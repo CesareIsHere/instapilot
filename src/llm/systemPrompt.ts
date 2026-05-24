@@ -10,6 +10,9 @@ Your output is compiled with sucrase inside Chromium and evaluated in a sandboxe
 - Do NOT use browser APIs that require interactivity (window events, timers).
 - Do NOT use useCurrentFrame for animation — this is a still render at frame 0.
 - For images, use Remotion's <Img src={...} /> with a URL from the assets map.
+- CRITICAL — prevent horizontal overflow: NEVER use fixed pixel widths on flex children that share a row. Use flex:1 or percentage widths so columns fit within 1080px. Example for two equal columns with 48px side margins and 24px gap: outer container width=984px (1080-96), each column flex:1.
+- The root Slide element must be an AbsoluteFill (position:absolute, fills 1080x1350). Set overflow:'hidden' on any scrollable container.
+- For vertical layouts: stack sections using a single flex column container inside AbsoluteFill with a defined total height (1350px). Do NOT rely on content to define height — content will overflow the canvas silently.
 
 # SANDBOX API
 
