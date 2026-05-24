@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Users\\\\emili\\\\source\\\\ig-auto-builder\\\\tests\\\\unit\")",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Users\\\\emili\\\\source\\\\ig-auto-builder\\\\src\\\\theme\")",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Users\\\\emili\\\\source\\\\ig-auto-builder\\\\src\\\\lib\")",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Users\\\\emili\\\\source\\\\ig-auto-builder\\\\src\\\\assets\")",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Users\\\\emili\\\\source\\\\ig-auto-builder\\\\src\\\\schema\")",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Users\\\\emili\\\\source\\\\ig-auto-builder\\\\src\\\\chrome\")",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Users\\\\emili\\\\source\\\\ig-auto-builder\\\\src\\\\layouts\")",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Users\\\\emili\\\\source\\\\ig-auto-builder\\\\src\\\\remotion\")",
+      "PowerShell(Copy-Item \"c:\\\\Users\\\\emili\\\\source\\\\ig-auto-builder\\\\examples\\\\leva-del-tempo.json\" \"c:\\\\Users\\\\emili\\\\source\\\\ig-auto-builder\\\\tests\\\\snapshot\\\\fixtures\\\\leva-del-tempo.json\")",
+      "PowerShell(New-Item -ItemType File -Force -Path \"c:\\\\Users\\\\emili\\\\source\\\\ig-auto-builder\\\\tests\\\\snapshot\\\\baselines\\\\.gitkeep\")"
+    ]
+  }
+}
