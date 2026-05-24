@@ -18,6 +18,17 @@ function buildApp() {
     next(err);
   });
   app.get('/boom', (_req, _res, next) => next(new Error('kaboom')));
+  app.get('/llmfail', (_req, _res, next) => {
+    const e: Error & { code?: string } = new Error('llm_empty_response');
+    e.code = 'LLM_FAILURE';
+    next(e);
+  });
+  app.get('/badcode', (_req, _res, next) => {
+    const e: Error & { code?: string; detail?: string } = new Error('invalid_code');
+    e.code = 'INVALID_CODE';
+    e.detail = 'unexpected token';
+    next(e);
+  });
   app.use(errorHandler);
   return app;
 }
@@ -41,5 +52,18 @@ describe('error handler', () => {
     const res = await request(buildApp()).get('/boom');
     expect(res.status).toBe(500);
     expect(res.body.error).toBe('render_failure');
+  });
+
+  it('maps LLM_FAILURE to 500 with error=llm_failure', async () => {
+    const res = await request(buildApp()).get('/llmfail');
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('llm_failure');
+  });
+
+  it('maps INVALID_CODE to 422 with error=invalid_code and detail', async () => {
+    const res = await request(buildApp()).get('/badcode');
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe('invalid_code');
+    expect(res.body.detail).toBe('unexpected token');
   });
 });
