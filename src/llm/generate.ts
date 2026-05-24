@@ -11,7 +11,7 @@ export interface GenerateArgs {
 
 export async function generateSlideCode(args: GenerateArgs): Promise<GeneratedSlide> {
   const { client, model, systemPrompt, userPrompt } = args;
-  const jsonSchema = zodToJsonSchema(GeneratedSlideSchema, 'GeneratedSlide');
+  const jsonSchema = zodToJsonSchema(GeneratedSlideSchema, { name: 'GeneratedSlide', nameStrategy: 'title' });
 
   const response = await client.chat.completions.create({
     model,

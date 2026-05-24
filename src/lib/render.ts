@@ -1,6 +1,7 @@
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { renderStill, selectComposition } from '@remotion/renderer';
+import { staticFile } from 'remotion';
 import type { SlideSpec } from '@/schema/slideSpec';
 import { assetExists, listAssets } from '@/assets';
 import { theme as brandTheme } from '@/theme';
@@ -76,7 +77,7 @@ export async function renderDynamicStill({ serveUrl, tsxCode }: RenderDynamicArg
   const start = Date.now();
 
   const assetsMap = Object.fromEntries(
-    Object.entries(listAssets()).map(([k, v]) => [k, v.absolutePath]),
+    Object.entries(listAssets()).map(([k, v]) => [k, staticFile(v.path)]),
   );
   const inputProps = { tsxCode, theme: brandTheme, assets: assetsMap };
 

@@ -16,9 +16,7 @@ export const DynamicSlide: React.FC<DynamicSlideProps> = ({ tsxCode, theme, asse
   const handleRef = React.useRef<number | null>(null);
 
   React.useEffect(() => {
-    if (handleRef.current === null) {
-      handleRef.current = delayRender('dynamic.compile');
-    }
+    handleRef.current ??= delayRender('dynamic.compile');
     try {
       const js = compileTsx(tsxCode);
       const factory = new Function(
@@ -30,16 +28,16 @@ export const DynamicSlide: React.FC<DynamicSlideProps> = ({ tsxCode, theme, asse
         globals.React, globals.Remotion, globals.theme, globals.assets, globals.primitives,
       );
       if (typeof Comp !== 'function') {
-        throw new Error('dynamic.eval: generated code did not define a `Slide` function');
+        throw new TypeError('dynamic.eval: generated code did not define a `Slide` function');
       }
-      setSlideComponent(() => Comp as React.ComponentType);
+      setSlideComponent(() => Comp);
       const h = handleRef.current;
       handleRef.current = null;
       continueRender(h);
     } catch (err) {
       cancelRender(err as Error);
     }
-  }, [tsxCode, theme, assets]);
+  }, [tsxCode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!SlideComponent) return <AbsoluteFill />;
   return <SlideComponent />;
