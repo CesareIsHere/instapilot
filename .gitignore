@@ -1,0 +1,9 @@
+node_modules/
+output/*
+!output/.gitkeep
+public/generated/*
+!public/generated/.gitkeep
+.env
+*.log
+dist/
+.DS_Store
