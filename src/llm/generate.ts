@@ -1,19 +1,21 @@
 import type OpenAI from 'openai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { GeneratedSlideSchema, type GeneratedSlide } from './schema';
+import type { ReasoningEffort } from './client';
 
 export interface GenerateArgs {
   client: OpenAI;
   model: string;
   systemPrompt: string;
   userPrompt: string;
+  reasoningEffort?: ReasoningEffort;
 }
 
 export async function generateSlideCode(args: GenerateArgs): Promise<GeneratedSlide> {
-  const { client, model, systemPrompt, userPrompt } = args;
+  const { client, model, systemPrompt, userPrompt, reasoningEffort } = args;
   const jsonSchema = zodToJsonSchema(GeneratedSlideSchema, { name: 'GeneratedSlide', nameStrategy: 'title' });
 
-  const response = await client.chat.completions.create({
+  const request: Record<string, unknown> = {
     model,
     messages: [
       { role: 'system', content: systemPrompt },
@@ -23,7 +25,14 @@ export async function generateSlideCode(args: GenerateArgs): Promise<GeneratedSl
       type: 'json_schema',
       json_schema: { name: 'GeneratedSlide', strict: true, schema: jsonSchema as Record<string, unknown> },
     },
-  });
+  };
+  if (reasoningEffort) {
+    request.reasoning_effort = reasoningEffort;
+  }
+
+  const response = (await client.chat.completions.create(
+    request as unknown as Parameters<typeof client.chat.completions.create>[0],
+  )) as OpenAI.Chat.Completions.ChatCompletion;
 
   const content = response.choices[0]?.message?.content;
   if (!content) {
@@ -35,7 +44,7 @@ export async function generateSlideCode(args: GenerateArgs): Promise<GeneratedSl
     parsed = JSON.parse(content);
   } catch {
     throw new Error('llm_invalid_response: not valid JSON');
-  }
+  } 
 
   const result = GeneratedSlideSchema.safeParse(parsed);
   if (!result.success) {

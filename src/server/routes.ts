@@ -98,6 +98,7 @@ export function mountDynamicRoutes(app: Express): void {
       try {
         generated = await generateSlideCode({
           client, model: body.model ?? cfg.model, systemPrompt, userPrompt: body.prompt,
+          reasoningEffort: cfg.reasoningEffort,
         });
       } catch (err) {
         const e: Error & { code?: string } = new Error((err as Error).message);
