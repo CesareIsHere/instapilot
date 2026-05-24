@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import { log } from '@/lib/log';
 import { buildBundle } from '@/remotion/bundler';
-import { mountDiscoveryRoutes, mountRenderRoutes } from './routes';
+import { mountDiscoveryRoutes, mountRenderRoutes, mountDynamicRoutes } from './routes';
 import { errorHandler } from './errors';
 
 const PORT = Number(process.env.PORT ?? 3001);
@@ -30,6 +30,7 @@ async function main() {
 
   mountDiscoveryRoutes(app);
   mountRenderRoutes(app);
+  mountDynamicRoutes(app);
   app.use(errorHandler);
 
   app.listen(PORT, () => {
