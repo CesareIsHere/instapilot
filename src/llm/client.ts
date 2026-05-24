@@ -1,17 +1,16 @@
 import OpenAI from 'openai';
 
 export interface LlmClientConfig {
-  baseURL: string;
+  baseURL?: string;
   apiKey: string;
   model: string;
 }
 
 export function readLlmConfig(env: NodeJS.ProcessEnv = process.env): LlmClientConfig {
   const baseURL = env.LITELLM_BASE_URL;
-  const apiKey = env.LITELLM_API_KEY;
-  const model = env.LITELLM_MODEL ?? 'claude-sonnet-4-6';
-  if (!baseURL) throw new Error('LITELLM_BASE_URL is required');
-  if (!apiKey) throw new Error('LITELLM_API_KEY is required');
+  const apiKey = env.LITELLM_API_KEY ?? env.OPENAI_API_KEY;
+  const model = env.LITELLM_MODEL ?? env.OPENAI_MODEL ?? 'gpt-4o';
+  if (!apiKey) throw new Error('LITELLM_API_KEY or OPENAI_API_KEY is required');
   return { baseURL, apiKey, model };
 }
 
