@@ -20,13 +20,15 @@ export const Slide: React.FC<SlideSpec> = (slide) => {
   }
   const LayoutComponent = layout.component;
 
+  const LOGO_HEIGHT = 104; // paddingTop(32) + img(72)
+
   return (
     <AbsoluteFill>
       <Background variant={slide.background} />
+      <AbsoluteFill>
+        <LayoutComponent blocks={slide.blocks} logoOffset={slide.chrome.showLogo ? LOGO_HEIGHT : 0} />
+      </AbsoluteFill>
       {slide.chrome.showLogo && <Logo />}
-      <div style={{ width: '100%', height: '100%' }}>
-        <LayoutComponent blocks={slide.blocks} />
-      </div>
       {slide.chrome.showCarouselNav && (
         <CarouselNav pageIndex={slide.chrome.pageIndex} totalPages={slide.chrome.totalPages} />
       )}
