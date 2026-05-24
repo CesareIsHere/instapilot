@@ -1,5 +1,5 @@
 import React from 'react';
-import { AbsoluteFill, delayRender, continueRender, cancelRender } from 'remotion';
+import { AbsoluteFill, delayRender, continueRender, cancelRender, staticFile } from 'remotion';
 import { compileTsx } from './compile';
 import { buildSandboxGlobals } from './sandbox';
 import type { Theme } from '@/theme';
@@ -23,7 +23,10 @@ export const DynamicSlide: React.FC<DynamicSlideProps> = ({ tsxCode, theme, asse
         'React', 'Remotion', 'theme', 'assets', 'primitives',
         `"use strict";\n${js}\n;return Slide;`,
       );
-      const globals = buildSandboxGlobals(theme, assets);
+      const resolvedAssets = Object.fromEntries(
+        Object.entries(assets).map(([k, v]) => [k, staticFile(v)]),
+      );
+      const globals = buildSandboxGlobals(theme, resolvedAssets);
       const Comp = factory(
         globals.React, globals.Remotion, globals.theme, globals.assets, globals.primitives,
       );
