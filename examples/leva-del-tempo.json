@@ -4,19 +4,46 @@
     "format": "post-portrait",
     "layout": "headline-body-illustration",
     "background": "paper",
-    "chrome": { "showLogo": true, "showCarouselNav": true, "pageIndex": 3 },
+    "chrome": { "showLogo": true, "showCarouselNav": true, "pageIndex": 3, "totalPages": 7 },
     "blocks": [
-      { "type": "Headline", "text": "La leva del tempo", "size": "xl", "color": "brand-navy" },
-      { "type": "RichText", "content": [
-        { "kind": "paragraph", "text": "Per Mirco, il vantaggio non sono i soldi, ma il tempo." },
-        { "kind": "bullets", "items": [
-          "Ha davanti a sé circa 30-35 anni di lavoro.",
-          "Più tempo = più interesse composto.",
-          "Sul lunghissimo periodo, i mercati azionari hanno reso il 7-8% all'anno.",
-          "Il tempo gli permetterà di partire da piccole cifre a un capitale importante per la sua pensione."
-        ]}
-      ]},
-      { "type": "Illustration", "assetId": "money-time-flow", "caption": "Tempo" }
+      {
+        "type": "Headline",
+        "text": "La leva del tempo",
+        "size": "xl",
+        "color": "brand-navy"
+      },
+      {
+        "type": "RichText",
+        "content": [
+          {
+            "kind": "paragraph",
+            "text": "Per Mirco, 24 anni, il vantaggio competitivo non sono i soldi — è il tempo davanti a lui."
+          },
+          {
+            "kind": "bullets",
+            "items": [
+              "30-35 anni di orizzonte temporale: abbastanza per attraversare più cicli di mercato.",
+              "A 7% reale annuo, €200/mese diventano ~€240.000 in 30 anni.",
+              "Lo stesso capitale investito a 45 anni produce meno della metà.",
+              "L'interesse composto non è lineare: gli ultimi 10 anni producono più dei primi 20."
+            ]
+          },
+          {
+            "kind": "paragraph",
+            "text": "Il rischio per Mirco non è volatilità — è non iniziare."
+          }
+        ]
+      },
+      {
+        "type": "Illustration",
+        "assetId": "money-time-flow",
+        "caption": "Stessa cifra mensile, risultati radicalmente diversi",
+        "align": "center"
+      },
+      {
+        "type": "Footer",
+        "variant": "disclaimer"
+      }
     ]
   }
 }

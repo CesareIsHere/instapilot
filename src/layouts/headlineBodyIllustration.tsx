@@ -20,6 +20,7 @@ export const HeadlineBodyIllustration: React.FC<Props> = ({ blocks, logoOffset =
       paddingRight: theme.spacing.xl,
       gap: theme.spacing.lg,
       boxSizing: 'border-box',
+      overflow: 'hidden',
     }}>
       {blocks.map((block, idx) => {
         const entry = primitives[block.type as keyof typeof primitives];

@@ -1,0 +1,40 @@
+{
+  "slide": {
+    "compositionId": "Slide",
+    "format": "post-portrait",
+    "layout": "headline-body-illustration",
+    "background": "paper",
+    "chrome": { "showLogo": true, "showCarouselNav": true, "pageIndex": 2, "totalPages": 7 },
+    "blocks": [
+      {
+        "type": "Headline",
+        "text": "Il tempo batte il capitale",
+        "size": "xl",
+        "color": "brand-navy"
+      },
+      {
+        "type": "RichText",
+        "content": [
+          {
+            "kind": "bullets",
+            "items": [
+              "€200/mese a 24 anni → ~€240.000 a 54 anni (7% reale).",
+              "Lo stesso piano iniziato a 34 anni produce meno della metà.",
+              "I primi 10 anni contano più degli ultimi 20."
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Illustration",
+        "assetId": "money-time-flow",
+        "caption": "Stesso importo mensile, risultati radicalmente diversi",
+        "align": "center"
+      },
+      {
+        "type": "Footer",
+        "variant": "disclaimer"
+      }
+    ]
+  }
+}
