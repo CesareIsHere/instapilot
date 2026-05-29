@@ -21,7 +21,8 @@ Motivazioni:
 |---|---|---|
 | Motore render HTML→PNG | **Playwright** | API screenshot, `fonts.ready`, clip preciso, request-interception per offline |
 | Output contract LLM | **Shell nostra + frammento** | Noi forniamo boilerplate/font/brand; LLM dà `bodyHtml` + `css` |
-| Font & asset | **Tutto offline/embedded** | woff2 self-hosted via `@font-face` + asset come data-URI |
+| Font & asset | **Tutto offline/embedded** | woff2 **base64 data-URI** in `@font-face` + asset come data-URI (zero richieste di rete) |
+| Output PNG | **1080×1350 (deviceScaleFactor 1)** | DSF>1 opzionale via env per nitidezza; default = parità con la pipeline Remotion |
 | Forma input | **Prompt libero** come `/render/dynamic` | `{ prompt, brandContext?, model?, role? }` |
 | Lifecycle browser | **Singleton condiviso** | Una istanza Playwright lazy, chiusa allo shutdown |
 | Backward compat | `/render/dynamic` e `/render/still` invariati | |
@@ -41,18 +42,18 @@ POST /render/html { prompt, brandContext?, model?, role? }
    │
    ▼
 [Node] template.ts — compone documento HTML completo:
-   <!DOCTYPE> + reset CSS + @font-face (woff2 locali)
-   + :root { --brand-navy, --brand-gold, --paper, --ink, --muted, spacing, font }
-   + asset come data-URI
+   <!DOCTYPE> + reset CSS + @font-face (woff2 base64 data-URI)
+   + :root { --brand-*, spacing, font, --asset-<id>: url(data:...) }
+   + sostituzione token {{asset:<id>}} → data-URI (dopo validazione)
    + .canvas 1080×1350 { <bodyHtml> }  + <style>{css}</style>
    │
    ▼
 [Chromium/Playwright] renderHtml.ts:
-   1. page (viewport 1080×1350, deviceScaleFactor 2)
-   2. route('**', abort)  → rete bloccata (offline deterministico)
+   1. page (viewport 1080×1350, deviceScaleFactor da env, default 1)
+   2. route(http/https → abort)  → blocca solo rete remota (data:/file: ok)
    3. setContent(html, waitUntil:'load')
    4. await document.fonts.ready
-   5. misura overflow (scrollWidth/scrollHeight vs 1080×1350)
+   5. misura overflow (.canvas scrollWidth/scrollHeight vs 1080×1350) — non-fatale
    6. screenshot { clip: 0,0,1080,1350 } → PNG in OUTPUT_DIR
    │
    ▼
@@ -105,18 +106,23 @@ z.object({
 
 L'LLM **non** scrive `<html>/<head>/<body>`, `@font-face` o `<!DOCTYPE>`: quelli li mette la shell. Scrive solo il markup dentro `.canvas` e il CSS associato. Niente `<script>`, niente URL `http(s)://`.
 
+**Reference asset:** l'LLM referenzia gli asset con un token `{{asset:<id>}}` (es. `<img src="{{asset:logo-f}}">` oppure `background-image: url('{{asset:logo-f}}')`); `template.ts` sostituisce i token con il data-URI corrispondente **dopo** la validazione. In alternativa per i background è disponibile la CSS-var `var(--asset-<id>)` (già contenente `url(data:...)`).
+
+**Scope CSS:** il `css` dell'LLM deve essere scopato sotto `.canvas` (es. `.canvas .hero { ... }`) per non collidere con reset e shell.
+
 ## 6. Template shell (`template.ts`)
 
 Responsabilità: garantire brand, font e canvas a prescindere dall'output LLM.
 
 - `<!DOCTYPE html>` + `<meta charset>`.
 - **Reset CSS** minimale (`* { margin:0; padding:0; box-sizing:border-box }`).
-- **`@font-face`** per Plus Jakarta Sans woff2 locali (pesi 400/600/800).
+- **`@font-face`** per Plus Jakarta Sans (pesi **400/500/600/700/800**) con `src` come **base64 data-URI** del woff2 (nessuna richiesta di rete).
 - **`:root`** con CSS custom properties derivate da `src/theme`:
   - `--brand-navy`, `--brand-gold`, `--paper`, `--ink`, `--muted`
   - `--space-xs..2xl` (8/16/24/40/64/96), `--font-family`
+  - `--asset-<id>: url(data:...)` per ogni asset del manifest (uso in `background-image`)
 - `.canvas` fisso `1080×1350`, `overflow:hidden`, `background: var(--paper)`, `font-family: var(--font-family)`.
-- **Asset injection**: gli asset del manifest passati al frammento come data-URI (o `file://`), referenziabili per id; lista id disponibili documentata nel system prompt.
+- **Asset injection**: sostituzione dei token `{{asset:<id>}}` nel `bodyHtml`/`css` con il data-URI (post-validazione) + le `--asset-<id>` in `:root`. Lista id disponibili documentata nel system prompt.
 - Slot: `<style>{css}</style>` + `<div class="canvas">{bodyHtml}</div>`.
 
 ## 7. System prompt (`htmlSystemPrompt.ts`)
@@ -129,11 +135,12 @@ Riadattamento HTML del prompt attuale. Compone i layer:
 4. **Riempimento verticale** — il canvas deve occupare i 1350px: flexbox/grid con `flex:1`, `margin-top:auto`, niente vuoti > 100px.
 5. **CSS-vars del brand** — usare `var(--brand-navy)` ecc. invece di hardcodare i colori.
 6. **Libreria recipe** (`recipes.ts`) — catalogo di pattern collaudati che l'LLM compone (vedi §8).
-7. **Asset catalog** — id disponibili (`logo-f`, `money-time-flow`, …) e come referenziarli.
-8. **Regole anti-overflow** — `box-sizing:border-box`, niente larghezze fisse che sommate sforano 1080, budget verticale ≤ 1350.
-9. **Output contract** — solo `bodyHtml` + `css`, niente `<script>`/URL remoti, JSON `{intent, bodyHtml, css}` senza markdown fence.
-10. **Self-check** finale prima di rispondere.
-11. **Brand context** — caricato da `BRAND_CONTEXT_FILE`.
+7. **Asset catalog** — id disponibili (`logo-f`, `money-time-flow`, …) e convenzione `{{asset:<id>}}` / `var(--asset-<id>)` per referenziarli.
+8. **Pesi font disponibili** — usare SOLO 400/500/600/700/800 (gli unici embedded); niente altri pesi che verrebbero sintetizzati.
+9. **Regole anti-overflow** — `box-sizing:border-box`, niente larghezze fisse che sommate sforano 1080, budget verticale ≤ 1350.
+10. **Output contract** — solo `bodyHtml` + `css` (scopato sotto `.canvas`), niente `<script>`/URL remoti, JSON `{intent, bodyHtml, css}` senza markdown fence.
+11. **Self-check** finale prima di rispondere.
+12. **Brand context** — caricato da `BRAND_CONTEXT_FILE`. Il `role` (cover/body/cta), se presente, è un hint per il tono/struttura della pagina.
 
 ## 8. Libreria recipe (`recipes.ts`)
 
@@ -160,18 +167,19 @@ src/
     generateHtml.ts      # generateSlideHtml(...) — chiamata LLM
     template.ts          # buildHtmlDocument({ bodyHtml, css, theme, assets })
     validate.ts          # validateGeneratedHtml(bodyHtml, css)
+    fonts.ts             # carica i woff2 e li serializza in base64 data-URI
     renderHtml.ts        # renderHtmlStill({ html }) → PNG via Playwright
     browser.ts           # singleton Playwright (getBrowser / closeBrowser)
   server/
     routes.ts            # + mountHtmlRoutes(app)
     index.ts             # closeBrowser() su shutdown
 public/
-  fonts/                 # Plus Jakarta Sans woff2 (400/600/800) self-hosted
+  fonts/                 # Plus Jakarta Sans woff2 (400/500/600/700/800) self-hosted
 tests/
   unit/html/
     schema.test.ts
-    validate.test.ts     # blocca <script> e http(s)://
-    template.test.ts     # inietta CSS-vars + asset
+    validate.test.ts     # blocca <script>, on*= e http(s)://; consente {{asset:}} e data:
+    template.test.ts     # inietta CSS-vars + sostituisce {{asset:}} → data-URI
     htmlSystemPrompt.test.ts
   integration/
     renderHtml.test.ts   # LLM mockato → render frammento noto → PNG 1080×1350, no overflow
@@ -182,18 +190,18 @@ examples/
 ## 10. Rendering (`renderHtml.ts` + `browser.ts`)
 
 - **Singleton browser**: `getBrowser()` lancia Chromium headless una volta (lazy), `closeBrowser()` allo shutdown del server. Evita di rilanciare Chromium per richiesta.
-- Per richiesta: nuova `page`, `setViewport(1080×1350, deviceScaleFactor:2)`.
-- `page.route('**', r => r.abort())` per garantire **offline** (nessuna fetch a render-time) — i font e gli asset sono già embedded nella shell.
+- Per richiesta: nuova `page`, `setViewport(1080×1350, deviceScaleFactor = HTML_DEVICE_SCALE_FACTOR ?? 1)`. Con DSF=1 il PNG è esattamente 1080×1350.
+- `page.route('**', ...)` che **abortisce solo `http(s)://`** e lascia passare `data:`/`file:` — i font/asset sono data-URI embedded, quindi nessuna fetch remota.
 - `setContent(html, { waitUntil: 'load' })` → `await page.evaluate(() => document.fonts.ready)`.
-- Overflow check via `page.evaluate` (`scrollWidth`/`scrollHeight` di `.canvas`).
+- Overflow check via `page.evaluate` (`scrollWidth`/`scrollHeight` di `.canvas` vs 1080×1350) — **non-fatale**: riportato nella response come warning, non blocca il 200. Nota: il `.canvas` ha `overflow:hidden`, quindi senza questo check il taglio sarebbe silenzioso.
 - `screenshot({ clip: {x:0,y:0,width:1080,height:1350}, type:'png' })`.
 - Output: `OUTPUT_DIR/HtmlSlide-{shortId}.png` (riuso helper `buildOutputPath`/`shortId` da `src/lib/render.ts`).
 - Timeout render configurabile (default 15s) → `render_failure` invece di hang.
 
 ## 11. Font & asset offline
 
-- **Font**: vendoring di Plus Jakarta Sans woff2 (400/600/800) in `public/fonts/`. Disponibili via `@remotion/google-fonts` già installato; vengono copiati una volta nel repo per render 100% offline (nessuna dipendenza da CDN né dalla network policy del container).
-- **Asset**: il manifest esistente (`src/assets`) viene risolto in data-URI e iniettato nella shell, così il frammento può usarli senza accesso al filesystem/rete dentro Chromium.
+- **Font**: vendoring di Plus Jakarta Sans woff2 (**400/500/600/700/800**) in `public/fonts/`. Disponibili via `@remotion/google-fonts` già installato; vengono copiati una volta nel repo. A render-time `fonts.ts` li legge e li serializza come **base64 data-URI** dentro l'`@font-face` della shell → render 100% offline (nessuna dipendenza da CDN né dalla network policy del container). I pesi embedded coprono tutti quelli usati nel design prompt.
+- **Asset**: il manifest esistente (`src/assets`) viene risolto in data-URI e iniettato nella shell (token `{{asset:<id>}}` + CSS-var `--asset-<id>`), così il frammento può usarli senza accesso al filesystem/rete dentro Chromium.
 
 ## 12. Validazione & safety
 
@@ -201,9 +209,10 @@ examples/
 - JSON parse OK + schema Zod OK.
 - `bodyHtml`/`css` non oltre i limiti di dimensione.
 - **Reject** se `bodyHtml` contiene `<script` o `on*=` handler inline; reject se `bodyHtml`/`css` contengono `http://`/`https://` (forziamo asset locali). → `422 invalid_html`.
+- **Consentiti**: i token `{{asset:<id>}}` (con `<id>` presente nel manifest) e gli URI `data:`. Token con id sconosciuto → `422 invalid_html`.
 
 **Render-time (Chromium):**
-- Rete bloccata via route abort (difesa in profondità anche se la validazione passasse qualcosa).
+- Route che abortisce solo `http(s)://` (difesa in profondità anche se la validazione passasse qualcosa); `data:`/`file:` consentiti per font/asset embedded.
 - `try/catch` attorno al render → `render_failure` con messaggio, niente hang.
 
 ## 13. Variabili d'ambiente
@@ -211,8 +220,14 @@ examples/
 Riuso delle esistenti (`LITELLM_*` / `OPENAI_*`, `BRAND_CONTEXT_FILE`, `OUTPUT_DIR`, `OPENAI_REASONING_EFFORT`). Nuove opzionali:
 ```
 HTML_RENDER_TIMEOUT_MS=15000      # timeout render Playwright
-HTML_DEVICE_SCALE_FACTOR=2        # crispness screenshot
+HTML_DEVICE_SCALE_FACTOR=1        # 1 = PNG 1080×1350 (default); >1 per più nitidezza (PNG più grande)
 PLAYWRIGHT_BROWSERS_PATH=...       # opzionale, path browser
+```
+
+**Setup (sul computer dell'utente, non in questo ambiente):**
+```
+npm install            # installa playwright
+npx playwright install chromium
 ```
 
 ## 14. Carosello (fuori scope, ma progettato per esso)
@@ -241,4 +256,4 @@ L'endpoint genera **una pagina sola**. Il campo opzionale `role` (`cover`/`body`
 9. `/render/dynamic` e `/render/still` continuano a funzionare invariati.
 10. README aggiornato (riga endpoint + esempio) e `examples/html-prompt.json` presente.
 11. Tutti i test passano (unit + integration con LLM mockato).
-```
+12. Con DSF=1 il PNG è esattamente 1080×1350; impostando `HTML_DEVICE_SCALE_FACTOR=2` il PNG esce 2160×3240.
