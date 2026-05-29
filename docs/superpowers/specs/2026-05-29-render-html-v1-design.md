@@ -279,4 +279,4 @@ L'endpoint genera **una pagina sola**. Il campo opzionale `role` (`cover`/`body`
 10. `/render/dynamic` e `/render/still` continuano a funzionare invariati.
 11. README aggiornato (riga endpoint + esempio) e `examples/html-prompt.json` presente.
 12. Tutti i test passano (unit + integration con LLM mockato), incluso un test del **loop overflow** (mock che sfora al 1° tentativo e rientra al 2°).
-13. Con DSF=1 il PNG è esattamente 1080×1350; impostando `HTML_DEVICE_SCALE_FACTOR=2` il PNG esce 2160×3240.
+13. Con DSF=1 il PNG è esattamente 1080×1350; impostando `HTML_DEVICE_SCALE_FACTOR=2` il PNG esce 2160×2700.

@@ -29,8 +29,8 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   }
 
   if (code === 'OVERFLOW_UNRESOLVED') {
-    const detail = (err as { detail?: unknown }).detail;
-    res.status(422).json({ error: 'overflow_unresolved', ...( typeof detail === 'object' ? detail : { detail }) });
+    const detail = (err as { detail?: Record<string, unknown> }).detail ?? {};
+    res.status(422).json({ error: 'overflow_unresolved', ...detail });
     return;
   }
 

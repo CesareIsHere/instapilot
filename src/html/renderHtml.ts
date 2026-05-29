@@ -26,12 +26,15 @@ export type RenderHtmlOutcome =
 export async function renderHtmlStill(html: string, outputId: string): Promise<RenderHtmlOutcome> {
   const start = Date.now();
   const browser = await getBrowser();
-  const page = await browser.newPage();
+  // deviceScaleFactor is a context-level option in Playwright (not settable via setViewportSize).
+  const context = await browser.newContext({
+    viewport: { width: 1080, height: 1350 },
+    deviceScaleFactor: DEVICE_SCALE_FACTOR,
+  });
+  const page = await context.newPage();
 
   try {
-    await page.setViewportSize({ width: 1080, height: 1350, deviceScaleFactor: DEVICE_SCALE_FACTOR } as Parameters<typeof page.setViewportSize>[0]);
-
-    // Block remote network — allow data: and blob: (embedded fonts/assets)
+    // Block remote network — data:/file: (embedded fonts/assets) pass through.
     await page.route(/^https?:\/\//, (route) => route.abort());
 
     await page.setContent(html, { waitUntil: 'load', timeout: RENDER_TIMEOUT_MS });
@@ -81,6 +84,6 @@ export async function renderHtmlStill(html: string, outputId: string): Promise<R
     log.info('render.html.complete', { file, durationMs });
     return { ok: true, file, durationMs };
   } finally {
-    await page.close();
+    await context.close();
   }
 }

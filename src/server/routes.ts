@@ -6,7 +6,7 @@ import { layouts } from '@/layouts';
 import { theme } from '@/theme';
 import { listAssets } from '@/assets';
 import { SlideSpecSchema } from '@/schema/slideSpec';
-import { renderSlideStill, renderDynamicStill } from '@/lib/render';
+import { renderSlideStill, renderDynamicStill, shortId } from '@/lib/render';
 import { generateSlideCode } from '@/llm/generate';
 import { createLlmClient, readLlmConfig } from '@/llm/client';
 import { buildSystemPrompt } from '@/llm/systemPrompt';
@@ -17,7 +17,7 @@ import { buildHtmlSystemPrompt, type SlideRole } from '@/html/htmlSystemPrompt';
 import { validateGeneratedHtml } from '@/html/validate';
 import { buildHtmlDocument } from '@/html/template';
 import { renderHtmlStill } from '@/html/renderHtml';
-import { shortId } from '@/lib/render';
+import type { GeneratedHtml, OverflowResult } from '@/html/schema';
 import { log } from '@/lib/log';
 
 export function mountDiscoveryRoutes(app: Express): void {
@@ -164,8 +164,8 @@ export function mountHtmlRoutes(app: Express): void {
       let totalLlmMs = 0;
       let totalRenderMs = 0;
       let attempts = 0;
-      let lastGenerated = null as Awaited<ReturnType<typeof generateSlideHtml>> | null;
-      let lastOverflow = null as import('@/html/schema').OverflowResult | null;
+      let lastGenerated: GeneratedHtml | null = null;
+      let lastOverflow: OverflowResult | null = null;
       let overflowFeedback: string | undefined;
 
       for (let attempt = 1; attempt <= HTML_MAX_ATTEMPTS; attempt++) {
@@ -173,7 +173,7 @@ export function mountHtmlRoutes(app: Express): void {
 
         // LLM generation
         const llmStart = Date.now();
-        let generated: Awaited<ReturnType<typeof generateSlideHtml>>;
+        let generated: GeneratedHtml;
         try {
           generated = await generateSlideHtml({
             client,

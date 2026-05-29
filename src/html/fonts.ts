@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { log } from '@/lib/log';
 
 const FONTS_DIR = path.resolve(process.cwd(), 'public/fonts');
 
@@ -23,19 +24,22 @@ function toDataUri(filePath: string): string {
 
 export function buildFontFaceBlock(): string {
   const faces: string[] = [];
+  const missing: number[] = [];
   for (const { weight, file } of VARIANTS) {
     const fullPath = path.join(FONTS_DIR, file);
     if (!fs.existsSync(fullPath)) {
-      // Fallback: reference by URL so Chrome can load from CDN if fonts not vendored yet
-      faces.push(
-        `@font-face { font-family: 'Plus Jakarta Sans'; font-weight: ${weight}; font-style: normal; font-display: block; src: url('https://fonts.gstatic.com/s/plusjakartasans/v8/LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_KU7NSg.woff2') format('woff2'); }`,
-      );
+      missing.push(weight);
       continue;
     }
     const dataUri = toDataUri(fullPath);
     faces.push(
       `@font-face { font-family: 'Plus Jakarta Sans'; font-weight: ${weight}; font-style: normal; font-display: block; src: url('${dataUri}') format('woff2'); }`,
     );
+  }
+  if (missing.length > 0) {
+    // No CDN fallback: remote requests are blocked at render-time. Missing weights
+    // degrade to the 'sans-serif' fallback in the font stack.
+    log.warn('html.fonts.missing', { weights: missing, dir: FONTS_DIR });
   }
   return faces.join('\n');
 }
