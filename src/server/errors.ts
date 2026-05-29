@@ -22,6 +22,18 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
 
+  if (code === 'INVALID_HTML') {
+    const detail = (err as { detail?: string }).detail;
+    res.status(422).json({ error: 'invalid_html', detail, message: (err as Error).message });
+    return;
+  }
+
+  if (code === 'OVERFLOW_UNRESOLVED') {
+    const detail = (err as { detail?: unknown }).detail;
+    res.status(422).json({ error: 'overflow_unresolved', ...( typeof detail === 'object' ? detail : { detail }) });
+    return;
+  }
+
   if (code === 'LLM_FAILURE') {
     log.error('llm.failure', { message: (err as Error).message });
     res.status(500).json({ error: 'llm_failure', message: (err as Error).message });

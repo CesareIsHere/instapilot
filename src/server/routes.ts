@@ -12,6 +12,13 @@ import { createLlmClient, readLlmConfig } from '@/llm/client';
 import { buildSystemPrompt } from '@/llm/systemPrompt';
 import { loadBrandContext } from '@/llm/brandContext';
 import { validateTsx } from '@/dynamic/compile';
+import { generateSlideHtml } from '@/html/generateHtml';
+import { buildHtmlSystemPrompt, type SlideRole } from '@/html/htmlSystemPrompt';
+import { validateGeneratedHtml } from '@/html/validate';
+import { buildHtmlDocument } from '@/html/template';
+import { renderHtmlStill } from '@/html/renderHtml';
+import { shortId } from '@/lib/render';
+import { log } from '@/lib/log';
 
 export function mountDiscoveryRoutes(app: Express): void {
   app.get('/compositions', (_req, res) => {
@@ -83,6 +90,13 @@ const DynamicBodySchema = z.object({
   model: z.string().optional(),
 });
 
+const HtmlBodySchema = z.object({
+  prompt: z.string().min(1).max(8000),
+  brandContext: z.string().optional(),
+  model: z.string().optional(),
+  role: z.enum(['cover', 'body', 'cta']).optional(),
+});
+
 export function mountDynamicRoutes(app: Express): void {
   app.post('/render/dynamic', async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -128,6 +142,106 @@ export function mountDynamicRoutes(app: Express): void {
         code: generated.code,
         intent: generated.intent,
       });
+    } catch (err) {
+      next(err);
+    }
+  });
+}
+
+const HTML_MAX_ATTEMPTS = Number(process.env.HTML_MAX_ATTEMPTS ?? 3);
+
+export function mountHtmlRoutes(app: Express): void {
+  app.post('/render/html', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const body = HtmlBodySchema.parse(req.body);
+      const cfg = readLlmConfig();
+      const client = createLlmClient(cfg);
+      const brand = body.brandContext
+        ?? loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'docs/contesto-progetto-finvestire.md');
+      const systemPrompt = buildHtmlSystemPrompt(brand, body.role as SlideRole | undefined);
+      const outputId = shortId();
+
+      let totalLlmMs = 0;
+      let totalRenderMs = 0;
+      let attempts = 0;
+      let lastGenerated = null as Awaited<ReturnType<typeof generateSlideHtml>> | null;
+      let lastOverflow = null as import('@/html/schema').OverflowResult | null;
+      let overflowFeedback: string | undefined;
+
+      for (let attempt = 1; attempt <= HTML_MAX_ATTEMPTS; attempt++) {
+        attempts = attempt;
+
+        // LLM generation
+        const llmStart = Date.now();
+        let generated: Awaited<ReturnType<typeof generateSlideHtml>>;
+        try {
+          generated = await generateSlideHtml({
+            client,
+            model: body.model ?? cfg.model,
+            systemPrompt,
+            userPrompt: body.prompt,
+            reasoningEffort: cfg.reasoningEffort,
+            overflowFeedback: attempt > 1 ? overflowFeedback : undefined,
+            previousOutput: attempt > 1 && lastGenerated ? lastGenerated : undefined,
+          });
+        } catch (err) {
+          const e: Error & { code?: string } = new Error((err as Error).message);
+          e.code = 'LLM_FAILURE';
+          throw e;
+        }
+        totalLlmMs += Date.now() - llmStart;
+        lastGenerated = generated;
+
+        // Validate
+        const validationErr = validateGeneratedHtml(generated.bodyHtml, generated.css);
+        if (validationErr) {
+          const e: Error & { code?: string; detail?: string } = new Error('invalid_html');
+          e.code = 'INVALID_HTML';
+          e.detail = validationErr.detail;
+          throw e;
+        }
+
+        // Build HTML document
+        const html = buildHtmlDocument(generated.bodyHtml, generated.css);
+
+        // Render + overflow check
+        const renderStart = Date.now();
+        const outcome = await renderHtmlStill(html, outputId);
+        totalRenderMs += Date.now() - renderStart;
+
+        if (outcome.ok) {
+          return res.json({
+            file: outcome.file,
+            intent: generated.intent,
+            html,
+            attempts,
+            durationMs: totalLlmMs + totalRenderMs,
+            llmDurationMs: totalLlmMs,
+            renderDurationMs: totalRenderMs,
+          });
+        }
+
+        // Overflow — prepare feedback for next attempt
+        lastOverflow = outcome.overflow;
+        const axes: string[] = [];
+        if (outcome.overflow.y) axes.push(`${outcome.overflow.scrollHeight - 1350}px taller than the 1350px canvas (scrollHeight: ${outcome.overflow.scrollHeight})`);
+        if (outcome.overflow.x) axes.push(`${outcome.overflow.scrollWidth - 1080}px wider than the 1080px canvas (scrollWidth: ${outcome.overflow.scrollWidth})`);
+        overflowFeedback = `The previous attempt overflowed: ${axes.join(' and ')}. You MUST fit everything inside exactly 1080×1350px. Strategies: reduce content quantity, decrease spacing, or use a more compact layout recipe. Do NOT reduce font sizes below the minimums in the design rules. Regenerate the full slide now.`;
+        log.warn('render.html.retry', { attempt, ...outcome.overflow });
+      }
+
+      // All attempts exhausted — return 422 with last overflow info
+      const e: Error & { code?: string; detail?: unknown } = new Error('overflow_unresolved');
+      e.code = 'OVERFLOW_UNRESOLVED';
+      e.detail = {
+        overflow: lastOverflow,
+        html: lastGenerated
+          ? buildHtmlDocument(lastGenerated.bodyHtml, lastGenerated.css)
+          : null,
+        intent: lastGenerated?.intent ?? null,
+        attempts,
+      };
+      throw e;
     } catch (err) {
       next(err);
     }

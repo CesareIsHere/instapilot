@@ -26,6 +26,7 @@ npm test
 | `POST` | `/render/still` | Renderizza 1 PNG da uno `SlideSpec` |
 | `POST` | `/render/carousel` | Renderizza N PNG da `SlideSpec[]` |
 | `POST` | `/render/dynamic` | Genera TSX via LLM e renderizza un PNG dinamico |
+| `POST` | `/render/html` | Genera HTML+CSS via LLM e renderizza un PNG via Playwright |
 | `GET` | `/compositions` | Metadati composition `Slide` |
 | `GET` | `/primitives` | Catalogo primitive + JSON Schema |
 | `GET` | `/layouts` | Catalogo layout preset |
@@ -54,6 +55,18 @@ curl -X POST http://localhost:3001/render/dynamic \
 Risposta: `{ "file": "...", "intent": "...", "code": "...", "durationMs": 4200, "llmDurationMs": 1800, "renderDurationMs": 2400 }`
 
 Richiede un proxy litellm in ascolto su `LITELLM_BASE_URL`. Le variabili minime sono in `.env.example` (`LITELLM_BASE_URL`, `LITELLM_API_KEY`, `LITELLM_MODEL`).
+
+## Esempio html render
+
+```bash
+curl -X POST http://localhost:3001/render/html \
+  -H "Content-Type: application/json" \
+  --data-binary @examples/html-prompt.json
+```
+
+Risposta: `{ "file": "...", "intent": "...", "html": "...", "attempts": 1, "durationMs": 3800, "llmDurationMs": 1600, "renderDurationMs": 2200 }`
+
+Richiede Playwright installato (`npm install && npx playwright install chromium`). Usa le stesse variabili LLM di `/render/dynamic`. Variabili opzionali: `HTML_MAX_ATTEMPTS` (default 3), `HTML_RENDER_TIMEOUT_MS` (default 15000), `HTML_DEVICE_SCALE_FACTOR` (default 1).
 
 ## Stack
 
