@@ -33,32 +33,38 @@ Motivazioni:
 POST /render/html { prompt, brandContext?, model?, role? }
    │
    ▼
-[Node] LLM chat completion (riusa client OpenAI/litellm esistente)
-   - system: brand context + scala tipografica + CSS-vars + recipe library + regole + self-check
-   - response_format: json_schema → { intent, bodyHtml, css }
+┌───────────────────────── LOOP (max HTML_MAX_ATTEMPTS, default 3) ─────────────────────────┐
+│  [Node] LLM chat completion (riusa client OpenAI/litellm esistente)                        │
+│     - system: brand + scala tipografica + CSS-vars + recipe library + regole + self-check  │
+│     - messages: prompt utente (+ al retry: feedback overflow del tentativo precedente)     │
+│     - response_format: json_schema → { intent, bodyHtml, css }                             │
+│        │                                                                                   │
+│        ▼                                                                                   │
+│  [Node] validate.ts — parse, reject <script>/on*=/http(s)://, valida token {{asset:}}      │
+│        │                                                                                   │
+│        ▼                                                                                   │
+│  [Node] template.ts — documento HTML completo:                                             │
+│     <!DOCTYPE> + reset + @font-face (woff2 base64) + :root{--brand-*,--asset-*} +          │
+│     sostituzione {{asset:<id>}} → data-URI + .canvas 1080×1350{bodyHtml} + <style>{css}>   │
+│        │                                                                                   │
+│        ▼                                                                                   │
+│  [Chromium/Playwright] renderHtml.ts:                                                      │
+│     1. page (viewport 1080×1350, deviceScaleFactor da env, default 1)                      │
+│     2. route(http/https → abort) — data:/file: ok                                          │
+│     3. setContent(html, waitUntil:'load') → await document.fonts.ready                     │
+│     4. MISURA OVERFLOW (.canvas scrollWidth/scrollHeight vs 1080×1350)                      │
+│        │                                                                                   │
+│        ├─ overflow? ──SÌ──► scarta, costruisci feedback (asse + px di sforamento) ─► retry │
+│        │                                                                                   │
+│        └─ NO ──► screenshot { clip:0,0,1080,1350 } → PNG in OUTPUT_DIR ─► esci dal loop     │
+└────────────────────────────────────────────────────────────────────────────────────────┘
    │
-   ▼
-[Node] validate.ts — parse, reject <script> e http(s)://
+   ├─ successo ──► PNG → { file, intent, html, attempts, durationMs, llmDurationMs, renderDurationMs }
    │
-   ▼
-[Node] template.ts — compone documento HTML completo:
-   <!DOCTYPE> + reset CSS + @font-face (woff2 base64 data-URI)
-   + :root { --brand-*, spacing, font, --asset-<id>: url(data:...) }
-   + sostituzione token {{asset:<id>}} → data-URI (dopo validazione)
-   + .canvas 1080×1350 { <bodyHtml> }  + <style>{css}</style>
-   │
-   ▼
-[Chromium/Playwright] renderHtml.ts:
-   1. page (viewport 1080×1350, deviceScaleFactor da env, default 1)
-   2. route(http/https → abort)  → blocca solo rete remota (data:/file: ok)
-   3. setContent(html, waitUntil:'load')
-   4. await document.fonts.ready
-   5. misura overflow (.canvas scrollWidth/scrollHeight vs 1080×1350) — non-fatale
-   6. screenshot { clip: 0,0,1080,1350 } → PNG in OUTPUT_DIR
-   │
-   ▼
-PNG → { file, intent, html, durationMs, llmDurationMs, renderDurationMs, overflow? }
+   └─ esauriti i tentativi e ancora overflow ──► 422 overflow_unresolved (nessun PNG tagliato esce mai)
 ```
+
+**Principio:** un PNG con contenuto tagliato è un post non pubblicabile. L'overflow è quindi **fatale**: ogni generazione termina solo con una pagina che sta integralmente dentro 1080×1350, oppure con un errore esplicito dopo aver esaurito i tentativi.
 
 ## 4. Endpoint
 
@@ -80,16 +86,19 @@ PNG → { file, intent, html, durationMs, llmDurationMs, renderDurationMs, overf
   file: string;             // path assoluto al PNG
   intent: string;           // descrizione del concept visivo (per review/debug)
   html: string;             // documento HTML finale renderizzato (per review/debug)
-  durationMs: number;       // totale
-  llmDurationMs: number;    // solo LLM
-  renderDurationMs: number; // solo render
-  overflow?: { x: boolean; y: boolean; scrollWidth: number; scrollHeight: number };
+  attempts: number;         // quanti tentativi sono serviti (1 = primo colpo)
+  durationMs: number;       // totale (tutti i tentativi)
+  llmDurationMs: number;    // somma tempo LLM
+  renderDurationMs: number; // somma tempo render
 }
 ```
 
+La response 200 è garantita **senza overflow**: il contenuto sta integralmente dentro 1080×1350.
+
 **Errori:**
 - `400 validation` — body malformato / prompt mancante
-- `422 invalid_html` — HTML contiene `<script>` o risorse remote, o non parsa
+- `422 invalid_html` — HTML contiene `<script>`/`on*=`/risorse remote, token asset sconosciuto, o non parsa
+- `422 overflow_unresolved` — dopo `HTML_MAX_ATTEMPTS` tentativi il contenuto sfora ancora il canvas. Body include l'ultimo `{ overflow: { x, y, scrollWidth, scrollHeight }, html, intent }` per debug.
 - `500 llm_failure` — errore LLM (timeout, rete, schema)
 - `500 render_failure` — errore Chromium/Playwright (timeout, eccezione di pagina)
 
@@ -183,6 +192,7 @@ tests/
     htmlSystemPrompt.test.ts
   integration/
     renderHtml.test.ts   # LLM mockato → render frammento noto → PNG 1080×1350, no overflow
+    overflowRetry.test.ts # mock sfora al 1° tentativo, rientra al 2° → 200 attempts=2; sempre sfora → 422
 examples/
   html-prompt.json
 ```
@@ -193,10 +203,20 @@ examples/
 - Per richiesta: nuova `page`, `setViewport(1080×1350, deviceScaleFactor = HTML_DEVICE_SCALE_FACTOR ?? 1)`. Con DSF=1 il PNG è esattamente 1080×1350.
 - `page.route('**', ...)` che **abortisce solo `http(s)://`** e lascia passare `data:`/`file:` — i font/asset sono data-URI embedded, quindi nessuna fetch remota.
 - `setContent(html, { waitUntil: 'load' })` → `await page.evaluate(() => document.fonts.ready)`.
-- Overflow check via `page.evaluate` (`scrollWidth`/`scrollHeight` di `.canvas` vs 1080×1350) — **non-fatale**: riportato nella response come warning, non blocca il 200. Nota: il `.canvas` ha `overflow:hidden`, quindi senza questo check il taglio sarebbe silenzioso.
-- `screenshot({ clip: {x:0,y:0,width:1080,height:1350}, type:'png' })`.
+- **Overflow check (fatale)** via `page.evaluate`: misura `scrollWidth`/`scrollHeight` di `.canvas` (e in fallback del root) vs 1080×1350, con tolleranza di **1px** per arrotondamenti sub-pixel. Il `.canvas` ha `overflow:hidden`, quindi senza questo check il taglio sarebbe silenzioso. Se c'è overflow su un asse → **NON** si fa lo screenshot, si ritorna l'esito al loop per la rigenerazione.
+- Lo `screenshot({ clip: {x:0,y:0,width:1080,height:1350}, type:'png' })` viene fatto **solo** quando l'overflow è zero.
 - Output: `OUTPUT_DIR/HtmlSlide-{shortId}.png` (riuso helper `buildOutputPath`/`shortId` da `src/lib/render.ts`).
 - Timeout render configurabile (default 15s) → `render_failure` invece di hang.
+
+### Loop di rigenerazione (overflow)
+
+- `renderHtmlStill` ritorna `{ overflow, measurements }` senza salvare PNG se sfora; salva e ritorna `{ file }` se ok.
+- Il route handler orchestra il loop (max `HTML_MAX_ATTEMPTS`, default 3):
+  1. genera → valida → render+misura;
+  2. se overflow, costruisce un **messaggio di feedback** per l'LLM, es. *"Il tentativo precedente sforava di 180px in altezza (scrollHeight 1530 vs 1350). Riduci la quantità di contenuto o ricomponi per stare DENTRO 1080×1350 senza tagli. Mantieni la scala tipografica minima."* e lo accoda come turno conversazionale (output precedente come `assistant`, feedback come `user`) → nuova generazione;
+  3. al primo render senza overflow esce e ritorna 200;
+  4. esauriti i tentativi → `422 overflow_unresolved`.
+- Il feedback è mirato (asse + px) per dare all'LLM un segnale azionabile, non un retry cieco.
 
 ## 11. Font & asset offline
 
@@ -221,6 +241,7 @@ Riuso delle esistenti (`LITELLM_*` / `OPENAI_*`, `BRAND_CONTEXT_FILE`, `OUTPUT_D
 ```
 HTML_RENDER_TIMEOUT_MS=15000      # timeout render Playwright
 HTML_DEVICE_SCALE_FACTOR=1        # 1 = PNG 1080×1350 (default); >1 per più nitidezza (PNG più grande)
+HTML_MAX_ATTEMPTS=3               # tentativi totali generazione+render prima di 422 overflow_unresolved
 PLAYWRIGHT_BROWSERS_PATH=...       # opzionale, path browser
 ```
 
@@ -240,8 +261,9 @@ L'endpoint genera **una pagina sola**. Il campo opzionale `role` (`cover`/`body`
 - Caching risultati (LLM o PNG).
 - Streaming response.
 - Animazioni / video (è uno still).
-- Self-critique / retry chain automatico.
 - Few-shot da esempi storici.
+
+> Nota: il **retry chain su overflow** è IN scope v1 (vedi §10). Restano fuori scope retry per altri tipi di critica qualitativa (es. self-critique estetico).
 
 ## 16. Acceptance criteria
 
@@ -252,8 +274,9 @@ L'endpoint genera **una pagina sola**. Il campo opzionale `role` (`cover`/`body`
 5. Output LLM con `<script>` o URL remoto (forzato via mock) → `422 invalid_html`.
 6. LLM down (mock) → `500 llm_failure`.
 7. Eccezione di pagina/timeout (forzato) → `500 render_failure`, niente hang.
-8. `overflow` riportato correttamente quando il contenuto sfora 1080×1350.
-9. `/render/dynamic` e `/render/still` continuano a funzionare invariati.
-10. README aggiornato (riga endpoint + esempio) e `examples/html-prompt.json` presente.
-11. Tutti i test passano (unit + integration con LLM mockato).
-12. Con DSF=1 il PNG è esattamente 1080×1350; impostando `HTML_DEVICE_SCALE_FACTOR=2` il PNG esce 2160×3240.
+8. **Overflow fatale**: una risposta 200 non contiene MAI un PNG con contenuto tagliato. Se il primo tentativo sfora (mock), il loop rigenera con feedback; se un tentativo successivo sta nel canvas → 200 con `attempts>1`.
+9. **Overflow irrisolto**: se tutti i tentativi (mock che sfora sempre) sforano → `422 overflow_unresolved`, nessun PNG salvato.
+10. `/render/dynamic` e `/render/still` continuano a funzionare invariati.
+11. README aggiornato (riga endpoint + esempio) e `examples/html-prompt.json` presente.
+12. Tutti i test passano (unit + integration con LLM mockato), incluso un test del **loop overflow** (mock che sfora al 1° tentativo e rientra al 2°).
+13. Con DSF=1 il PNG è esattamente 1080×1350; impostando `HTML_DEVICE_SCALE_FACTOR=2` il PNG esce 2160×3240.
