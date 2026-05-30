@@ -12,12 +12,7 @@ import { createLlmClient, readLlmConfig } from '@/llm/client';
 import { buildSystemPrompt } from '@/llm/systemPrompt';
 import { loadBrandContext } from '@/llm/brandContext';
 import { validateTsx } from '@/dynamic/compile';
-import { generateSlideHtml } from '@/html/generateHtml';
-import { buildHtmlSystemPrompt } from '@/html/htmlSystemPrompt';
-import { validateGeneratedHtml } from '@/html/validate';
-import { buildHtmlDocument } from '@/html/template';
-import { renderHtmlStill } from '@/html/renderHtml';
-import type { GeneratedHtml, OverflowResult } from '@/html/schema';
+import { runSlidePipeline } from '@/html/pipeline';
 import { log } from '@/lib/log';
 
 export function mountDiscoveryRoutes(app: Express): void {
@@ -148,8 +143,6 @@ export function mountDynamicRoutes(app: Express): void {
   });
 }
 
-const HTML_MAX_ATTEMPTS = Number(process.env.HTML_MAX_ATTEMPTS ?? 3);
-
 export function mountHtmlRoutes(app: Express): void {
   app.post('/render/html', async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -158,90 +151,35 @@ export function mountHtmlRoutes(app: Express): void {
       const client = createLlmClient(cfg);
       const brand = body.brandContext
         ?? loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'docs/contesto-progetto-finvestire.md');
-      const systemPrompt = buildHtmlSystemPrompt(brand, body.role);
-      const outputId = shortId();
 
-      let totalLlmMs = 0;
-      let totalRenderMs = 0;
-      let attempts = 0;
-      let lastGenerated: GeneratedHtml | null = null;
-      let lastOverflow: OverflowResult | null = null;
-      let overflowFeedback: string | undefined;
+      const result = await runSlidePipeline({
+        client,
+        model: body.model ?? cfg.model,
+        reasoningEffort: cfg.reasoningEffort,
+        brandContext: brand,
+        userPrompt: body.prompt,
+        role: body.role,
+        outputId: shortId(),
+      });
 
-      for (let attempt = 1; attempt <= HTML_MAX_ATTEMPTS; attempt++) {
-        attempts = attempt;
-
-        // LLM generation
-        const llmStart = Date.now();
-        let generated: GeneratedHtml;
-        try {
-          generated = await generateSlideHtml({
-            client,
-            model: body.model ?? cfg.model,
-            systemPrompt,
-            userPrompt: body.prompt,
-            reasoningEffort: cfg.reasoningEffort,
-            overflowFeedback: attempt > 1 ? overflowFeedback : undefined,
-            previousOutput: attempt > 1 && lastGenerated ? lastGenerated : undefined,
-          });
-        } catch (err) {
-          const e: Error & { code?: string } = new Error((err as Error).message);
-          e.code = 'LLM_FAILURE';
-          throw e;
-        }
-        totalLlmMs += Date.now() - llmStart;
-        lastGenerated = generated;
-
-        // Validate
-        const validationErr = validateGeneratedHtml(generated.bodyHtml, generated.css);
-        if (validationErr) {
-          const e: Error & { code?: string; detail?: string } = new Error('invalid_html');
-          e.code = 'INVALID_HTML';
-          e.detail = validationErr.detail;
-          throw e;
-        }
-
-        // Build HTML document
-        const html = buildHtmlDocument(generated.bodyHtml, generated.css);
-
-        // Render + overflow check
-        const renderStart = Date.now();
-        const outcome = await renderHtmlStill(html, outputId);
-        totalRenderMs += Date.now() - renderStart;
-
-        if (outcome.ok) {
-          return res.json({
-            file: outcome.file,
-            intent: generated.intent,
-            html,
-            attempts,
-            durationMs: totalLlmMs + totalRenderMs,
-            llmDurationMs: totalLlmMs,
-            renderDurationMs: totalRenderMs,
-          });
-        }
-
-        // Overflow — prepare feedback for next attempt
-        lastOverflow = outcome.overflow;
-        const axes: string[] = [];
-        if (outcome.overflow.y) axes.push(`${outcome.overflow.scrollHeight - 1350}px taller than the 1350px canvas (scrollHeight: ${outcome.overflow.scrollHeight})`);
-        if (outcome.overflow.x) axes.push(`${outcome.overflow.scrollWidth - 1080}px wider than the 1080px canvas (scrollWidth: ${outcome.overflow.scrollWidth})`);
-        overflowFeedback = `The previous attempt overflowed: ${axes.join(' and ')}. You MUST fit everything inside exactly 1080×1350px. Strategies: reduce content quantity, decrease spacing, or use a more compact layout recipe. Do NOT reduce font sizes below the minimums in the design rules. Regenerate the full slide now.`;
-        log.warn('render.html.retry', { attempt, ...outcome.overflow });
+      if (!result.ok) {
+        const e: Error & { code?: string; detail?: unknown } = new Error(result.code.toLowerCase());
+        e.code = result.code;
+        e.detail = result.detail;
+        throw e;
       }
 
-      // All attempts exhausted — return 422 with last overflow info
-      const e: Error & { code?: string; detail?: unknown } = new Error('overflow_unresolved');
-      e.code = 'OVERFLOW_UNRESOLVED';
-      e.detail = {
-        overflow: lastOverflow,
-        html: lastGenerated
-          ? buildHtmlDocument(lastGenerated.bodyHtml, lastGenerated.css)
-          : null,
-        intent: lastGenerated?.intent ?? null,
-        attempts,
-      };
-      throw e;
+      res.json({
+        file: result.file,
+        intent: result.intent,
+        html: result.html,
+        designSpec: result.designSpec,
+        qualityWarnings: result.qualityWarnings.length > 0 ? result.qualityWarnings : undefined,
+        attempts: result.attempts,
+        durationMs: result.durationMs.total,
+        llmDurationMs: result.durationMs.llm,
+        renderDurationMs: result.durationMs.render,
+      });
     } catch (err) {
       next(err);
     }

@@ -9,24 +9,17 @@ export interface GenerateHtmlArgs {
   systemPrompt: string;
   userPrompt: string;
   reasoningEffort?: ReasoningEffort;
-  overflowFeedback?: string;
-  previousOutput?: GeneratedHtml;
+  feedback?: string;
 }
 
 export async function generateSlideHtml(args: GenerateHtmlArgs): Promise<GeneratedHtml> {
-  const { client, model, systemPrompt, userPrompt, reasoningEffort, overflowFeedback, previousOutput } = args;
+  const { client, model, systemPrompt, userPrompt, reasoningEffort } = args;
   const jsonSchema = zodToJsonSchema(GeneratedHtmlSchema, { name: 'GeneratedHtml', nameStrategy: 'title' });
 
   const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
     { role: 'system', content: systemPrompt },
     { role: 'user', content: userPrompt },
   ];
-
-  // On retry, include the previous attempt + overflow feedback as a conversational turn
-  if (previousOutput && overflowFeedback) {
-    messages.push({ role: 'assistant', content: JSON.stringify(previousOutput) });
-    messages.push({ role: 'user', content: overflowFeedback });
-  }
 
   const request: Record<string, unknown> = {
     model,

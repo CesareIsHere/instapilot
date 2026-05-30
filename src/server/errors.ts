@@ -34,6 +34,12 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
 
+  if (code === 'DESIGN_REVIEW_FAILED') {
+    const detail = (err as { detail?: Record<string, unknown> }).detail ?? {};
+    res.status(422).json({ error: 'design_review_failed', ...detail });
+    return;
+  }
+
   if (code === 'LLM_FAILURE') {
     log.error('llm.failure', { message: (err as Error).message });
     res.status(500).json({ error: 'llm_failure', message: (err as Error).message });
