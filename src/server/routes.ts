@@ -13,7 +13,7 @@ import { buildSystemPrompt } from '@/llm/systemPrompt';
 import { loadBrandContext } from '@/llm/brandContext';
 import { validateTsx } from '@/dynamic/compile';
 import { generateSlideHtml } from '@/html/generateHtml';
-import { buildHtmlSystemPrompt, type SlideRole } from '@/html/htmlSystemPrompt';
+import { buildHtmlSystemPrompt } from '@/html/htmlSystemPrompt';
 import { validateGeneratedHtml } from '@/html/validate';
 import { buildHtmlDocument } from '@/html/template';
 import { renderHtmlStill } from '@/html/renderHtml';
@@ -158,7 +158,7 @@ export function mountHtmlRoutes(app: Express): void {
       const client = createLlmClient(cfg);
       const brand = body.brandContext
         ?? loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'docs/contesto-progetto-finvestire.md');
-      const systemPrompt = buildHtmlSystemPrompt(brand, body.role as SlideRole | undefined);
+      const systemPrompt = buildHtmlSystemPrompt(brand, body.role);
       const outputId = shortId();
 
       let totalLlmMs = 0;

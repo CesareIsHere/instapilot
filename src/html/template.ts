@@ -16,12 +16,16 @@ function assetToDataUri(assetPath: string): string | null {
   return `data:${mime};base64,${buf.toString('base64')}`;
 }
 
+let cachedAssetUris: Record<string, string> | null = null;
+
 function buildAssetDataUris(): Record<string, string> {
+  if (cachedAssetUris !== null) return cachedAssetUris;
   const result: Record<string, string> = {};
   for (const [id, entry] of Object.entries(manifest)) {
     const uri = assetToDataUri(entry.path);
     if (uri) result[id] = uri;
   }
+  cachedAssetUris = result;
   return result;
 }
 

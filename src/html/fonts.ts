@@ -22,7 +22,11 @@ function toDataUri(filePath: string): string {
   return `data:font/woff2;base64,${buf.toString('base64')}`;
 }
 
+let cachedBlock: string | null = null;
+
 export function buildFontFaceBlock(): string {
+  if (cachedBlock !== null) return cachedBlock;
+
   const faces: string[] = [];
   const missing: number[] = [];
   for (const { weight, file } of VARIANTS) {
@@ -41,5 +45,6 @@ export function buildFontFaceBlock(): string {
     // degrade to the 'sans-serif' fallback in the font stack.
     log.warn('html.fonts.missing', { weights: missing, dir: FONTS_DIR });
   }
-  return faces.join('\n');
+  cachedBlock = faces.join('\n');
+  return cachedBlock;
 }

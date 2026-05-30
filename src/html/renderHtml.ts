@@ -31,14 +31,15 @@ export async function renderHtmlStill(html: string, outputId: string): Promise<R
     viewport: { width: 1080, height: 1350 },
     deviceScaleFactor: DEVICE_SCALE_FACTOR,
   });
-  const page = await context.newPage();
 
   try {
+    const page = await context.newPage();
+
     // Block remote network — data:/file: (embedded fonts/assets) pass through.
     await page.route(/^https?:\/\//, (route) => route.abort());
 
     await page.setContent(html, { waitUntil: 'load', timeout: RENDER_TIMEOUT_MS });
-    await page.evaluate(() => document.fonts.ready);
+    await page.evaluate(async () => { await document.fonts.ready; });
 
     // Measure overflow on .canvas
     const measurements = await page.evaluate(() => {
