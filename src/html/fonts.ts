@@ -10,11 +10,11 @@ interface FontVariant {
 }
 
 const VARIANTS: FontVariant[] = [
-  { weight: 400, file: 'PlusJakartaSans-Regular.woff2' },
-  { weight: 500, file: 'PlusJakartaSans-Medium.woff2' },
-  { weight: 600, file: 'PlusJakartaSans-SemiBold.woff2' },
-  { weight: 700, file: 'PlusJakartaSans-Bold.woff2' },
-  { weight: 800, file: 'PlusJakartaSans-ExtraBold.woff2' },
+  { weight: 400, file: 'Montserrat-Regular.woff2' },
+  { weight: 500, file: 'Montserrat-Medium.woff2' },
+  { weight: 600, file: 'Montserrat-SemiBold.woff2' },
+  { weight: 700, file: 'Montserrat-Bold.woff2' },
+  { weight: 800, file: 'Montserrat-ExtraBold.woff2' },
 ];
 
 function toDataUri(filePath: string): string {
@@ -37,7 +37,7 @@ export function buildFontFaceBlock(): string {
     }
     const dataUri = toDataUri(fullPath);
     faces.push(
-      `@font-face { font-family: 'Plus Jakarta Sans'; font-weight: ${weight}; font-style: normal; font-display: block; src: url('${dataUri}') format('woff2'); }`,
+      `@font-face { font-family: 'Montserrat'; font-weight: ${weight}; font-style: normal; font-display: block; src: url('${dataUri}') format('woff2'); }`,
     );
   }
   if (missing.length > 0) {

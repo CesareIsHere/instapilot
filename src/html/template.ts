@@ -65,17 +65,18 @@ ${fontFaces}
 }
 
 :root {
-  --brand-navy: ${c['brand-navy']};
-  --brand-gold: ${c['brand-gold']};
-  --paper: ${c['paper']};
-  --ink: ${c['ink']};
-  --muted: ${c['muted']};
-  --font-family: 'Plus Jakarta Sans', sans-serif;
-  --space-xs: ${sp.xs}px;
-  --space-sm: ${sp.sm}px;
-  --space-md: ${sp.md}px;
-  --space-lg: ${sp.lg}px;
-  --space-xl: ${sp.xl}px;
+  --brand-navy:  ${c['brand-navy']};
+  --brand-green: ${c['brand-green']};
+  --paper:       ${c['paper']};
+  --ink:         ${c['ink']};
+  --muted:       ${c['muted']};
+  --danger:      ${c['danger']};
+  --font-family: 'Montserrat', sans-serif;
+  --space-xs:  ${sp.xs}px;
+  --space-sm:  ${sp.sm}px;
+  --space-md:  ${sp.md}px;
+  --space-lg:  ${sp.lg}px;
+  --space-xl:  ${sp.xl}px;
   --space-2xl: ${sp['2xl']}px;
 ${assetCssVars}
 }
@@ -94,6 +95,27 @@ html, body {
   font-family: var(--font-family);
   color: var(--ink);
   position: relative;
+}
+
+/* CTA arrow — present on every slide, bottom-right */
+.canvas::after {
+  content: '→';
+  position: absolute;
+  bottom: 48px;
+  right: 56px;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  border: 3px solid var(--brand-navy);
+  color: var(--brand-navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  font-family: var(--font-family);
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
 }
 
 ${resolvedCss}

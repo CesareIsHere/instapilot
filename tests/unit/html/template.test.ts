@@ -4,9 +4,10 @@ import { buildHtmlDocument } from '@/html/template';
 describe('buildHtmlDocument', () => {
   it('injects brand CSS custom properties', () => {
     const html = buildHtmlDocument('<div>x</div>', '');
-    expect(html).toContain('--brand-navy: #1B3A6B');
-    expect(html).toContain('--brand-gold: #C9A24A');
-    expect(html).toContain('--paper: #F5F1E8');
+    expect(html).toContain('--brand-navy:  #012A78');
+    expect(html).toContain('--brand-green: #00B373');
+    expect(html).toContain('--danger:      #DC2626');
+    expect(html).toContain('--paper:       #FFFFFF');
   });
 
   it('includes .canvas with correct dimensions', () => {
