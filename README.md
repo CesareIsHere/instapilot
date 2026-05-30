@@ -27,6 +27,7 @@ npm test
 | `POST` | `/render/carousel` | Renderizza N PNG da `SlideSpec[]` |
 | `POST` | `/render/dynamic` | Genera TSX via LLM e renderizza un PNG dinamico |
 | `POST` | `/render/html` | Genera HTML+CSS via LLM e renderizza un PNG via Playwright |
+| `POST` | `/generate/content` | Genera un contenuto completo (post singolo o carosello) end-to-end |
 | `GET` | `/compositions` | Metadati composition `Slide` |
 | `GET` | `/primitives` | Catalogo primitive + JSON Schema |
 | `GET` | `/layouts` | Catalogo layout preset |
@@ -67,6 +68,35 @@ curl -X POST http://localhost:3001/render/html \
 Risposta: `{ "file": "...", "intent": "...", "html": "...", "attempts": 1, "durationMs": 3800, "llmDurationMs": 1600, "renderDurationMs": 2200 }`
 
 Richiede Playwright installato (`npm install && npx playwright install chromium`). Usa le stesse variabili LLM di `/render/dynamic`. Variabili opzionali: `HTML_MAX_ATTEMPTS` (default 3), `HTML_RENDER_TIMEOUT_MS` (default 15000), `HTML_DEVICE_SCALE_FACTOR` (default 1).
+
+## Esempio content generation (end-to-end)
+
+Crea un contenuto completo partendo solo dall'argomento. Pipeline:
+**1)** un agente *ricercatore* approfondisce l'argomento via web search (OpenAI Responses API) →
+**2)** un agente *content planner* struttura il contenuto in slide (cosa va in quale slide) →
+**3)** ogni slide passa nella pipeline a 4 agenti di `/render/html` →
+**4)** un *caporedattore* fa la revisione editoriale finale (aderenza all'argomento, scorrevolezza, qualità) e, se serve, rimanda la correzione all'agente della singola slide.
+
+```bash
+# Carosello da 6 slide
+curl -X POST http://localhost:3001/generate/content \
+  -H "Content-Type: application/json" \
+  -d '{
+    "topic": "La leva del tempo negli investimenti",
+    "instructions": "Tono educativo, pubblico principiante. Usa un esempio numerico sull'\''interesse composto.",
+    "format": "carousel",
+    "slideCount": 6
+  }'
+
+# Post singolo
+curl -X POST http://localhost:3001/generate/content \
+  -H "Content-Type: application/json" \
+  -d '{ "topic": "Cos'\''è l'\''ETF", "format": "single" }'
+```
+
+Risposta: `{ "title": "...", "angle": "...", "files": ["...", ...], "slides": [...], "reviewRounds": 1, "durationMs": 42000 }`
+
+`format` è `single` (1 slide) o `carousel` (`slideCount` 3–10, default 6). Variabili opzionali: `CONTENT_MAX_REVIEW_ROUNDS` (default 2), `OPENAI_WEB_SEARCH_TOOL` (default `web_search_preview`). La web search nativa richiede un modello OpenAI hosted; con un proxy senza web search l'agente ricercatore degrada sulla conoscenza del modello.
 
 ## Stack
 
