@@ -38,6 +38,6 @@ describe('discovery endpoints', () => {
   it('GET /assets returns manifest entries', async () => {
     const res = await request(buildApp()).get('/assets');
     expect(res.status).toBe(200);
-    expect(res.body['logo-f']).toMatchObject({ path: expect.stringContaining('logo-f.svg') });
+    expect(res.body['logo-f']).toMatchObject({ path: expect.stringContaining('logo.png') });
   });
 });
