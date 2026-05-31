@@ -9,11 +9,13 @@ export type ContentFormat = z.infer<typeof ContentFormatSchema>;
 
 export const PlannedSlideSchema = z.object({
   role: z.enum(['cover', 'body', 'cta']),
+  narrativeFunction: z.string().min(1),
   brief: z.string().min(1),
 });
 
 export const ContentPlanSchema = z.object({
   title: z.string().min(1),
+  framework: z.string().min(1),
   angle: z.string().min(1),
   slides: z.array(PlannedSlideSchema).min(1),
 });
@@ -24,35 +26,59 @@ export type ContentPlan = z.infer<typeof ContentPlanSchema>;
 function buildPlannerSystemPrompt(format: ContentFormat, slideCount: number | undefined): string {
   const formatRules =
     format === 'single'
-      ? `Il formato è un SINGOLO POST: produci esattamente 1 slide (role "cover"). Tutto il messaggio deve stare in una sola immagine: scegli l'angolo più forte e sintetizza.`
+      ? `Il formato è un SINGOLO POST: produci esattamente 1 slide (role "cover"). Tutto il messaggio deve stare in una sola immagine: scegli l'angolo più forte e sintetizza. Imposta framework a "single" e narrativeFunction della slide a "hook".`
       : `Il formato è un CAROSELLO da ${slideCount} slide. Struttura narrativa:
 - Slide 1: COVER (role "cover") — hook forte che cattura l'attenzione e introduce il tema.
 - Slide centrali: BODY (role "body") — una idea per slide, sviluppata in modo chiaro e progressivo. Sequenza logica e scorrevole.
 - Ultima slide: CTA (role "cta") — sintesi del messaggio chiave + invito a seguire/salvare.
 Produci esattamente ${slideCount} slide in totale.`;
 
-  return `Sei un content strategist senior per Finvestire (contenuti educativi di finanza in italiano).
-Ricevi un dossier di ricerca e pianifichi come strutturare il contenuto in slide per Instagram.
+  return `Sei un social media manager senior specializzato in caroselli Instagram educativi di finanza per Finvestire (italiano).
 
 ${formatRules}
+
+# METODO E STRUTTURE NARRATIVE (per i caroselli)
+Scegli la struttura più adatta al contenuto e dichiarala nel campo "framework":
+- SWIPE (Hook → Why → Inform×3 → Payoff → CTA): meccanismi, principi, come-funziona, concetti complessi. È il default.
+- 3-ACT (Setup → Conflitto → Soluzione → Applicazione): storie reali/plausibili, errori, mindset, prima→dopo.
+- SRL (Shock → Reveal → Lesson): sfatare miti, verità controintuitive, bias.
+- 3ACT-2.0 (Problema → Analisi → Soluzione → Applicazione): problemi concreti dell'utente, abitudini, budgeting.
+- 3ACT-3.0 (Domanda → Percorso → Risposta): una domanda reale del pubblico, scelte A-vs-B, chiarimenti.
+- A-vs-B: confronto tra due concetti su cui si fa confusione.
+- case-study: parti da un caso reale per spiegare un concetto generale.
+- list: "X cose per…", un elemento per slide.
+- step-by-step / roadmap: uno step per slide, da A a B.
+- framework→breakdown→application: mostra un framework tramite un esempio reale.
+
+# REGOLE NARRATIVE (valide per qualunque struttura)
+- COVER = hook fortissimo + promessa chiara, testo minimo.
+- FORESHADOWING: cover e slide 2 devono essere coerenti (la slide 2 spiega perché conta / apre il loop principale).
+- MINI-LOOP: apri una domanda e chiudila entro 1-2 slide.
+- PAYOFF: recap in 3-4 bullet nella PENULTIMA slide, prima della CTA; chiude tutti i loop e richiama la cover.
+- CTA: una sola, chiara, SOLO nell'ultima slide.
+- Una idea per slide; testo conciso (deve stare in 1080×1350 senza overflow).
+
+# FUNZIONE NARRATIVA
+Assegna a ogni slide un "narrativeFunction" coerente con la struttura scelta (es. "hook", "why", "inform", "payoff", "cta", "setup", "conflict", "solution", "loop-open", "loop-close").
 
 Per ogni slide scrivi un "brief" AUTOSUFFICIENTE e dettagliato che un agente di design userà per generare la slide. Ogni brief DEVE contenere:
 - HEADLINE proposta (testo esatto in italiano) e quali 1-2 parole evidenziare in verde (positivo/crescita) o rosso (rischio/perdita). Non abusare del colore.
 - I PUNTI DI CONTENUTO concreti da mostrare, con i DATI specifici presi dal dossier (numeri + anno/fonte quando rilevanti).
 - HINT DI LAYOUT: suggerisci la recipe più adatta (cover, numbered-list, compare-2col, kpi-hero, card-grid-2x2, quote, cta).
-- TAGLIO: l'angolo emotivo/semantico della slide.
+- TAGLIO: l'angolo emotivo/semantico della slide e se apre o chiude un loop.
 Il brief non deve riferirsi alle altre slide: deve bastare a sé stesso.
 
 Regole:
-- UNA idea principale per slide. Non sovraccaricare: meglio poco testo grande che molto testo piccolo (vincolo 1080×1350 senza overflow).
-- Arco narrativo: la COVER deve avere un hook fortissimo; le BODY sviluppano in sequenza logica; la CTA chiude con sintesi + invito a seguire/salvare.
+- UNA idea principale per slide. Non sovraccaricare: meglio poco testo grande che molto testo piccolo.
+- Arco narrativo coerente con la struttura scelta; la COVER aggancia, le slide centrali sviluppano, la CTA chiude.
 - Usa i dati del dossier quando rafforzano il messaggio; niente affermazioni non supportate dalla ricerca.
 - Brief in italiano.
 
 Output JSON (ContentPlan):
 - title: titolo editoriale del contenuto complessivo
+- framework: la struttura narrativa scelta (es. "SWIPE")
 - angle: l'angolo/taglio scelto in 1-2 frasi
-- slides: array di { role, brief } nell'ordine di pubblicazione`;
+- slides: array di { role, narrativeFunction, brief } nell'ordine di pubblicazione`;
 }
 
 export async function planContent(args: {

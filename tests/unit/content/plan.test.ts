@@ -15,11 +15,12 @@ describe('ContentFormatSchema', () => {
 describe('ContentPlanSchema', () => {
   const valid = {
     title: 'La leva del tempo',
+    framework: 'SWIPE',
     angle: 'Il tempo come alleato dell investitore di lungo periodo.',
     slides: [
-      { role: 'cover', brief: 'Hook: il tempo vale piu del timing.' },
-      { role: 'body', brief: 'Spiega interesse composto con esempio numerico.' },
-      { role: 'cta', brief: 'Invito a iniziare presto + segui.' },
+      { role: 'cover', narrativeFunction: 'hook', brief: 'Hook: il tempo vale piu del timing.' },
+      { role: 'body', narrativeFunction: 'inform', brief: 'Spiega interesse composto con esempio numerico.' },
+      { role: 'cta', narrativeFunction: 'cta', brief: 'Invito a iniziare presto + segui.' },
     ],
   };
 
@@ -32,12 +33,22 @@ describe('ContentPlanSchema', () => {
   });
 
   it('rejects invalid role', () => {
-    const bad = { ...valid, slides: [{ role: 'intro', brief: 'x' }] };
+    const bad = { ...valid, slides: [{ role: 'intro', narrativeFunction: 'hook', brief: 'x' }] };
     expect(ContentPlanSchema.safeParse(bad).success).toBe(false);
   });
 
   it('rejects empty brief', () => {
-    const bad = { ...valid, slides: [{ role: 'cover', brief: '' }] };
+    const bad = { ...valid, slides: [{ role: 'cover', narrativeFunction: 'hook', brief: '' }] };
+    expect(ContentPlanSchema.safeParse(bad).success).toBe(false);
+  });
+
+  it('requires framework', () => {
+    const { framework, ...noFramework } = valid;
+    expect(ContentPlanSchema.safeParse(noFramework).success).toBe(false);
+  });
+
+  it('requires narrativeFunction on each slide', () => {
+    const bad = { ...valid, slides: [{ role: 'cover', brief: 'x' }] };
     expect(ContentPlanSchema.safeParse(bad).success).toBe(false);
   });
 });
