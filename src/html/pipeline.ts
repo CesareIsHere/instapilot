@@ -25,6 +25,10 @@ export interface PipelineArgs {
   outputId: string;
   /** Optional output target — used by carousels to group files into one folder. */
   output?: { dir?: string; fileName?: string };
+  showCtaArrow?: boolean;
+  narrativeFunction?: string;
+  slideIndex?: number;
+  slideTotal?: number;
 }
 
 export type PipelineWarning =
@@ -55,6 +59,17 @@ export type PipelineResult = PipelineSuccess | PipelineFailure;
 
 export async function runSlidePipeline(args: PipelineArgs): Promise<PipelineResult> {
   const { client, model, reasoningEffort, brandContext, userPrompt, role, outputId, output } = args;
+  const showArrow = args.showCtaArrow ?? true;
+  const isLast = args.slideTotal != null && args.slideIndex != null
+    ? args.slideIndex === args.slideTotal - 1
+    : undefined;
+  const slideContext = {
+    role,
+    narrativeFunction: args.narrativeFunction,
+    index: args.slideIndex,
+    total: args.slideTotal,
+    isLast,
+  };
   const meter = new UsageMeter();
   const warnings: PipelineWarning[] = [];
   let totalLlmMs = 0;
@@ -137,7 +152,7 @@ export async function runSlidePipeline(args: PipelineArgs): Promise<PipelineResu
       log.warn('pipeline.render.invalid_html_best_effort', { detail: validationErr.detail });
     }
 
-    const html = buildHtmlDocument(generated.bodyHtml, generated.css);
+    const html = buildHtmlDocument(generated.bodyHtml, generated.css, showArrow);
 
     const t4 = Date.now();
     const renderOutcome = await renderHtmlStill(html, outputId, {
@@ -167,7 +182,7 @@ export async function runSlidePipeline(args: PipelineArgs): Promise<PipelineResu
     const t5 = Date.now();
     let qualityReview;
     try {
-      qualityReview = await reviewRenderedSlide({ client, model, reasoningEffort, pngPath: renderOutcome.file, html, designSpec, meter });
+      qualityReview = await reviewRenderedSlide({ client, model, reasoningEffort, pngPath: renderOutcome.file, html, designSpec, meter, slideContext });
     } catch (err) {
       totalLlmMs += Date.now() - t5;
       log.warn('pipeline.quality.review_error', { error: (err as Error).message, attempt: ra });

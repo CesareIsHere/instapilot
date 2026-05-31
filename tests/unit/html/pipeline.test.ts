@@ -13,6 +13,7 @@ const {
   reviewRenderedSlide,
   renderHtmlStill,
   validateGeneratedHtml: _validateGeneratedHtml,
+  buildHtmlDocument,
 } = vi.hoisted(() => ({
   planSlideDesign: vi.fn(),
   reviewSlideDesign: vi.fn(),
@@ -20,6 +21,7 @@ const {
   reviewRenderedSlide: vi.fn(),
   renderHtmlStill: vi.fn(),
   validateGeneratedHtml: vi.fn(() => null),
+  buildHtmlDocument: vi.fn(() => '<html>doc</html>'),
 }));
 
 vi.mock('@/html/designSpec', () => ({ planSlideDesign, reviewSlideDesign }));
@@ -27,7 +29,7 @@ vi.mock('@/html/generateHtml', () => ({ generateSlideHtml }));
 vi.mock('@/html/qualityReview', () => ({ reviewRenderedSlide }));
 vi.mock('@/html/renderHtml', () => ({ renderHtmlStill }));
 vi.mock('@/html/validate', () => ({ validateGeneratedHtml: _validateGeneratedHtml }));
-vi.mock('@/html/template', () => ({ buildHtmlDocument: vi.fn(() => '<html>doc</html>') }));
+vi.mock('@/html/template', () => ({ buildHtmlDocument }));
 vi.mock('@/html/htmlSystemPrompt', () => ({ buildHtmlSystemPrompt: vi.fn(() => 'sys') }));
 
 import { runSlidePipeline } from '@/html/pipeline';
@@ -138,5 +140,25 @@ describe('runSlidePipeline — best effort', () => {
     if (!res.ok) return;
     expect(res.file).toBe('/out/x.png');
     expect(res.warnings).toEqual([]);
+  });
+
+  it('omits the arrow when showCtaArrow is false', async () => {
+    await runSlidePipeline({ ...baseArgs, showCtaArrow: false } as never);
+    expect(buildHtmlDocument.mock.calls[0][2]).toBe(false);
+  });
+
+  it('defaults showArrow to true when showCtaArrow is omitted', async () => {
+    await runSlidePipeline(baseArgs as never);
+    expect(buildHtmlDocument.mock.calls[0][2]).toBe(true);
+  });
+
+  it('forwards narrative slide context to the quality reviewer', async () => {
+    await runSlidePipeline({
+      ...baseArgs, role: 'cta', narrativeFunction: 'cta', slideIndex: 4, slideTotal: 5,
+    } as never);
+    const reviewArgs = reviewRenderedSlide.mock.calls[0][0];
+    expect(reviewArgs.slideContext).toMatchObject({
+      role: 'cta', narrativeFunction: 'cta', index: 4, total: 5, isLast: true,
+    });
   });
 });
