@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type OpenAI from 'openai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { ReasoningEffort } from '@/llm/client';
+import type { UsageMeter } from '@/llm/usage';
 import type { SlideRole } from './htmlSystemPrompt';
 import { manifest } from '@/assets/manifest';
 
@@ -46,6 +47,8 @@ async function callLlmJson<T extends z.ZodType>(
   messages: OpenAI.Chat.ChatCompletionMessageParam[],
   schema: T,
   schemaName: string,
+  meter: UsageMeter | undefined,
+  label: string,
 ): Promise<z.infer<T>> {
   const jsonSchema = zodToJsonSchema(schema, { name: schemaName, nameStrategy: 'title' });
   const request: Record<string, unknown> = {
@@ -61,6 +64,8 @@ async function callLlmJson<T extends z.ZodType>(
   const resp = await client.chat.completions.create(
     request as unknown as Parameters<typeof client.chat.completions.create>[0],
   ) as OpenAI.Chat.Completions.ChatCompletion;
+
+  meter?.record(label, resp.usage);
 
   const content = resp.choices[0]?.message?.content;
   if (!content) throw new Error('llm_empty_response');
@@ -139,6 +144,7 @@ export async function planSlideDesign(args: {
   userPrompt: string;
   role?: SlideRole;
   feedback?: string;
+  meter?: UsageMeter;
 }): Promise<SlideDesignSpec> {
   const userContent = args.feedback
     ? `${args.userPrompt}\n\n---\nDesign review feedback (previous spec rejected — address these issues):\n${args.feedback}`
@@ -151,6 +157,7 @@ export async function planSlideDesign(args: {
       { role: 'user', content: userContent },
     ],
     SlideDesignSpecSchema, 'SlideDesignSpec',
+    args.meter, 'design.plan',
   );
 }
 
@@ -176,6 +183,7 @@ export async function reviewSlideDesign(args: {
   reasoningEffort?: ReasoningEffort;
   originalPrompt: string;
   designSpec: SlideDesignSpec;
+  meter?: UsageMeter;
 }): Promise<DesignReview> {
   return callLlmJson(
     args.client, args.model, args.reasoningEffort,
@@ -187,5 +195,6 @@ export async function reviewSlideDesign(args: {
       },
     ],
     DesignReviewSchema, 'DesignReview',
+    args.meter, 'design.review',
   );
 }

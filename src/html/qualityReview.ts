@@ -3,6 +3,7 @@ import type OpenAI from 'openai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { promises as fs } from 'node:fs';
 import type { ReasoningEffort } from '@/llm/client';
+import type { UsageMeter } from '@/llm/usage';
 import type { SlideDesignSpec } from './designSpec';
 
 const ISSUE_CATEGORIES = ['brand-color', 'font-size', 'layout', 'logo', 'style', 'content'] as const;
@@ -62,6 +63,7 @@ export async function reviewRenderedSlide(args: {
   pngPath: string;
   html: string;
   designSpec: SlideDesignSpec;
+  meter?: UsageMeter;
 }): Promise<QualityReview> {
   const jsonSchema = zodToJsonSchema(QualityReviewSchema, { name: 'QualityReview', nameStrategy: 'title' });
   const request: Record<string, unknown> = {
@@ -80,6 +82,8 @@ export async function reviewRenderedSlide(args: {
   const resp = await args.client.chat.completions.create(
     request as unknown as Parameters<typeof args.client.chat.completions.create>[0],
   ) as OpenAI.Chat.Completions.ChatCompletion;
+
+  args.meter?.record('quality.review', resp.usage);
 
   const content = resp.choices[0]?.message?.content;
   if (!content) throw new Error('llm_empty_response');

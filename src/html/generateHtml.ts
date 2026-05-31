@@ -2,6 +2,7 @@ import type OpenAI from 'openai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { GeneratedHtmlSchema, type GeneratedHtml } from './schema';
 import type { ReasoningEffort } from '@/llm/client';
+import type { UsageMeter } from '@/llm/usage';
 
 export interface GenerateHtmlArgs {
   client: OpenAI;
@@ -10,6 +11,7 @@ export interface GenerateHtmlArgs {
   userPrompt: string;
   reasoningEffort?: ReasoningEffort;
   feedback?: string;
+  meter?: UsageMeter;
 }
 
 export async function generateSlideHtml(args: GenerateHtmlArgs): Promise<GeneratedHtml> {
@@ -40,6 +42,8 @@ export async function generateSlideHtml(args: GenerateHtmlArgs): Promise<Generat
   const response = (await client.chat.completions.create(
     request as unknown as Parameters<typeof client.chat.completions.create>[0],
   )) as OpenAI.Chat.Completions.ChatCompletion;
+
+  args.meter?.record('html.generate', response.usage);
 
   const content = response.choices[0]?.message?.content;
   if (!content) throw new Error('llm_empty_response: no content in LLM response');
