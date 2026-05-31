@@ -194,7 +194,8 @@ const ContentBodySchema = z
     topic: z.string().min(1).max(2000),
     instructions: z.string().max(4000).optional(),
     format: z.enum(['single', 'carousel']),
-    slideCount: z.number().int().min(3).max(10).optional(),
+    // Permissive bound: carousel values are silently clamped to 6-9 in the transform below (not rejected).
+    slideCount: z.number().int().min(1).max(20).optional(),
     brandContext: z.string().optional(),
     model: z.string().optional(),
   })

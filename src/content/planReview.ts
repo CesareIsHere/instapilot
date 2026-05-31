@@ -12,7 +12,7 @@ export const PlanReviewSchema = z.object({
 });
 export type PlanReview = z.infer<typeof PlanReviewSchema>;
 
-const PLAN_REVIEWER_PROMPT = `Sei un caporedattore di Finvestire. Valuti il PIANO di un contenuto Instagram (la struttura in slide e i brief) PRIMA che le slide vengono generate.
+const PLAN_REVIEWER_PROMPT = `Sei un caporedattore di Finvestire. Valuti il PIANO di un contenuto Instagram (la struttura in slide e i brief) PRIMA che le slide vengano generate.
 
 Controlla:
 1. Struttura: rispetta il formato richiesto (numero di slide, ruoli cover/body/cta)?
@@ -26,7 +26,7 @@ Controlla:
 9. Mini-loop: ogni domanda/loop aperto viene chiuso entro 1-2 slide?
 10. Payoff: c'è un recap (3-4 bullet) nella penultima slide, prima della CTA, che richiama la cover?
 11. CTA: ce n'è UNA sola, chiara, e solo nell'ultima slide?
-12. Ritmo: il numero di slide è ragionevole per il framework (≈7)?
+12. Ritmo: il numero di slide è ragionevole per il framework (tipicamente 6-9; non imporre ≈7 ai framework a lista o roadmap, dove il numero dipende dagli elementi)?
 
 Sii esigente ma equo. Approva se il piano è solido. Boccia solo per problemi reali.
 Se NON approvi, elenca gli issue e fornisci in planFeedback istruzioni concrete e azionabili per rifare il piano.
