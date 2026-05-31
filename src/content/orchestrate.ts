@@ -1,14 +1,22 @@
+import path from 'node:path';
+import fs from 'node:fs';
 import type OpenAI from 'openai';
 import type { ReasoningEffort } from '@/llm/client';
 import { shortId } from '@/lib/render';
-import { runSlidePipeline, type PipelineSuccess } from '@/html/pipeline';
+import { runSlidePipeline, type PipelineSuccess, type PipelineWarning } from '@/html/pipeline';
 import type { SlideRole } from '@/html/htmlSystemPrompt';
+import { UsageMeter, type UsageTotals } from '@/llm/usage';
 import { researchTopic } from './research';
+import { reviewResearch } from './researchReview';
 import { planContent, type ContentFormat, type ContentPlan } from './plan';
+import { reviewPlan } from './planReview';
 import { reviewContent, type ReviewableSlide } from './review';
 import { log } from '@/lib/log';
 
 const MAX_REVIEW_ROUNDS = Number(process.env.CONTENT_MAX_REVIEW_ROUNDS ?? 2);
+const MAX_RESEARCH_ROUNDS = Number(process.env.CONTENT_MAX_RESEARCH_ROUNDS ?? 2);
+const MAX_PLAN_ROUNDS = Number(process.env.CONTENT_MAX_PLAN_ROUNDS ?? 2);
+const OUTPUT_DIR = process.env.OUTPUT_DIR ?? path.resolve(process.cwd(), 'output');
 
 export interface GenerateContentArgs {
   client: OpenAI;
@@ -29,11 +37,14 @@ export interface ContentSlideResult {
   intent: string;
   designSpec: PipelineSuccess['designSpec'];
   attempts: PipelineSuccess['attempts'];
-  warnings: PipelineSuccess['warnings'];
+  warnings: PipelineWarning[];
+  usage: UsageTotals;
 }
 
 export interface GenerateContentSuccess {
   ok: true;
+  carouselId?: string;
+  carouselDir?: string;
   topic: string;
   format: ContentFormat;
   title: string;
@@ -41,6 +52,8 @@ export interface GenerateContentSuccess {
   research: string;
   slides: ContentSlideResult[];
   reviewRounds: number;
+  contentWarnings: { research: string[]; plan: string[] };
+  usage: UsageTotals;
   durationMs: number;
 }
 
@@ -62,99 +75,178 @@ interface SlideState {
 export async function generateContent(args: GenerateContentArgs): Promise<GenerateContentResult> {
   const { client, model, reasoningEffort, brandContext, topic, instructions, format, slideCount } = args;
   const start = Date.now();
+  const meter = new UsageMeter();
+  const contentWarnings = { research: [] as string[], plan: [] as string[] };
 
-  // ── Agent 1: research ────────────────────────────────────────────────────
+  // ── Phase A: Research + review loop (best effort) ─────────────────────────
   let research: string;
   try {
-    research = await researchTopic({ client, model, reasoningEffort, topic, instructions });
+    research = await researchTopic({ client, model, reasoningEffort, topic, instructions, meter });
+    for (let round = 1; round <= MAX_RESEARCH_ROUNDS; round++) {
+      const review = await reviewResearch({ client, model, reasoningEffort, topic, instructions, research, meter });
+      log.info('content.research.reviewed', { approved: review.approved, issues: review.issues.length, round });
+      if (review.approved || review.issues.length === 0) break;
+      if (round === MAX_RESEARCH_ROUNDS) { contentWarnings.research = review.issues; break; }
+      research = await researchTopic({ client, model, reasoningEffort, topic, instructions, feedback: review.issues.join('; '), meter });
+    }
   } catch (err) {
     return { ok: false, code: 'LLM_FAILURE', detail: `research: ${(err as Error).message}` };
   }
 
-  // ── Agent 2: content plan ────────────────────────────────────────────────
+  // ── Phase B: Plan + review loop (best effort) ─────────────────────────────
   let plan: ContentPlan;
   try {
-    plan = await planContent({ client, model, reasoningEffort, format, slideCount, topic, instructions, research });
+    plan = await planContent({ client, model, reasoningEffort, format, slideCount, topic, instructions, research, meter });
+    for (let round = 1; round <= MAX_PLAN_ROUNDS; round++) {
+      const review = await reviewPlan({ client, model, reasoningEffort, topic, instructions, format, slideCount, research, plan, meter });
+      log.info('content.plan.reviewed', { approved: review.approved, issues: review.issues.length, round });
+      if (review.approved || review.issues.length === 0) break;
+      if (round === MAX_PLAN_ROUNDS) { contentWarnings.plan = review.issues; break; }
+      const feedback = review.planFeedback ?? review.issues.join('; ');
+      plan = await planContent({ client, model, reasoningEffort, format, slideCount, topic, instructions, research, feedback, meter });
+    }
   } catch (err) {
     return { ok: false, code: 'LLM_FAILURE', detail: `plan: ${(err as Error).message}` };
   }
   log.info('content.plan.done', { title: plan.title, slides: plan.slides.length });
 
-  // ── Per-slide generation (existing 4-agent pipeline) ──────────────────────
+  // ── Carousel output folder (single posts stay flat) ───────────────────────
+  const isCarousel = format === 'carousel';
+  const carouselId = isCarousel ? shortId() : undefined;
+  const carouselDir = carouselId ? path.join(OUTPUT_DIR, `carousel-${carouselId}`) : undefined;
+
+  function slideOutput(index: number): { dir?: string; fileName?: string } {
+    if (!carouselDir) return {};
+    return { dir: carouselDir, fileName: `slide-${String(index + 1).padStart(2, '0')}.png` };
+  }
+
+  // ── Phase C: Per-slide generation (4-agent pipeline) ──────────────────────
   const states: SlideState[] = [];
   for (let i = 0; i < plan.slides.length; i++) {
     const planned = plan.slides[i];
-    const result = await generateOneSlide(args, planned.role, planned.brief, []);
+    const result = await generateOneSlide(args, planned.role, planned.brief, [], slideOutput(i));
     if (!result.ok) {
-      return { ok: false, code: 'SLIDE_GENERATION_FAILED', detail: { slideIndex: i, ...(result as object) } };
+      return {
+        ok: false,
+        code: result.code === 'LLM_FAILURE' ? 'LLM_FAILURE' : 'SLIDE_GENERATION_FAILED',
+        detail: { slideIndex: i, ...(result as object) },
+      };
     }
     states.push({ role: planned.role, baseBrief: planned.brief, fixes: [], result });
     log.info('content.slide.done', { index: i, role: planned.role });
   }
 
-  // ── Final review loop (editorial) ─────────────────────────────────────────
+  // ── Phase D: Final editorial review loop (existing) ───────────────────────
   let reviewRounds = 0;
   for (let round = 1; round <= MAX_REVIEW_ROUNDS; round++) {
     reviewRounds = round;
-
     const reviewable: ReviewableSlide[] = states.map((s, idx) => ({
-      index: idx,
-      role: s.role,
-      brief: composeBrief(s),
-      intent: s.result.intent,
-      designSpec: s.result.designSpec,
+      index: idx, role: s.role, brief: composeBrief(s), intent: s.result.intent, designSpec: s.result.designSpec,
     }));
 
     let review;
     try {
-      review = await reviewContent({
-        client, model, reasoningEffort,
-        topic, instructions, title: plan.title, angle: plan.angle, slides: reviewable,
-      });
+      review = await reviewContent({ client, model, reasoningEffort, topic, instructions, title: plan.title, angle: plan.angle, slides: reviewable, meter });
     } catch (err) {
-      // Editorial review failure is non-fatal: ship what we have.
       log.warn('content.review.error', { reason: (err as Error).message, round });
       break;
     }
     log.info('content.review.done', { approved: review.approved, fixes: review.slideFixes.length, round });
 
     if (review.approved || review.slideFixes.length === 0) break;
-    if (round === MAX_REVIEW_ROUNDS) break; // exhausted — ship best effort
+    if (round === MAX_REVIEW_ROUNDS) break;
 
-    // Apply fixes only to the flagged slides and regenerate them.
     for (const fix of review.slideFixes) {
       const state = states[fix.slideIndex];
       if (!state) continue;
       state.fixes.push(fix.fix);
-      const regenerated = await generateOneSlide(args, state.role, state.baseBrief, state.fixes);
+      const regenerated = await generateOneSlide(args, state.role, state.baseBrief, state.fixes, slideOutput(fix.slideIndex));
       if (!regenerated.ok) {
-        return { ok: false, code: 'SLIDE_GENERATION_FAILED', detail: { slideIndex: fix.slideIndex, ...(regenerated as object) } };
+        return {
+          ok: false,
+          code: regenerated.code === 'LLM_FAILURE' ? 'LLM_FAILURE' : 'SLIDE_GENERATION_FAILED',
+          detail: { slideIndex: fix.slideIndex, ...(regenerated as object) },
+        };
       }
       state.result = regenerated;
       log.info('content.slide.refixed', { index: fix.slideIndex, round });
     }
   }
 
+  // ── Roll per-slide usage into the carousel/post total ─────────────────────
+  states.forEach((s, idx) => meter.recordTotals(`slide-${idx + 1}`, s.result.usage));
+  const usage = meter.totals;
+  log.info('content.usage', { breakdown: meter.breakdown, total: usage });
+
+  const slides: ContentSlideResult[] = states.map((s, idx) => ({
+    index: idx,
+    role: s.role,
+    brief: composeBrief(s),
+    file: s.result.file,
+    intent: s.result.intent,
+    designSpec: s.result.designSpec,
+    attempts: s.result.attempts,
+    warnings: s.result.warnings,
+    usage: s.result.usage,
+  }));
+
+  // ── Write carousel HTML files + manifest.json ─────────────────────────────
+  if (carouselDir) {
+    writeCarouselArtifacts({ carouselId: carouselId!, carouselDir, topic, format, plan, research, usage, contentWarnings, states });
+  }
+
   return {
     ok: true,
-    topic,
-    format,
-    title: plan.title,
-    angle: plan.angle,
-    research,
-    slides: states.map((s, idx) => ({
+    carouselId, carouselDir,
+    topic, format, title: plan.title, angle: plan.angle, research,
+    slides, reviewRounds, contentWarnings, usage,
+    durationMs: Date.now() - start,
+  };
+}
+
+function writeCarouselArtifacts(p: {
+  carouselId: string;
+  carouselDir: string;
+  topic: string;
+  format: ContentFormat;
+  plan: ContentPlan;
+  research: string;
+  usage: UsageTotals;
+  contentWarnings: { research: string[]; plan: string[] };
+  states: SlideState[];
+}): void {
+  if (!fs.existsSync(p.carouselDir)) fs.mkdirSync(p.carouselDir, { recursive: true });
+
+  const manifestSlides = p.states.map((s, idx) => {
+    const htmlFile = `slide-${String(idx + 1).padStart(2, '0')}.html`;
+    fs.writeFileSync(path.join(p.carouselDir, htmlFile), s.result.html, 'utf8');
+    return {
       index: idx,
       role: s.role,
-      brief: composeBrief(s),
-      file: s.result.file,
+      file: path.basename(s.result.file),
+      htmlFile,
       intent: s.result.intent,
       designSpec: s.result.designSpec,
       attempts: s.result.attempts,
       warnings: s.result.warnings,
-    })),
-    reviewRounds,
-    durationMs: Date.now() - start,
+      usage: s.result.usage,
+    };
+  });
+
+  const manifest = {
+    carouselId: p.carouselId,
+    topic: p.topic,
+    format: p.format,
+    title: p.plan.title,
+    angle: p.plan.angle,
+    createdAt: new Date().toISOString(),
+    usage: p.usage,
+    warnings: p.contentWarnings,
+    research: p.research,
+    slides: manifestSlides,
   };
+  fs.writeFileSync(path.join(p.carouselDir, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
+  log.info('content.carousel.written', { carouselId: p.carouselId, dir: p.carouselDir, slides: manifestSlides.length });
 }
 
 function composeBrief(state: SlideState): string {
@@ -167,6 +259,7 @@ async function generateOneSlide(
   role: SlideRole,
   baseBrief: string,
   fixes: string[],
+  output: { dir?: string; fileName?: string },
 ) {
   const brief = fixes.length === 0
     ? baseBrief
@@ -180,5 +273,6 @@ async function generateOneSlide(
     userPrompt: brief,
     role,
     outputId: shortId(),
+    output,
   });
 }
