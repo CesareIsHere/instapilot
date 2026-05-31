@@ -36,7 +36,7 @@ function substituteTokens(str: string, dataUris: Record<string, string>): string
   });
 }
 
-export function buildHtmlDocument(bodyHtml: string, css: string): string {
+export function buildHtmlDocument(bodyHtml: string, css: string, showArrow = true): string {
   const fontFaces = buildFontFaceBlock();
   const assetUris = buildAssetDataUris();
 
@@ -49,6 +49,29 @@ export function buildHtmlDocument(bodyHtml: string, css: string): string {
 
   const c = theme.colors;
   const sp = theme.spacing;
+
+  const ctaArrowCss = showArrow
+    ? `/* CTA arrow — swipe affordance, bottom-right (omitted on the last slide) */
+.canvas::after {
+  content: '→';
+  position: absolute;
+  bottom: 48px;
+  right: 56px;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  border: 3px solid var(--brand-navy);
+  color: var(--brand-navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  font-family: var(--font-family);
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}`
+    : '';
 
   return `<!DOCTYPE html>
 <html lang="it">
@@ -97,26 +120,7 @@ html, body {
   position: relative;
 }
 
-/* CTA arrow — present on every slide, bottom-right */
-.canvas::after {
-  content: '→';
-  position: absolute;
-  bottom: 48px;
-  right: 56px;
-  width: 88px;
-  height: 88px;
-  border-radius: 50%;
-  border: 3px solid var(--brand-navy);
-  color: var(--brand-navy);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 40px;
-  font-family: var(--font-family);
-  font-weight: 700;
-  line-height: 1;
-  pointer-events: none;
-}
+${ctaArrowCss}
 
 ${resolvedCss}
 </style>

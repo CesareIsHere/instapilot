@@ -39,4 +39,21 @@ describe('buildHtmlDocument', () => {
     expect(html).toContain('<html');
     expect(html).toContain('</html>');
   });
+
+  it('includes the CTA arrow by default', () => {
+    const html = buildHtmlDocument('<div></div>', '.canvas{}');
+    expect(html).toContain('.canvas::after');
+    expect(html).toContain("content: '→'");
+  });
+
+  it('includes the CTA arrow when showArrow is true', () => {
+    const html = buildHtmlDocument('<div></div>', '.canvas{}', true);
+    expect(html).toContain('.canvas::after');
+  });
+
+  it('omits the CTA arrow when showArrow is false', () => {
+    const html = buildHtmlDocument('<div></div>', '.canvas{}', false);
+    expect(html).not.toContain('.canvas::after');
+    expect(html).not.toContain("content: '→'");
+  });
 });
