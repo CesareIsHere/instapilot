@@ -29,7 +29,7 @@ export interface ContentSlideResult {
   intent: string;
   designSpec: PipelineSuccess['designSpec'];
   attempts: PipelineSuccess['attempts'];
-  qualityWarnings: PipelineSuccess['qualityWarnings'];
+  warnings: PipelineSuccess['warnings'];
 }
 
 export interface GenerateContentSuccess {
@@ -150,7 +150,7 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
       intent: s.result.intent,
       designSpec: s.result.designSpec,
       attempts: s.result.attempts,
-      qualityWarnings: s.result.qualityWarnings,
+      warnings: s.result.warnings,
     })),
     reviewRounds,
     durationMs: Date.now() - start,

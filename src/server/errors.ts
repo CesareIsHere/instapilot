@@ -22,24 +22,6 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return;
   }
 
-  if (code === 'INVALID_HTML') {
-    const detail = (err as { detail?: string }).detail;
-    res.status(422).json({ error: 'invalid_html', detail, message: (err as Error).message });
-    return;
-  }
-
-  if (code === 'OVERFLOW_UNRESOLVED') {
-    const detail = (err as { detail?: Record<string, unknown> }).detail ?? {};
-    res.status(422).json({ error: 'overflow_unresolved', ...detail });
-    return;
-  }
-
-  if (code === 'DESIGN_REVIEW_FAILED') {
-    const detail = (err as { detail?: Record<string, unknown> }).detail ?? {};
-    res.status(422).json({ error: 'design_review_failed', ...detail });
-    return;
-  }
-
   if (code === 'SLIDE_GENERATION_FAILED') {
     const detail = (err as { detail?: Record<string, unknown> }).detail ?? {};
     res.status(422).json({ error: 'slide_generation_failed', ...detail });

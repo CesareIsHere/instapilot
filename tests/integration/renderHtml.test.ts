@@ -19,9 +19,10 @@ const MOCK_SUCCESS = {
   html: '<!DOCTYPE html><html><head></head><body><div class="canvas"></div></body></html>',
   intent: 'mock cover intent',
   designSpec: MOCK_DESIGN_SPEC,
-  qualityWarnings: [],
+  warnings: [] as never[],
   attempts: { design: 1, render: 1 },
   durationMs: { llm: 200, render: 80, total: 280 },
+  usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150, calls: 4 },
 };
 
 vi.mock('@/html/pipeline', () => ({
@@ -66,39 +67,29 @@ describe('POST /render/html', () => {
     expect(typeof res.body.renderDurationMs).toBe('number');
   });
 
-  it('omits qualityWarnings field when empty', async () => {
+  it('omits warnings field when empty and includes usage', async () => {
     const res = await request(buildApp()).post('/render/html').send({ prompt: 'x' });
     expect(res.status).toBe(200);
-    expect(res.body.qualityWarnings).toBeUndefined();
+    expect(res.body.warnings).toBeUndefined();
+    expect(res.body.usage.totalTokens).toBe(150);
   });
 
-  it('includes qualityWarnings when present', async () => {
+  it('includes warnings when present', async () => {
     const { runSlidePipeline } = await import('@/html/pipeline');
     (runSlidePipeline as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ...MOCK_SUCCESS,
-      qualityWarnings: [{ category: 'brand-color', description: 'Hardcoded hex', suggestion: 'Use CSS vars' }],
+      warnings: [{ kind: 'quality', issues: [{ category: 'brand-color', description: 'Hardcoded hex', suggestion: 'Use CSS vars' }] }],
     });
     const res = await request(buildApp()).post('/render/html').send({ prompt: 'x' });
     expect(res.status).toBe(200);
-    expect(res.body.qualityWarnings).toHaveLength(1);
+    expect(res.body.warnings).toHaveLength(1);
+    expect(res.body.warnings[0].kind).toBe('quality');
   });
 
   it('returns 400 when prompt is missing', async () => {
     const res = await request(buildApp()).post('/render/html').send({});
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('validation');
-  });
-
-  it('returns 422 invalid_html when pipeline reports INVALID_HTML', async () => {
-    const { runSlidePipeline } = await import('@/html/pipeline');
-    (runSlidePipeline as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      ok: false,
-      code: 'INVALID_HTML',
-      detail: 'script_tag_forbidden',
-    });
-    const res = await request(buildApp()).post('/render/html').send({ prompt: 'bad' });
-    expect(res.status).toBe(422);
-    expect(res.body.error).toBe('invalid_html');
   });
 
   it('returns 500 llm_failure when pipeline reports LLM_FAILURE', async () => {
@@ -111,30 +102,6 @@ describe('POST /render/html', () => {
     const res = await request(buildApp()).post('/render/html').send({ prompt: 'fail' });
     expect(res.status).toBe(500);
     expect(res.body.error).toBe('llm_failure');
-  });
-
-  it('returns 422 overflow_unresolved when pipeline exhausts render retries', async () => {
-    const { runSlidePipeline } = await import('@/html/pipeline');
-    (runSlidePipeline as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      ok: false,
-      code: 'OVERFLOW_UNRESOLVED',
-      detail: { overflow: { x: false, y: true, scrollWidth: 1080, scrollHeight: 1530 }, attempts: 3 },
-    });
-    const res = await request(buildApp()).post('/render/html').send({ prompt: 'overflow' });
-    expect(res.status).toBe(422);
-    expect(res.body.error).toBe('overflow_unresolved');
-  });
-
-  it('returns 422 design_review_failed when Agent 2 rejects design', async () => {
-    const { runSlidePipeline } = await import('@/html/pipeline');
-    (runSlidePipeline as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      ok: false,
-      code: 'DESIGN_REVIEW_FAILED',
-      detail: { issues: ['Recipe does not match content'] },
-    });
-    const res = await request(buildApp()).post('/render/html').send({ prompt: 'bad design' });
-    expect(res.status).toBe(422);
-    expect(res.body.error).toBe('design_review_failed');
   });
 
   it('forwards role to pipeline', async () => {
