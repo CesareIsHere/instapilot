@@ -40,6 +40,9 @@ Valuta l'INSIEME del contenuto, non la singola slide isolata:
 5. Completezza: i punti chiave dell'argomento sono coperti?
 6. Aderenza alla ricerca: i dati citati sono coerenti con il dossier e con l'argomento richiesto?
 7. Forza editoriale: la cover aggancia davvero? La CTA chiude con un invito chiaro?
+8. Foreshadowing: la cover e la seconda slide sono coerenti tra loro?
+9. Loop narrativi: le domande/tensioni aperte vengono chiuse? C'è un payoff chiaro prima della CTA?
+10. CTA unica: l'ultima slide contiene una sola call-to-action chiara e nessun rimando a "slide successive"?
 
 Sii esigente ma equo. Approva se il contenuto è solido. Boccia solo per problemi reali.
 

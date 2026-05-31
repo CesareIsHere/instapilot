@@ -12,7 +12,7 @@ export const PlanReviewSchema = z.object({
 });
 export type PlanReview = z.infer<typeof PlanReviewSchema>;
 
-const PLAN_REVIEWER_PROMPT = `Sei un caporedattore di Finvestire. Valuti il PIANO di un contenuto Instagram (la struttura in slide e i brief) PRIMA che le slide vengano generate.
+const PLAN_REVIEWER_PROMPT = `Sei un caporedattore di Finvestire. Valuti il PIANO di un contenuto Instagram (la struttura in slide e i brief) PRIMA che le slide vengono generate.
 
 Controlla:
 1. Struttura: rispetta il formato richiesto (numero di slide, ruoli cover/body/cta)?
@@ -21,6 +21,12 @@ Controlla:
 4. Qualità dei brief: ogni brief è autosufficiente, con headline, dati concreti, hint di layout, taglio?
 5. Aderenza alla ricerca e all'argomento: i brief usano il materiale del dossier e rispondono al tema?
 6. Fattibilità: il contenuto di ogni slide è sintetizzabile in 1080×1350 senza overflow?
+7. Struttura narrativa: il framework dichiarato è adatto al contenuto? La sequenza dei narrativeFunction è coerente con quel framework?
+8. Foreshadowing: cover e slide 2 sono coerenti (la slide 2 apre il loop / spiega perché conta)?
+9. Mini-loop: ogni domanda/loop aperto viene chiuso entro 1-2 slide?
+10. Payoff: c'è un recap (3-4 bullet) nella penultima slide, prima della CTA, che richiama la cover?
+11. CTA: ce n'è UNA sola, chiara, e solo nell'ultima slide?
+12. Ritmo: il numero di slide è ragionevole per il framework (≈7)?
 
 Sii esigente ma equo. Approva se il piano è solido. Boccia solo per problemi reali.
 Se NON approvi, elenca gli issue e fornisci in planFeedback istruzioni concrete e azionabili per rifare il piano.
@@ -41,7 +47,7 @@ export async function reviewPlan(args: {
 }): Promise<PlanReview> {
   const jsonSchema = zodToJsonSchema(PlanReviewSchema, { name: 'PlanReview', nameStrategy: 'title' });
   const slidesText = args.plan.slides
-    .map((s, i) => `### Slide ${i} (${s.role})\n${s.brief}`)
+    .map((s, i) => `### Slide ${i} (${s.role} / ${s.narrativeFunction})\n${s.brief}`)
     .join('\n\n');
   const userContent = `ARGOMENTO: ${args.topic}
 ${args.instructions ? `ISTRUZIONI: ${args.instructions}\n` : ''}FORMATO: ${args.format}${args.slideCount ? ` (${args.slideCount} slide)` : ''}
@@ -49,7 +55,7 @@ ${args.instructions ? `ISTRUZIONI: ${args.instructions}\n` : ''}FORMATO: ${args.
 DOSSIER DI RICERCA:
 ${args.research}
 
-PIANO PROPOSTO — titolo: "${args.plan.title}", angolo: "${args.plan.angle}"
+PIANO PROPOSTO — framework: "${args.plan.framework}", titolo: "${args.plan.title}", angolo: "${args.plan.angle}"
 ${slidesText}`;
 
   const request: Record<string, unknown> = {
