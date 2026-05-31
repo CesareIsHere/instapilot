@@ -161,6 +161,7 @@ export function mountHtmlRoutes(app: Express): void {
         userPrompt: body.prompt,
         role: body.role,
         outputId: shortId(),
+        showCtaArrow: false,
       });
 
       if (!result.ok) {
@@ -199,8 +200,8 @@ const ContentBodySchema = z
   })
   .transform((b) => ({
     ...b,
-    // Carousel defaults to 6 slides; single is always 1.
-    slideCount: b.format === 'carousel' ? b.slideCount ?? 6 : 1,
+    // Carousel defaults to 7 slides (clamped 6-9); single is always 1.
+    slideCount: b.format === 'carousel' ? Math.min(9, Math.max(6, b.slideCount ?? 7)) : 1,
   }));
 
 export function mountContentRoutes(app: Express): void {
@@ -237,6 +238,7 @@ export function mountContentRoutes(app: Express): void {
         format: result.format,
         title: result.title,
         angle: result.angle,
+        framework: result.framework,
         files: result.slides.map((s) => s.file),
         slides: result.slides,
         reviewRounds: result.reviewRounds,

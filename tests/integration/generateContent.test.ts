@@ -39,11 +39,12 @@ vi.mock('@/content/research', () => ({
 vi.mock('@/content/plan', () => ({
   planContent: vi.fn(async () => ({
     title: 'Titolo contenuto',
+    framework: 'SWIPE',
     angle: 'angolo',
     slides: [
-      { role: 'cover', brief: 'brief cover' },
-      { role: 'body', brief: 'brief body' },
-      { role: 'cta', brief: 'brief cta' },
+      { role: 'cover', narrativeFunction: 'hook', brief: 'brief cover' },
+      { role: 'body', narrativeFunction: 'inform', brief: 'brief body' },
+      { role: 'cta', narrativeFunction: 'cta', brief: 'brief cta' },
     ],
   })),
 }));
@@ -110,6 +111,9 @@ describe('POST /generate/content', () => {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     expect(manifest.slides).toHaveLength(3);
     expect(manifest.slides[0].htmlFile).toBe('slide-01.html');
+    expect(manifest.framework).toBe('SWIPE');
+    expect(manifest.slides[0].narrativeFunction).toBe('hook');
+    expect(manifest.slides[2].narrativeFunction).toBe('cta');
   });
 
   it('passes slideCount to the planner for carousel', async () => {
@@ -178,5 +182,17 @@ describe('POST /generate/content', () => {
     const res = await request(buildApp()).post('/generate/content').send({ format: 'single' });
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('validation');
+  });
+
+  it('disables the swipe arrow on the last carousel slide', async () => {
+    const { runSlidePipeline } = await import('@/html/pipeline');
+    await request(buildApp())
+      .post('/generate/content')
+      .send({ topic: 'x', format: 'carousel', slideCount: 3 });
+    const calls = (runSlidePipeline as ReturnType<typeof vi.fn>).mock.calls;
+    const lastSlideArg = (calls[2] as unknown[])[0] as { showCtaArrow?: boolean };
+    expect(lastSlideArg.showCtaArrow).toBe(false);
+    const firstSlideArg = (calls[0] as unknown[])[0] as { showCtaArrow?: boolean };
+    expect(firstSlideArg.showCtaArrow).toBe(true);
   });
 });
