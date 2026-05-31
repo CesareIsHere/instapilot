@@ -102,14 +102,41 @@ The canvas MUST use all 1350px without large empty areas.
 - For rows of cards/columns: each child gets \`flex:1\`. Use \`gap\` for gutters, never fixed margins between flex children.
 - >100px of unintentional empty space = design failure. Enlarge fonts, increase padding, add content.
 
-# ANTI-OVERFLOW RULES (CRITICAL)
+# ANTI-OVERFLOW & POSITIONING RULES (CRITICAL — read twice)
 
-Content that overflows causes a regeneration. Prevent it:
-- Root element: \`width:1080px; height:1350px; overflow:hidden\`.
-- Two-column row: each child \`flex:1\`, parent \`gap:N\`. No fixed px widths.
-- Do the arithmetic: outer padding 64px each side → usable width = 952px. Plan all children within it.
-- Budget height: logo 120px + title 200px + content + footer 80px + CTA zone 160px. Sum ≤ 1350px.
-- \`flex-shrink:0\` on fixed-height sections (logo, footer) so they are never compressed by flex.
+Content that overflows 1080×1350 forces a regeneration. Be meticulous.
+
+## Box model
+- Add this rule FIRST in your CSS: \`.canvas, .canvas *, .canvas *::before, .canvas *::after { box-sizing: border-box; }\`. Without it, padding ADDS to width/height and causes overflow.
+- Root element inside \`.canvas\`: \`width:1080px; height:1350px; overflow:hidden\`. Never larger.
+
+## Flexbox (the #1 source of silent overflow)
+- Every flex child that holds text MUST have \`min-width:0\` (for rows) and \`min-height:0\` (for columns). Flex items default to \`min-width:auto\`, which refuses to shrink and overflows.
+- Two-column row: parent \`display:flex; gap:N\`, each child \`flex:1; min-width:0\`. No fixed px widths.
+- Fixed sections (logo, footer): \`flex-shrink:0\` so they keep their height; everything else absorbs the remaining space.
+
+## Units & sizing
+- NEVER use \`100vw\`, \`100vh\`, \`vmin\`, \`vmax\`, or \`%\` of the viewport. The canvas is exactly 1080×1350px — use those fixed numbers.
+- No \`position:absolute\` for layout (decorative accents only).
+
+## Text wrapping
+- Long words, URLs, tickers, big numbers: add \`overflow-wrap:anywhere\` (and \`hyphens:auto\` where natural) so they never push width.
+- Recommended \`line-height\`: 1.05–1.15 for hero titles, 1.2–1.3 for section headers, 1.35–1.45 for body copy.
+
+## Height budget (do the arithmetic before writing CSS)
+Plan the vertical stack so the parts sum to ≤ 1350px. Worked example for a body slide:
+
+\`\`\`
+logo zone        120px   (logo 88px + 32px gap below)
+title block      ~220px  (2 lines @ 84px, line-height 1.1)
+content (flex:1) ~770px  ← absorbs the remainder
+footer           80px
+CTA reserve      160px   (bottom padding for the injected arrow)
+-----------------------------
+total            1350px  ✓
+\`\`\`
+
+If the content does not fit: FIRST shorten the copy, THEN compact the layout (smaller gaps/padding). NEVER reduce font sizes below the minimums (22px / 30px in cards).
 
 # CSS SCOPE & CONVENTIONS
 
@@ -149,17 +176,18 @@ JSON with three fields:
 
 No markdown fences. No prose outside the JSON.
 
-# SELF-CHECK BEFORE RESPONDING
+# SELF-CHECK BEFORE RESPONDING (verify each, do the math)
 
-1. Root element has \`width:1080px; height:1350px; overflow:hidden\`?
-2. Background is white (\`var(--paper)\`)?
-3. All colors from CSS vars (no hardcoded hex)?
-4. Logo present at top center, 80–96px?
-5. All font sizes ≥ 22px (≥ 30px inside cards)?
-6. Height budget: logo + title + content + footer + 160px CTA zone ≤ 1350px?
-7. All flex-row children fit within usable width (1080 − 2×padding)?
-8. No CTA arrow in the HTML (injected by shell)?
-9. One clear focal point?
+1. First CSS rule is \`box-sizing: border-box\` on \`.canvas\` and all descendants?
+2. Root element: \`width:1080px; height:1350px; overflow:hidden\`?
+3. Every flex row child has \`min-width:0\`; every flex column child has \`min-height:0\`?
+4. Fixed sections (logo, footer) have \`flex-shrink:0\`?
+5. No \`100vw/100vh/vmin/vmax\` and no viewport-% sizing anywhere?
+6. Long words/numbers protected with \`overflow-wrap:anywhere\`?
+7. Height budget summed on paper: logo + title + content + footer + 160px CTA reserve ≤ 1350?
+8. All flex-row children fit within usable width (1080 − 2×side-padding)?
+9. Background white, all colors via CSS vars, all font sizes ≥ 22px (≥ 30px in cards)?
+10. Logo at top center (80–96px); one clear focal point; no CTA arrow in the HTML?
 
 # BRAND CONTEXT
 
