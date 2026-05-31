@@ -47,6 +47,7 @@ export interface GenerateContentSuccess {
   carouselDir?: string;
   topic: string;
   format: ContentFormat;
+  framework: string;
   title: string;
   angle: string;
   research: string;
@@ -120,11 +121,22 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
     return { dir: carouselDir, fileName: `slide-${String(index + 1).padStart(2, '0')}.png` };
   }
 
+  const total = plan.slides.length;
+  function slideCtx(index: number, narrativeFunction?: string) {
+    return {
+      narrativeFunction,
+      index,
+      total,
+      // Arrow only in a carousel, and never on the last slide.
+      showCtaArrow: isCarousel && index < total - 1,
+    };
+  }
+
   // ── Phase C: Per-slide generation (4-agent pipeline) ──────────────────────
   const states: SlideState[] = [];
   for (let i = 0; i < plan.slides.length; i++) {
     const planned = plan.slides[i];
-    const result = await generateOneSlide(args, planned.role, planned.brief, [], slideOutput(i));
+    const result = await generateOneSlide(args, planned.role, planned.brief, [], slideOutput(i), slideCtx(i, planned.narrativeFunction));
     if (!result.ok) {
       return {
         ok: false,
@@ -160,7 +172,7 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
       const state = states[fix.slideIndex];
       if (!state) continue;
       state.fixes.push(fix.fix);
-      const regenerated = await generateOneSlide(args, state.role, state.baseBrief, state.fixes, slideOutput(fix.slideIndex));
+      const regenerated = await generateOneSlide(args, state.role, state.baseBrief, state.fixes, slideOutput(fix.slideIndex), slideCtx(fix.slideIndex, plan.slides[fix.slideIndex]?.narrativeFunction));
       if (!regenerated.ok) {
         return {
           ok: false,
@@ -202,7 +214,7 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
   return {
     ok: true,
     carouselId, carouselDir,
-    topic, format, title: plan.title, angle: plan.angle, research,
+    topic, format, framework: plan.framework, title: plan.title, angle: plan.angle, research,
     slides, reviewRounds, contentWarnings, usage,
     durationMs: Date.now() - start,
   };
@@ -227,6 +239,7 @@ function writeCarouselArtifacts(p: {
     return {
       index: idx,
       role: s.role,
+      narrativeFunction: p.plan.slides[idx]?.narrativeFunction,
       file: path.basename(s.result.file),
       htmlFile,
       intent: s.result.intent,
@@ -241,6 +254,7 @@ function writeCarouselArtifacts(p: {
     carouselId: p.carouselId,
     topic: p.topic,
     format: p.format,
+    framework: p.plan.framework,
     title: p.plan.title,
     angle: p.plan.angle,
     createdAt: new Date().toISOString(),
@@ -264,6 +278,7 @@ async function generateOneSlide(
   baseBrief: string,
   fixes: string[],
   output: { dir?: string; fileName?: string },
+  ctx: { narrativeFunction?: string; index: number; total: number; showCtaArrow: boolean },
 ) {
   const brief = fixes.length === 0
     ? baseBrief
@@ -278,5 +293,9 @@ async function generateOneSlide(
     role,
     outputId: shortId(),
     output,
+    narrativeFunction: ctx.narrativeFunction,
+    slideIndex: ctx.index,
+    slideTotal: ctx.total,
+    showCtaArrow: ctx.showCtaArrow,
   });
 }
