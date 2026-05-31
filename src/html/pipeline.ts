@@ -63,13 +63,15 @@ export async function runSlidePipeline(args: PipelineArgs): Promise<PipelineResu
   const isLast = args.slideTotal != null && args.slideIndex != null
     ? args.slideIndex === args.slideTotal - 1
     : undefined;
-  const slideContext = {
-    role,
-    narrativeFunction: args.narrativeFunction,
-    index: args.slideIndex,
-    total: args.slideTotal,
-    isLast,
-  };
+  const slideContext = role == null
+    ? undefined
+    : {
+        role,
+        narrativeFunction: args.narrativeFunction,
+        index: args.slideIndex,
+        total: args.slideTotal,
+        isLast,
+      };
   const meter = new UsageMeter();
   const warnings: PipelineWarning[] = [];
   let totalLlmMs = 0;

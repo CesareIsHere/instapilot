@@ -5,6 +5,7 @@ import { promises as fs } from 'node:fs';
 import type { ReasoningEffort } from '@/llm/client';
 import type { UsageMeter } from '@/llm/usage';
 import type { SlideDesignSpec } from './designSpec';
+import type { SlideRole } from './htmlSystemPrompt';
 
 const ISSUE_CATEGORIES = ['brand-color', 'font-size', 'layout', 'logo', 'style', 'content'] as const;
 
@@ -52,6 +53,15 @@ You receive the rendered slide image and the HTML/CSS source. Analyze both caref
 - No CTA arrow manually added in bodyHtml (it is injected by the shell)
 - No <script> tags, no @font-face, no @import, no :root in CSS
 
+## NARRATIVE / SLIDE-TYPE REVIEW (act as an expert content reviewer)
+You are told this slide's role, narrative function and position. Judge whether the CONTENT fits its type:
+- cover / hook: a strong hook + clear promise, minimal text, one focal point — NOT a dense body.
+- inform: exactly one clear idea, density appropriate to the recipe.
+- payoff: a concise recap (bullets), echoes the cover, introduces no new topic.
+- cta: one clear call-to-action / invite, closing tone.
+- SWIPE ARROW RULE: the bottom-right circular swipe arrow (→) is a "scroll to next" affordance. On the LAST / CTA slide there is no next slide, so it MUST NOT appear — if you see it on the last/CTA slide, flag it (category "layout"). On non-last slides the arrow is expected; do NOT flag its presence there.
+Flag real mismatches only (use category "content" for wrong-content-for-type, "layout" for the arrow).
+
 ## OUTPUT
 { "approved": boolean, "issues": [...], "rendererFeedback": "consolidated actionable instructions for the renderer if not approved, null if approved" }
 Only flag real violations — not stylistic preferences. Approve when everything is correct.`;
@@ -64,13 +74,20 @@ export async function reviewRenderedSlide(args: {
   html: string;
   designSpec: SlideDesignSpec;
   meter?: UsageMeter;
+  slideContext?: {
+    role: SlideRole;
+    narrativeFunction?: string;
+    index?: number;
+    total?: number;
+    isLast?: boolean;
+  };
 }): Promise<QualityReview> {
   const jsonSchema = zodToJsonSchema(QualityReviewSchema, { name: 'QualityReview', nameStrategy: 'title' });
   const request: Record<string, unknown> = {
     model: args.model,
     messages: [
       { role: 'system', content: QUALITY_REVIEWER_PROMPT },
-      { role: 'user', content: await buildReviewContent(args.pngPath, args.html, args.designSpec) },
+      { role: 'user', content: await buildReviewContent(args.pngPath, args.html, args.designSpec, args.slideContext) },
     ],
     response_format: {
       type: 'json_schema',
@@ -104,6 +121,13 @@ async function buildReviewContent(
   pngPath: string,
   html: string,
   designSpec: SlideDesignSpec,
+  slideContext?: {
+    role: SlideRole;
+    narrativeFunction?: string;
+    index?: number;
+    total?: number;
+    isLast?: boolean;
+  },
 ): Promise<OpenAI.Chat.ChatCompletionContentPart[]> {
   let imagePart: OpenAI.Chat.ChatCompletionContentPart;
   try {
@@ -118,11 +142,29 @@ async function buildReviewContent(
     imagePart = { type: 'text', text: '[rendered image not available — perform source-only review]' };
   }
 
+  let contextPrefix = '';
+  if (slideContext) {
+    const position =
+      slideContext.index != null && slideContext.total != null
+        ? String(slideContext.index + 1) + '/' + String(slideContext.total)
+        : 'standalone';
+    contextPrefix =
+      'Slide context: role=' +
+      slideContext.role +
+      ', narrativeFunction=' +
+      (slideContext.narrativeFunction ?? 'n/a') +
+      ', position=' +
+      position +
+      ', isLast=' +
+      String(slideContext.isLast ?? 'n/a') +
+      '.\n\n';
+  }
+
   return [
     imagePart,
     {
       type: 'text',
-      text: `Design specification that was implemented:\n${JSON.stringify(designSpec, null, 2)}\n\n---\nHTML/CSS source:\n${html}`,
+      text: `${contextPrefix}Design specification that was implemented:\n${JSON.stringify(designSpec, null, 2)}\n\n---\nHTML/CSS source:\n${html}`,
     },
   ];
 }

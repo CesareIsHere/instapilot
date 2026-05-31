@@ -144,12 +144,12 @@ describe('runSlidePipeline — best effort', () => {
 
   it('omits the arrow when showCtaArrow is false', async () => {
     await runSlidePipeline({ ...baseArgs, showCtaArrow: false } as never);
-    expect(buildHtmlDocument.mock.calls[0][2]).toBe(false);
+    expect((buildHtmlDocument.mock.calls[0] as unknown[])[2]).toBe(false);
   });
 
   it('defaults showArrow to true when showCtaArrow is omitted', async () => {
     await runSlidePipeline(baseArgs as never);
-    expect(buildHtmlDocument.mock.calls[0][2]).toBe(true);
+    expect((buildHtmlDocument.mock.calls[0] as unknown[])[2]).toBe(true);
   });
 
   it('forwards narrative slide context to the quality reviewer', async () => {
