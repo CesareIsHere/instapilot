@@ -93,7 +93,10 @@ export async function runSlidePipeline(args: PipelineArgs): Promise<PipelineResu
       lastIssues = review.issues;
       designFeedback = review.issues.join('; ');
     }
-    designSpec = lastSpec as SlideDesignSpec;
+    if (!lastSpec) {
+      return { ok: false, code: 'LLM_FAILURE', detail: 'MAX_DESIGN_RETRIES must be >= 1' };
+    }
+    designSpec = lastSpec;
     if (lastIssues.length > 0) {
       warnings.push({ kind: 'design-review', issues: lastIssues });
       log.warn('pipeline.design.best_effort', { issues: lastIssues });

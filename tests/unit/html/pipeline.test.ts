@@ -112,4 +112,31 @@ describe('runSlidePipeline — best effort', () => {
     await runSlidePipeline({ ...baseArgs, output: { dir: '/out/carousel-1', fileName: 'slide-01.png' } } as never);
     expect(renderHtmlStill.mock.calls[0][2]).toMatchObject({ dir: '/out/carousel-1', fileName: 'slide-01.png' });
   });
+
+  it('passes design feedback to the second planSlideDesign attempt', async () => {
+    reviewSlideDesign
+      .mockResolvedValueOnce({ approved: false, issues: ['recipe mismatch'] })
+      .mockResolvedValueOnce({ approved: true, issues: [] });
+    await runSlidePipeline(baseArgs as never);
+    const secondPlanCall = planSlideDesign.mock.calls[1][0];
+    expect(secondPlanCall.feedback).toContain('recipe mismatch');
+  });
+
+  it('passes renderer feedback to the next generateSlideHtml attempt on quality rejection', async () => {
+    reviewRenderedSlide
+      .mockResolvedValueOnce({ approved: false, issues: [{ category: 'brand-color', description: 'hardcoded hex', suggestion: 'use var' }], rendererFeedback: 'fix: use CSS vars' })
+      .mockResolvedValueOnce({ approved: true, issues: [], rendererFeedback: null });
+    await runSlidePipeline(baseArgs as never);
+    const secondGenerateCall = generateSlideHtml.mock.calls[1][0];
+    expect(secondGenerateCall.userPrompt).toContain('CORRECTIONS REQUIRED');
+  });
+
+  it('returns ok when quality review throws (non-fatal path)', async () => {
+    reviewRenderedSlide.mockRejectedValue(new Error('vision api down'));
+    const res = await runSlidePipeline(baseArgs as never);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.file).toBe('/out/x.png');
+    expect(res.warnings).toEqual([]);
+  });
 });
