@@ -41,7 +41,7 @@ describe('UsageMeter', () => {
   it('records UsageTotals via recordTotals (for rollups)', () => {
     const m = new UsageMeter();
     m.recordTotals('slide-1', { promptTokens: 100, completionTokens: 50, totalTokens: 150, calls: 4 });
-    expect(m.totals).toEqual({ promptTokens: 100, completionTokens: 50, totalTokens: 150, calls: 1 });
+    expect(m.totals).toEqual({ promptTokens: 100, completionTokens: 50, totalTokens: 150, calls: 4 });
     expect(m.breakdown[0].label).toBe('slide-1');
   });
 });

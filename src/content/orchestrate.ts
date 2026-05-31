@@ -192,7 +192,11 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
 
   // ── Write carousel HTML files + manifest.json ─────────────────────────────
   if (carouselDir) {
-    writeCarouselArtifacts({ carouselId: carouselId!, carouselDir, topic, format, plan, research, usage, contentWarnings, states });
+    try {
+      writeCarouselArtifacts({ carouselId: carouselId!, carouselDir, topic, format, plan, research, usage, contentWarnings, states });
+    } catch (err) {
+      log.error('content.carousel.write_error', { reason: (err as Error).message });
+    }
   }
 
   return {

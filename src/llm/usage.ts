@@ -36,7 +36,7 @@ export class UsageMeter {
 
   /** Record a pre-aggregated UsageTotals (e.g. rolling a per-slide total into a carousel total). */
   recordTotals(label: string, totals: UsageTotals): void {
-    this._records.push({ label, ...totals, calls: 1 });
+    this._records.push({ label, ...totals });
   }
 
   get records(): UsageRecord[] {
@@ -49,7 +49,7 @@ export class UsageMeter {
         promptTokens: acc.promptTokens + r.promptTokens,
         completionTokens: acc.completionTokens + r.completionTokens,
         totalTokens: acc.totalTokens + r.totalTokens,
-        calls: acc.calls + 1,
+        calls: acc.calls + r.calls,
       }),
       { ...ZERO },
     );
@@ -64,7 +64,7 @@ export class UsageMeter {
         existing.promptTokens += r.promptTokens;
         existing.completionTokens += r.completionTokens;
         existing.totalTokens += r.totalTokens;
-        existing.calls += 1;
+        existing.calls += r.calls;
       } else {
         map.set(r.label, { ...r });
       }
