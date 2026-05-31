@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type OpenAI from 'openai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { ReasoningEffort } from '@/llm/client';
+import type { UsageMeter } from '@/llm/usage';
 
 export const ContentFormatSchema = z.enum(['single', 'carousel']);
 export type ContentFormat = z.infer<typeof ContentFormatSchema>;
@@ -30,18 +31,23 @@ function buildPlannerSystemPrompt(format: ContentFormat, slideCount: number | un
 - Ultima slide: CTA (role "cta") — sintesi del messaggio chiave + invito a seguire/salvare.
 Produci esattamente ${slideCount} slide in totale.`;
 
-  return `Sei un content strategist per Finvestire (contenuti educativi di finanza in italiano).
+  return `Sei un content strategist senior per Finvestire (contenuti educativi di finanza in italiano).
 Ricevi un dossier di ricerca e pianifichi come strutturare il contenuto in slide per Instagram.
 
 ${formatRules}
 
-Per ogni slide scrivi un "brief": istruzioni di contenuto dettagliate e autosufficienti che descrivono COSA deve comunicare quella slide (titolo proposto, punti da includere, dati specifici dalla ricerca, eventuale taglio emotivo/semantico). Il brief verrà passato a un agente di design che genererà la slide: deve contenere tutto il necessario, senza riferirsi alle altre slide.
+Per ogni slide scrivi un "brief" AUTOSUFFICIENTE e dettagliato che un agente di design userà per generare la slide. Ogni brief DEVE contenere:
+- HEADLINE proposta (testo esatto in italiano) e quali 1-2 parole evidenziare in verde (positivo/crescita) o rosso (rischio/perdita). Non abusare del colore.
+- I PUNTI DI CONTENUTO concreti da mostrare, con i DATI specifici presi dal dossier (numeri + anno/fonte quando rilevanti).
+- HINT DI LAYOUT: suggerisci la recipe più adatta (cover, numbered-list, compare-2col, kpi-hero, card-grid-2x2, quote, cta).
+- TAGLIO: l'angolo emotivo/semantico della slide.
+Il brief non deve riferirsi alle altre slide: deve bastare a sé stesso.
 
 Regole:
-- Una idea principale per slide. Non sovraccaricare.
-- Mantieni continuità narrativa tra le slide (il carosello deve scorrere come un racconto).
-- Usa dati concreti dalla ricerca quando rafforzano il messaggio.
-- I brief sono in italiano.
+- UNA idea principale per slide. Non sovraccaricare: meglio poco testo grande che molto testo piccolo (vincolo 1080×1350 senza overflow).
+- Arco narrativo: la COVER deve avere un hook fortissimo; le BODY sviluppano in sequenza logica; la CTA chiude con sintesi + invito a seguire/salvare.
+- Usa i dati del dossier quando rafforzano il messaggio; niente affermazioni non supportate dalla ricerca.
+- Brief in italiano.
 
 Output JSON (ContentPlan):
 - title: titolo editoriale del contenuto complessivo
@@ -58,6 +64,8 @@ export async function planContent(args: {
   topic: string;
   instructions?: string;
   research: string;
+  meter?: UsageMeter;
+  feedback?: string;
 }): Promise<ContentPlan> {
   const { client, model, reasoningEffort, format, slideCount, topic, instructions, research } = args;
   const jsonSchema = zodToJsonSchema(ContentPlanSchema, { name: 'ContentPlan', nameStrategy: 'title' });
@@ -65,7 +73,7 @@ export async function planContent(args: {
   const userContent = `ARGOMENTO: ${topic}
 ${instructions ? `ISTRUZIONI: ${instructions}\n` : ''}
 DOSSIER DI RICERCA:
-${research}`;
+${research}${args.feedback ? `\n\n--- REVISIONE DEL PIANO PRECEDENTE DA CORREGGERE ---\n${args.feedback}` : ''}`;
 
   const request: Record<string, unknown> = {
     model,
@@ -83,6 +91,8 @@ ${research}`;
   const resp = (await client.chat.completions.create(
     request as unknown as Parameters<typeof client.chat.completions.create>[0],
   )) as OpenAI.Chat.Completions.ChatCompletion;
+
+  args.meter?.record('content.plan', resp.usage);
 
   const content = resp.choices[0]?.message?.content;
   if (!content) throw new Error('llm_empty_response');

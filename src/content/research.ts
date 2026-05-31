@@ -1,26 +1,34 @@
 import type OpenAI from 'openai';
 import type { ReasoningEffort } from '@/llm/client';
+import type { UsageMeter } from '@/llm/usage';
 import { log } from '@/lib/log';
 
 // OpenAI Responses API web-search tool. Configurable for forward-compat
 // (web_search_preview is the broadly-supported variant for gpt-4o).
 const WEB_SEARCH_TOOL = process.env.OPENAI_WEB_SEARCH_TOOL ?? 'web_search_preview';
 
-function buildResearchPrompt(topic: string, instructions: string | undefined): string {
-  return `Sei un ricercatore esperto di finanza personale e investimenti per Finvestire (contenuti educativi in italiano).
+function buildResearchPrompt(topic: string, instructions: string | undefined, feedback?: string): string {
+  const corrections = feedback
+    ? `\n\n--- REVISIONE PRECEDENTE DA CORREGGERE ---\nIl dossier precedente è stato bocciato per questi motivi. Correggili in questa versione:\n${feedback}\n`
+    : '';
+  return `Sei un ricercatore senior di finanza personale e investimenti per Finvestire (contenuti educativi in italiano), rivolto a un pubblico NON esperto.
 
-Approfondisci a fondo il seguente argomento, cercando informazioni aggiornate e affidabili su internet:
+Approfondisci a fondo il seguente argomento con informazioni aggiornate, affidabili e verificabili:
 
 ARGOMENTO: ${topic}
-${instructions ? `\nISTRUZIONI SUL CONTENUTO: ${instructions}\n` : ''}
-Produci un dossier di ricerca strutturato in italiano che includa:
-- I concetti chiave necessari per spiegare l'argomento a un pubblico non esperto
-- Dati, numeri, statistiche concrete e recenti (con anno/fonte quando rilevante)
-- Esempi pratici, analogie o casi reali utili a illustrare i concetti
-- Eventuali errori comuni o fraintendimenti da chiarire
-- Citazioni delle fonti principali consultate
+${instructions ? `\nISTRUZIONI SUL CONTENUTO: ${instructions}\n` : ''}${corrections}
+Produci un dossier di ricerca in italiano con QUESTE SEZIONI esplicite:
+1. CONCETTI CHIAVE — i concetti necessari, spiegati in modo accessibile a chi parte da zero.
+2. DATI E NUMERI — statistiche concrete e recenti. Ogni dato DEVE avere anno e fonte. Se non sei certo dell'aggiornamento, segnalalo esplicitamente con "[da verificare]".
+3. ESEMPI E ANALOGIE — almeno 2 esempi pratici o analogie concrete che rendano tangibili i concetti.
+4. ERRORI COMUNI — fraintendimenti diffusi da sfatare.
+5. ANGOLI E HOOK — 2-3 angoli narrativi forti e ganci d'apertura utilizzabili per un post Instagram.
+6. FONTI — le fonti principali consultate.
 
-Il dossier deve essere accurato, fattuale e abbastanza ricco da permettere a un altro agente di scrivere un post Instagram di alta qualità. Non scrivere il post: produci solo il materiale di ricerca.`;
+Regole di qualità:
+- Accuratezza prima di tutto: niente affermazioni inventate. Distingui i fatti dalle opinioni.
+- Niente contenuto generico o "filler": ogni riga deve essere utile a chi scriverà il post.
+- Non scrivere il post: produci solo materiale di ricerca ricco e strutturato.`;
 }
 
 export interface ResearchArgs {
@@ -29,6 +37,8 @@ export interface ResearchArgs {
   reasoningEffort?: ReasoningEffort;
   topic: string;
   instructions?: string;
+  meter?: UsageMeter;
+  feedback?: string;
 }
 
 /**
@@ -39,7 +49,7 @@ export interface ResearchArgs {
  */
 export async function researchTopic(args: ResearchArgs): Promise<string> {
   const { client, model, reasoningEffort, topic, instructions } = args;
-  const prompt = buildResearchPrompt(topic, instructions);
+  const prompt = buildResearchPrompt(topic, instructions, args.feedback);
 
   try {
     const request: Record<string, unknown> = {
@@ -54,13 +64,14 @@ export async function researchTopic(args: ResearchArgs): Promise<string> {
     );
     const text = (resp as { output_text?: string }).output_text;
     if (text && text.trim().length > 0) {
+      args.meter?.record('research', (resp as { usage?: Record<string, number> }).usage);
       log.info('content.research.done', { mode: 'web_search', chars: text.length });
       return text;
     }
     throw new Error('empty_web_search_response');
   } catch (err) {
     log.warn('content.research.fallback', { reason: (err as Error).message });
-    return researchWithoutWeb({ client, model, reasoningEffort, prompt });
+    return researchWithoutWeb({ client, model, reasoningEffort, prompt, meter: args.meter });
   }
 }
 
@@ -69,6 +80,7 @@ async function researchWithoutWeb(args: {
   model: string;
   reasoningEffort?: ReasoningEffort;
   prompt: string;
+  meter?: UsageMeter;
 }): Promise<string> {
   const request: Record<string, unknown> = {
     model: args.model,
@@ -86,6 +98,8 @@ async function researchWithoutWeb(args: {
   const resp = (await args.client.chat.completions.create(
     request as unknown as Parameters<typeof args.client.chat.completions.create>[0],
   )) as OpenAI.Chat.Completions.ChatCompletion;
+
+  args.meter?.record('research', resp.usage);
 
   const text = resp.choices[0]?.message?.content;
   if (!text) throw new Error('research_failed: no content from model');

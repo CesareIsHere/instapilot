@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type OpenAI from 'openai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { ReasoningEffort } from '@/llm/client';
+import type { UsageMeter } from '@/llm/usage';
 import type { SlideDesignSpec } from '@/html/designSpec';
 
 export const SlideFixSchema = z.object({
@@ -37,6 +38,8 @@ Valuta l'INSIEME del contenuto, non la singola slide isolata:
 3. Qualità e livello: il contenuto è accurato, chiaro, di alto livello e non banale?
 4. Coerenza: nessuna ripetizione inutile, nessuna contraddizione, nessun salto logico.
 5. Completezza: i punti chiave dell'argomento sono coperti?
+6. Aderenza alla ricerca: i dati citati sono coerenti con il dossier e con l'argomento richiesto?
+7. Forza editoriale: la cover aggancia davvero? La CTA chiude con un invito chiaro?
 
 Sii esigente ma equo. Approva se il contenuto è solido. Boccia solo per problemi reali.
 
@@ -57,6 +60,7 @@ export async function reviewContent(args: {
   title: string;
   angle: string;
   slides: ReviewableSlide[];
+  meter?: UsageMeter;
 }): Promise<ContentReview> {
   const { client, model, reasoningEffort } = args;
   const jsonSchema = zodToJsonSchema(ContentReviewSchema, { name: 'ContentReview', nameStrategy: 'title' });
@@ -94,6 +98,8 @@ ${slidesText}`;
   const resp = (await client.chat.completions.create(
     request as unknown as Parameters<typeof client.chat.completions.create>[0],
   )) as OpenAI.Chat.Completions.ChatCompletion;
+
+  args.meter?.record('content.review', resp.usage);
 
   const content = resp.choices[0]?.message?.content;
   if (!content) throw new Error('llm_empty_response');
