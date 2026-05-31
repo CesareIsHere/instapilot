@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import express from 'express';
 import request from 'supertest';
+import os from 'node:os';
+import path from 'node:path';
+import fs from 'node:fs';
+
+process.env.OUTPUT_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'instapilot-test-'));
 
 const DESIGN_SPEC = {
   recipe: 'cover',
@@ -20,9 +25,10 @@ function pipelineSuccess(file: string) {
     html: '<!DOCTYPE html>',
     intent: 'intent',
     designSpec: DESIGN_SPEC,
-    qualityWarnings: [],
+    warnings: [] as never[],
     attempts: { design: 1, render: 1 },
     durationMs: { llm: 1, render: 1, total: 2 },
+    usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15, calls: 4 },
   };
 }
 
@@ -40,6 +46,14 @@ vi.mock('@/content/plan', () => ({
       { role: 'cta', brief: 'brief cta' },
     ],
   })),
+}));
+
+vi.mock('@/content/researchReview', () => ({
+  reviewResearch: vi.fn(async () => ({ approved: true, issues: [] })),
+}));
+
+vi.mock('@/content/planReview', () => ({
+  reviewPlan: vi.fn(async () => ({ approved: true, issues: [], planFeedback: null })),
 }));
 
 vi.mock('@/content/review', () => ({
@@ -89,6 +103,13 @@ describe('POST /generate/content', () => {
     expect(res.body.slides[0].role).toBe('cover');
     expect(res.body.slides[2].role).toBe('cta');
     expect(res.body.reviewRounds).toBe(1);
+    expect(res.body.usage.totalTokens).toBeGreaterThan(0);
+    expect(res.body.carouselId).toBeTruthy();
+    const manifestPath = path.join(res.body.carouselDir, 'manifest.json');
+    expect(fs.existsSync(manifestPath)).toBe(true);
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    expect(manifest.slides).toHaveLength(3);
+    expect(manifest.slides[0].htmlFile).toBe('slide-01.html');
   });
 
   it('passes slideCount to the planner for carousel', async () => {
@@ -136,12 +157,12 @@ describe('POST /generate/content', () => {
     expect(lastCall.role).toBe('body');
   });
 
-  it('returns 422 slide_generation_failed when a slide pipeline fails', async () => {
+  it('returns 422 slide_generation_failed when a slide pipeline fails (non-LLM)', async () => {
     const { runSlidePipeline } = await import('@/html/pipeline');
     (runSlidePipeline as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       ok: false,
-      code: 'OVERFLOW_UNRESOLVED',
-      detail: { attempts: 3 },
+      code: 'RENDER_FAILURE',
+      detail: { reason: 'browser crash' },
     });
 
     const res = await request(buildApp())

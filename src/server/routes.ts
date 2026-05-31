@@ -231,6 +231,8 @@ export function mountContentRoutes(app: Express): void {
       }
 
       res.json({
+        carouselId: result.carouselId,
+        carouselDir: result.carouselDir,
         topic: result.topic,
         format: result.format,
         title: result.title,
@@ -238,6 +240,8 @@ export function mountContentRoutes(app: Express): void {
         files: result.slides.map((s) => s.file),
         slides: result.slides,
         reviewRounds: result.reviewRounds,
+        contentWarnings: result.contentWarnings,
+        usage: result.usage,
         durationMs: result.durationMs,
       });
     } catch (err) {
