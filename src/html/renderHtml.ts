@@ -12,6 +12,8 @@ const OVERFLOW_TOLERANCE_PX = 1;
 export interface RenderHtmlResult {
   file: string;
   durationMs: number;
+  /** Present when the screenshot was forced despite overflow (best-effort render). */
+  overflow?: OverflowResult;
 }
 
 export interface RenderHtmlOverflow {
@@ -19,14 +21,26 @@ export interface RenderHtmlOverflow {
   durationMs: number;
 }
 
+export interface RenderHtmlOpts {
+  /** Screenshot even if overflow is detected, returning ok:true with `overflow` set. */
+  force?: boolean;
+  /** Output directory (defaults to OUTPUT_DIR env). */
+  dir?: string;
+  /** Output file name including extension (defaults to `HtmlSlide-<outputId>.png`). */
+  fileName?: string;
+}
+
 export type RenderHtmlOutcome =
   | ({ ok: true } & RenderHtmlResult)
   | ({ ok: false } & RenderHtmlOverflow);
 
-export async function renderHtmlStill(html: string, outputId: string): Promise<RenderHtmlOutcome> {
+export async function renderHtmlStill(
+  html: string,
+  outputId: string,
+  opts: RenderHtmlOpts = {},
+): Promise<RenderHtmlOutcome> {
   const start = Date.now();
   const browser = await getBrowser();
-  // deviceScaleFactor is a context-level option in Playwright (not settable via setViewportSize).
   const context = await browser.newContext({
     viewport: { width: 1080, height: 1350 },
     deviceScaleFactor: DEVICE_SCALE_FACTOR,
@@ -34,46 +48,36 @@ export async function renderHtmlStill(html: string, outputId: string): Promise<R
 
   try {
     const page = await context.newPage();
-
-    // Block remote network — data:/file: (embedded fonts/assets) pass through.
     await page.route(/^https?:\/\//, (route) => route.abort());
-
     await page.setContent(html, { waitUntil: 'load', timeout: RENDER_TIMEOUT_MS });
     await page.evaluate(async () => { await document.fonts.ready; });
 
-    // Measure overflow on .canvas
     const measurements = await page.evaluate(() => {
       const canvas = document.querySelector('.canvas') as HTMLElement | null;
       const el = canvas ?? document.documentElement;
-      return {
-        scrollWidth: el.scrollWidth,
-        scrollHeight: el.scrollHeight,
-      };
+      return { scrollWidth: el.scrollWidth, scrollHeight: el.scrollHeight };
     });
 
     const overflowX = measurements.scrollWidth > 1080 + OVERFLOW_TOLERANCE_PX;
     const overflowY = measurements.scrollHeight > 1350 + OVERFLOW_TOLERANCE_PX;
+    const hasOverflow = overflowX || overflowY;
+    const overflow: OverflowResult = {
+      x: overflowX,
+      y: overflowY,
+      scrollWidth: measurements.scrollWidth,
+      scrollHeight: measurements.scrollHeight,
+    };
 
-    if (overflowX || overflowY) {
+    if (hasOverflow && !opts.force) {
       const durationMs = Date.now() - start;
       log.warn('render.html.overflow', { ...measurements, overflowX, overflowY });
-      return {
-        ok: false,
-        overflow: {
-          x: overflowX,
-          y: overflowY,
-          scrollWidth: measurements.scrollWidth,
-          scrollHeight: measurements.scrollHeight,
-        },
-        durationMs,
-      };
+      return { ok: false, overflow, durationMs };
     }
 
-    // No overflow — take the screenshot
-    if (!fs.existsSync(OUTPUT_DIR)) {
-      fs.mkdirSync(OUTPUT_DIR, { recursive: true });
-    }
-    const file = path.join(OUTPUT_DIR, `HtmlSlide-${outputId}.png`);
+    const dir = opts.dir ?? OUTPUT_DIR;
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const fileName = opts.fileName ?? `HtmlSlide-${outputId}.png`;
+    const file = path.join(dir, fileName);
 
     await page.screenshot({
       path: file,
@@ -82,6 +86,10 @@ export async function renderHtmlStill(html: string, outputId: string): Promise<R
     });
 
     const durationMs = Date.now() - start;
+    if (hasOverflow) {
+      log.warn('render.html.forced_overflow', { file, durationMs, ...measurements });
+      return { ok: true, file, durationMs, overflow };
+    }
     log.info('render.html.complete', { file, durationMs });
     return { ok: true, file, durationMs };
   } finally {
