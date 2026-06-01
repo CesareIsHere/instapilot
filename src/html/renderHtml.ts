@@ -59,6 +59,7 @@ export async function renderHtmlStill(
         elements: [] as Array<Record<string, unknown>>,
       };
       if (!canvas) return result;
+      const cr = canvas.getBoundingClientRect();
       const clip = (v: string) => v === 'hidden' || v === 'clip' || v === 'auto' || v === 'scroll';
       for (const el of Array.from(canvas.querySelectorAll('*'))) {
         const node = el as HTMLElement;
@@ -73,7 +74,7 @@ export async function renderHtmlStill(
           tag: node.tagName.toLowerCase(),
           cls: typeof node.className === 'string' && node.className ? node.className.split(/\s+/)[0] : '',
           text: ownText.slice(0, 60),
-          left: r.left, top: r.top, right: r.right, bottom: r.bottom,
+          left: r.left - cr.left, top: r.top - cr.top, right: r.right - cr.left, bottom: r.bottom - cr.top,
           clientW: node.clientWidth, clientH: node.clientHeight,
           scrollW: node.scrollWidth, scrollH: node.scrollHeight,
           clipped: clip(cs.overflowX) || clip(cs.overflowY),

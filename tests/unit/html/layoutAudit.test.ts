@@ -70,6 +70,11 @@ describe('analyzeLayout', () => {
     expect(analyzeLayout(meas(els), CANVAS).some((i) => i.type === 'overlap')).toBe(false);
   });
 
+  it('does NOT flag a decorative (no-text) element outside the canvas', () => {
+    const els = [rect({ text: '', isTextLeaf: false, left: -50, top: 0, right: 1130, bottom: 200 })];
+    expect(analyzeLayout(meas(els), CANVAS).some((i) => i.type === 'exceeds-canvas')).toBe(false);
+  });
+
   it('caps the issue list at 12', () => {
     const els: ElementRect[] = [];
     for (let i = 0; i < 30; i++) els.push(rect({ text: `e${i}`, left: 0, top: 0, right: 1200, bottom: 100 }));

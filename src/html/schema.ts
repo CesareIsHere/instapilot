@@ -7,12 +7,3 @@ export const GeneratedHtmlSchema = z.object({
 });
 
 export type GeneratedHtml = z.infer<typeof GeneratedHtmlSchema>;
-
-export const OverflowResult = z.object({
-  x: z.boolean(),
-  y: z.boolean(),
-  scrollWidth: z.number(),
-  scrollHeight: z.number(),
-});
-
-export type OverflowResult = z.infer<typeof OverflowResult>;

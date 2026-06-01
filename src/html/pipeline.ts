@@ -223,7 +223,7 @@ function buildLayoutFeedback(issues: LayoutIssue[]): string {
   const lines: string[] = ['LAYOUT ISSUES detected in the rendered slide — fix them:'];
   const overlap = byType('overlap');
   if (overlap.length) {
-    lines.push('OVERLAP (elements must never collide — give each block its own vertical space; do NOT use position:absolute for content; avoid fixed heights too small for the content):');
+    lines.push('OVERLAP (elements must never collide — give each content block its own space in normal flow; avoid position:absolute for body text; avoid fixed heights too small for the content):');
     lines.push(...overlap);
   }
   const clipped = byType('clipped-text');

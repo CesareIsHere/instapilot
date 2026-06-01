@@ -56,7 +56,7 @@ export function analyzeLayout(
   const visible = m.elements.filter((e) => area(e) > 0);
 
   for (const e of visible) {
-    if (e.left < -TOL || e.top < -TOL || e.right > canvas.width + TOL || e.bottom > canvas.height + TOL) {
+    if (e.text.length > 0 && (e.left < -TOL || e.top < -TOL || e.right > canvas.width + TOL || e.bottom > canvas.height + TOL)) {
       push('exceeds-canvas', `${label(e)} extends to [${Math.round(e.left)},${Math.round(e.top)},${Math.round(e.right)},${Math.round(e.bottom)}] (outside 0,0-${canvas.width},${canvas.height})`);
     }
   }
