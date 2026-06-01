@@ -1,5 +1,5 @@
 import type OpenAI from 'openai';
-import type { ReasoningEffort } from '@/llm/client';
+import type { ReasoningEffort, AgentModels } from '@/llm/client';
 import type { SlideRole } from './htmlSystemPrompt';
 import { planSlideDesign, reviewSlideDesign, type SlideDesignSpec } from './designSpec';
 import { generateSlideHtml } from './generateHtml';
@@ -29,6 +29,8 @@ export interface PipelineArgs {
   narrativeFunction?: string;
   slideIndex?: number;
   slideTotal?: number;
+  /** Per-agent model overrides. Each key falls back to `model` if not set. */
+  models?: Partial<AgentModels>;
 }
 
 export type PipelineWarning =
@@ -59,6 +61,7 @@ export type PipelineResult = PipelineSuccess | PipelineFailure;
 
 export async function runSlidePipeline(args: PipelineArgs): Promise<PipelineResult> {
   const { client, model, reasoningEffort, brandContext, userPrompt, role, outputId, output } = args;
+  const pick = (agent: keyof AgentModels) => args.models?.[agent] ?? model;
   const showArrow = args.showCtaArrow ?? true;
   const isLast = args.slideTotal != null && args.slideIndex != null
     ? args.slideIndex === args.slideTotal - 1
@@ -89,7 +92,7 @@ export async function runSlidePipeline(args: PipelineArgs): Promise<PipelineResu
       designAttempts = da;
       const t1 = Date.now();
       try {
-        lastSpec = await planSlideDesign({ client, model, reasoningEffort, brandContext, userPrompt, role, feedback: designFeedback, meter });
+        lastSpec = await planSlideDesign({ client, model: pick('designPlan'), reasoningEffort, brandContext, userPrompt, role, feedback: designFeedback, meter });
       } catch (err) {
         return { ok: false, code: 'LLM_FAILURE', detail: (err as Error).message };
       }
@@ -99,7 +102,7 @@ export async function runSlidePipeline(args: PipelineArgs): Promise<PipelineResu
       const t2 = Date.now();
       let review;
       try {
-        review = await reviewSlideDesign({ client, model, reasoningEffort, originalPrompt: userPrompt, designSpec: lastSpec, meter });
+        review = await reviewSlideDesign({ client, model: pick('designReview'), reasoningEffort, originalPrompt: userPrompt, designSpec: lastSpec, meter });
       } catch (err) {
         return { ok: false, code: 'LLM_FAILURE', detail: (err as Error).message };
       }
@@ -133,7 +136,7 @@ export async function runSlidePipeline(args: PipelineArgs): Promise<PipelineResu
     let generated;
     try {
       generated = await generateSlideHtml({
-        client, model, systemPrompt, reasoningEffort,
+        client, model: pick('htmlRender'), systemPrompt, reasoningEffort,
         userPrompt: buildRendererPrompt(designSpec, renderFeedback),
         feedback: renderFeedback, meter,
       });
@@ -180,7 +183,7 @@ export async function runSlidePipeline(args: PipelineArgs): Promise<PipelineResu
     const t5 = Date.now();
     let qualityReview;
     try {
-      qualityReview = await reviewRenderedSlide({ client, model, reasoningEffort, pngPath: renderOutcome.file, html, designSpec, meter, slideContext });
+      qualityReview = await reviewRenderedSlide({ client, model: pick('qualityReview'), reasoningEffort, pngPath: renderOutcome.file, html, designSpec, meter, slideContext });
     } catch (err) {
       totalLlmMs += Date.now() - t5;
       log.warn('pipeline.quality.review_error', { error: (err as Error).message, attempt: ra });

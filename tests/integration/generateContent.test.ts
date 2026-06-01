@@ -67,7 +67,7 @@ vi.mock('@/html/pipeline', () => ({
 }));
 
 vi.mock('@/llm/client', () => ({
-  readLlmConfig: vi.fn(() => ({ apiKey: 'k', model: 'm' })),
+  readLlmConfig: vi.fn(() => ({ apiKey: 'k', model: 'm', models: { research: 'm', researchReview: 'm', plan: 'm', planReview: 'm', designPlan: 'm', designReview: 'm', htmlRender: 'm', qualityReview: 'm', editorialReview: 'm', dynamic: 'm' } })),
   createLlmClient: vi.fn(() => ({} as unknown)),
 }));
 

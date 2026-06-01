@@ -107,7 +107,7 @@ export function mountDynamicRoutes(app: Express): void {
       let generated;
       try {
         generated = await generateSlideCode({
-          client, model: body.model ?? cfg.model, systemPrompt, userPrompt: body.prompt,
+          client, model: body.model ?? cfg.models?.dynamic ?? cfg.model, systemPrompt, userPrompt: body.prompt,
           reasoningEffort: cfg.reasoningEffort,
         });
       } catch (err) {
@@ -162,6 +162,7 @@ export function mountHtmlRoutes(app: Express): void {
         role: body.role,
         outputId: shortId(),
         showCtaArrow: false,
+        models: body.model ? undefined : cfg.models,
       });
 
       if (!result.ok) {
@@ -223,6 +224,7 @@ export function mountContentRoutes(app: Express): void {
         instructions: body.instructions,
         format: body.format,
         slideCount: body.slideCount,
+        models: body.model ? undefined : cfg.models,
       });
 
       if (!result.ok) {

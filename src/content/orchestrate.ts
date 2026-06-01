@@ -1,7 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import type OpenAI from 'openai';
-import type { ReasoningEffort } from '@/llm/client';
+import type { ReasoningEffort, AgentModels } from '@/llm/client';
 import { shortId } from '@/lib/render';
 import { runSlidePipeline, type PipelineSuccess, type PipelineWarning } from '@/html/pipeline';
 import type { SlideRole } from '@/html/htmlSystemPrompt';
@@ -27,6 +27,8 @@ export interface GenerateContentArgs {
   instructions?: string;
   format: ContentFormat;
   slideCount?: number;
+  /** Per-agent model overrides. Each key falls back to `model` if not set. */
+  models?: Partial<AgentModels>;
 }
 
 export interface ContentSlideResult {
@@ -75,6 +77,7 @@ interface SlideState {
 
 export async function generateContent(args: GenerateContentArgs): Promise<GenerateContentResult> {
   const { client, model, reasoningEffort, brandContext, topic, instructions, format, slideCount } = args;
+  const pick = (agent: keyof AgentModels) => args.models?.[agent] ?? model;
   const start = Date.now();
   const meter = new UsageMeter();
   const contentWarnings = { research: [] as string[], plan: [] as string[] };
@@ -82,13 +85,13 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
   // ── Phase A: Research + review loop (best effort) ─────────────────────────
   let research: string;
   try {
-    research = await researchTopic({ client, model, reasoningEffort, topic, instructions, meter });
+    research = await researchTopic({ client, model: pick('research'), reasoningEffort, topic, instructions, meter });
     for (let round = 1; round <= MAX_RESEARCH_ROUNDS; round++) {
-      const review = await reviewResearch({ client, model, reasoningEffort, topic, instructions, research, meter });
+      const review = await reviewResearch({ client, model: pick('researchReview'), reasoningEffort, topic, instructions, research, meter });
       log.info('content.research.reviewed', { approved: review.approved, issues: review.issues.length, round });
       if (review.approved || review.issues.length === 0) break;
       if (round === MAX_RESEARCH_ROUNDS) { contentWarnings.research = review.issues; break; }
-      research = await researchTopic({ client, model, reasoningEffort, topic, instructions, feedback: review.issues.join('; '), meter });
+      research = await researchTopic({ client, model: pick('research'), reasoningEffort, topic, instructions, feedback: review.issues.join('; '), meter });
     }
   } catch (err) {
     return { ok: false, code: 'LLM_FAILURE', detail: `research: ${(err as Error).message}` };
@@ -97,14 +100,14 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
   // ── Phase B: Plan + review loop (best effort) ─────────────────────────────
   let plan: ContentPlan;
   try {
-    plan = await planContent({ client, model, reasoningEffort, format, slideCount, topic, instructions, research, meter });
+    plan = await planContent({ client, model: pick('plan'), reasoningEffort, format, slideCount, topic, instructions, research, meter });
     for (let round = 1; round <= MAX_PLAN_ROUNDS; round++) {
-      const review = await reviewPlan({ client, model, reasoningEffort, topic, instructions, format, slideCount, research, plan, meter });
+      const review = await reviewPlan({ client, model: pick('planReview'), reasoningEffort, topic, instructions, format, slideCount, research, plan, meter });
       log.info('content.plan.reviewed', { approved: review.approved, issues: review.issues.length, round });
       if (review.approved || review.issues.length === 0) break;
       if (round === MAX_PLAN_ROUNDS) { contentWarnings.plan = review.issues; break; }
       const feedback = review.planFeedback ?? review.issues.join('; ');
-      plan = await planContent({ client, model, reasoningEffort, format, slideCount, topic, instructions, research, feedback, meter });
+      plan = await planContent({ client, model: pick('plan'), reasoningEffort, format, slideCount, topic, instructions, research, feedback, meter });
     }
   } catch (err) {
     return { ok: false, code: 'LLM_FAILURE', detail: `plan: ${(err as Error).message}` };
@@ -158,7 +161,7 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
 
     let review;
     try {
-      review = await reviewContent({ client, model, reasoningEffort, topic, instructions, title: plan.title, angle: plan.angle, slides: reviewable, meter });
+      review = await reviewContent({ client, model: pick('editorialReview'), reasoningEffort, topic, instructions, title: plan.title, angle: plan.angle, slides: reviewable, meter });
     } catch (err) {
       log.warn('content.review.error', { reason: (err as Error).message, round });
       break;
@@ -297,5 +300,6 @@ async function generateOneSlide(
     slideIndex: ctx.index,
     slideTotal: ctx.total,
     showCtaArrow: ctx.showCtaArrow,
+    models: args.models,
   });
 }
