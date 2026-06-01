@@ -8,7 +8,7 @@ import { validateGeneratedHtml } from './validate';
 import { buildHtmlDocument } from './template';
 import { renderHtmlStill } from './renderHtml';
 import { reviewRenderedSlide, type QualityIssue } from './qualityReview';
-import type { OverflowResult } from './schema';
+import type { LayoutIssue } from './layoutAudit';
 import { UsageMeter, type UsageTotals } from '@/llm/usage';
 import { log } from '@/lib/log';
 
@@ -33,7 +33,7 @@ export interface PipelineArgs {
 
 export type PipelineWarning =
   | { kind: 'design-review'; issues: string[] }
-  | { kind: 'overflow'; overflow: OverflowResult }
+  | { kind: 'layout'; issues: LayoutIssue[] }
   | { kind: 'quality'; issues: QualityIssue[] }
   | { kind: 'invalid-html'; detail: string };
 
@@ -165,18 +165,14 @@ export async function runSlidePipeline(args: PipelineArgs): Promise<PipelineResu
     totalRenderMs += Date.now() - t4;
 
     if (!renderOutcome.ok) {
-      const { scrollHeight, scrollWidth } = renderOutcome.overflow;
-      const axes: string[] = [];
-      if (renderOutcome.overflow.y) axes.push(`${scrollHeight - 1350}px taller than canvas (scrollHeight: ${scrollHeight})`);
-      if (renderOutcome.overflow.x) axes.push(`${scrollWidth - 1080}px wider than canvas (scrollWidth: ${scrollWidth})`);
-      log.warn('pipeline.render.overflow', { attempt: ra, scrollHeight, scrollWidth });
-      renderFeedback = `OVERFLOW: ${axes.join(' and ')}. First shorten the copy, then compact the layout (reduce gaps/padding). Never go below font-size minimums.`;
+      log.warn('pipeline.render.layout_issues', { attempt: ra, count: renderOutcome.issues.length });
+      renderFeedback = buildLayoutFeedback(renderOutcome.issues);
       continue;
     }
 
-    // Forced render that still overflowed → ship best-effort, skip quality review.
-    if (renderOutcome.overflow) {
-      warnings.push({ kind: 'overflow', overflow: renderOutcome.overflow });
+    // Forced render that still had layout issues → ship best-effort, skip quality review.
+    if (renderOutcome.issues.length > 0) {
+      warnings.push({ kind: 'layout', issues: renderOutcome.issues });
       return finalize(renderOutcome.file, html, generated.intent);
     }
 
@@ -220,6 +216,33 @@ export async function runSlidePipeline(args: PipelineArgs): Promise<PipelineResu
       usage,
     };
   }
+}
+
+function buildLayoutFeedback(issues: LayoutIssue[]): string {
+  const byType = (t: string) => issues.filter((i) => i.type === t).slice(0, 3).map((i) => `- ${i.detail}`);
+  const lines: string[] = ['LAYOUT ISSUES detected in the rendered slide — fix them:'];
+  const overlap = byType('overlap');
+  if (overlap.length) {
+    lines.push('OVERLAP (elements must never collide — give each block its own vertical space; do NOT use position:absolute for content; avoid fixed heights too small for the content):');
+    lines.push(...overlap);
+  }
+  const clipped = byType('clipped-text');
+  if (clipped.length) {
+    lines.push('CLIPPED TEXT (text is cut off — reduce font-size within the minimums or shorten the copy; do not put text in a fixed-height box):');
+    lines.push(...clipped);
+  }
+  const exceeds = byType('exceeds-canvas');
+  if (exceeds.length) {
+    lines.push('EXCEEDS CANVAS (keep all content within 1080×1350):');
+    lines.push(...exceeds);
+  }
+  const overflow = byType('overflow');
+  if (overflow.length) {
+    lines.push('OVERFLOW (the canvas itself overflows — reduce total content height/width):');
+    lines.push(...overflow);
+  }
+  lines.push('Priority: first shorten the copy, then reduce font sizes within the minimums, then simplify the layout. Never go below the font-size minimums.');
+  return lines.join('\n');
 }
 
 function buildRendererPrompt(designSpec: SlideDesignSpec, feedback: string | undefined): string {

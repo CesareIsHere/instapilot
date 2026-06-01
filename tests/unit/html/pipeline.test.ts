@@ -51,7 +51,7 @@ beforeEach(() => {
   planSlideDesign.mockImplementation(withMeter('design.plan', SPEC));
   reviewSlideDesign.mockImplementation(withMeter('design.review', { approved: true, issues: [] }));
   generateSlideHtml.mockImplementation(withMeter('html.generate', GENERATED));
-  renderHtmlStill.mockResolvedValue({ ok: true, file: '/out/x.png', durationMs: 5 });
+  renderHtmlStill.mockResolvedValue({ ok: true, file: '/out/x.png', durationMs: 5, issues: [] });
   reviewRenderedSlide.mockImplementation(withMeter('quality.review', { approved: true, issues: [], rendererFeedback: null }));
   (validateGeneratedHtml as ReturnType<typeof vi.fn>).mockReturnValue(null);
 });
@@ -74,21 +74,21 @@ describe('runSlidePipeline — best effort', () => {
     expect(res.file).toBe('/out/x.png');
   });
 
-  it('forces a render and warns when overflow never resolves', async () => {
+  it('forces a render and warns (layout) when issues never resolve', async () => {
+    const issue = { type: 'overlap', detail: 'A overlaps B' };
     renderHtmlStill
-      .mockResolvedValueOnce({ ok: false, overflow: { x: false, y: true, scrollWidth: 1080, scrollHeight: 1500 }, durationMs: 5 })
-      .mockResolvedValueOnce({ ok: false, overflow: { x: false, y: true, scrollWidth: 1080, scrollHeight: 1500 }, durationMs: 5 })
-      .mockResolvedValueOnce({ ok: false, overflow: { x: false, y: true, scrollWidth: 1080, scrollHeight: 1500 }, durationMs: 5 })
-      .mockResolvedValueOnce({ ok: false, overflow: { x: false, y: true, scrollWidth: 1080, scrollHeight: 1500 }, durationMs: 5 })
-      .mockResolvedValueOnce({ ok: true, file: '/out/forced.png', durationMs: 5, overflow: { x: false, y: true, scrollWidth: 1080, scrollHeight: 1500 } });
+      .mockResolvedValueOnce({ ok: false, issues: [issue], durationMs: 5 })
+      .mockResolvedValueOnce({ ok: false, issues: [issue], durationMs: 5 })
+      .mockResolvedValueOnce({ ok: false, issues: [issue], durationMs: 5 })
+      .mockResolvedValueOnce({ ok: false, issues: [issue], durationMs: 5 })
+      .mockResolvedValueOnce({ ok: true, file: '/out/forced.png', durationMs: 5, issues: [issue] });
     const res = await runSlidePipeline(baseArgs as never);
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     expect(res.file).toBe('/out/forced.png');
-    expect(res.warnings.some((w) => w.kind === 'overflow')).toBe(true);
-    // Last attempt must request a forced render.
+    expect(res.warnings.some((w) => w.kind === 'layout')).toBe(true);
     const lastCall = renderHtmlStill.mock.calls[renderHtmlStill.mock.calls.length - 1];
-    expect(lastCall[2]).toMatchObject({ force: true });
+    expect((lastCall as unknown[])[2]).toMatchObject({ force: true });
   });
 
   it('treats invalid HTML as retry feedback, not a hard failure', async () => {
