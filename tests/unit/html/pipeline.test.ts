@@ -161,4 +161,49 @@ describe('runSlidePipeline — best effort', () => {
       role: 'cta', narrativeFunction: 'cta', index: 4, total: 5, isLast: true,
     });
   });
+
+  it('reviews the renderer OWN bodyHtml/css, not the shell-wrapped document', async () => {
+    await runSlidePipeline(baseArgs as never);
+    const reviewArgs = reviewRenderedSlide.mock.calls[0][0];
+    expect(reviewArgs.bodyHtml).toBe(GENERATED.bodyHtml);
+    expect(reviewArgs.css).toBe(GENERATED.css);
+    // The shell-wrapped doc (with the injected :root/hex/arrow) must NOT be what the reviewer sees.
+    expect(reviewArgs.html).toBeUndefined();
+  });
+
+  it('exposes bodyHtml/css on success so a later revision can reuse them', async () => {
+    const res = await runSlidePipeline(baseArgs as never);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.bodyHtml).toBe(GENERATED.bodyHtml);
+    expect(res.css).toBe(GENERATED.css);
+  });
+
+  describe('revision mode (surgical editorial fix)', () => {
+    const revisionArgs = {
+      ...baseArgs,
+      revision: {
+        designSpec: SPEC,
+        previousHtml: { bodyHtml: '<prev/>', css: '.prev{}' },
+        editorialFix: 'aggiungi un esempio numerico',
+      },
+    };
+
+    it('skips the design phase (Agent 1 + 2) and reuses the provided spec', async () => {
+      const res = await runSlidePipeline(revisionArgs as never);
+      expect(res.ok).toBe(true);
+      if (!res.ok) return;
+      expect(planSlideDesign).not.toHaveBeenCalled();
+      expect(reviewSlideDesign).not.toHaveBeenCalled();
+      expect(res.attempts.design).toBe(0);
+    });
+
+    it('seeds the renderer with the prior HTML and the editorial fix', async () => {
+      await runSlidePipeline(revisionArgs as never);
+      const firstGenerate = generateSlideHtml.mock.calls[0][0];
+      expect(firstGenerate.userPrompt).toContain('aggiungi un esempio numerico');
+      expect(firstGenerate.userPrompt).toContain('<prev/>');
+      expect(firstGenerate.userPrompt).toContain('REVISION REQUESTED');
+    });
+  });
 });

@@ -1,6 +1,7 @@
 import { theme } from '@/theme';
 import { manifest } from '@/assets/manifest';
 import { buildFontFaceBlock } from './fonts';
+import { buildPaletteCss } from './palette';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -101,6 +102,7 @@ ${fontFaces}
   --space-lg:  ${sp.lg}px;
   --space-xl:  ${sp.xl}px;
   --space-2xl: ${sp['2xl']}px;
+${buildPaletteCss()}
 ${assetCssVars}
 }
 

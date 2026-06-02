@@ -80,6 +80,64 @@ export const recipes: Recipe[] = [
 </div>`.trim(),
   },
   {
+    id: 'card-grid',
+    when: 'Several parallel concepts/metrics (3–6) shown with equal weight. Use 3 cols × N rows. Each card: a label + a short explanation (a value is optional). Cards may use distinct accent borders + light surface fills to tell them apart.',
+    skeleton: `
+<div class="grid-slide">
+  <div class="grid-slide__eyebrow">TOPICAL LABEL</div>
+  <h1 class="grid-slide__title">Hook headline</h1>
+  <p class="grid-slide__subtitle">One sentence that frames what these cards are and how to read them.</p>
+  <div class="grid-slide__grid"><!-- repeat 3–6 cards; cycle the accent classes for variety -->
+    <div class="gcard gcard--navy"><div class="gcard__label">P/E</div><p class="gcard__desc">What it measures, in one plain line.</p><p class="gcard__desc">A second short note if useful.</p></div>
+    <div class="gcard gcard--green"><div class="gcard__label">P/FCF</div><p class="gcard__desc">…</p></div>
+    <div class="gcard gcard--amber"><div class="gcard__label">EV/EBITDA</div><p class="gcard__desc">…</p></div>
+  </div>
+</div>`.trim(),
+  },
+  {
+    id: 'concept-breakdown',
+    when: 'Unpack ONE concept with supporting boxes: a definition box + a formula/breakdown box + an optional glossary box. Great for "what is X" explainers.',
+    skeleton: `
+<div class="concept">
+  <h1 class="concept__title">Finalmente capisci <span class="accent-green">X</span></h1>
+  <div class="concept__boxes">
+    <div class="concept__box concept__box--blue"><div class="concept__box-title">Cos'è X?</div><p>Plain-language definition in 1–2 lines.</p></div>
+    <div class="concept__box concept__box--gray"><div class="concept__box-title">Come si calcola</div><p>A + B + C = X (one line per term).</p></div>
+    <div class="concept__box concept__box--green"><div class="concept__box-title">In breve</div><p>The single takeaway.</p></div>
+  </div>
+</div>`.trim(),
+  },
+  {
+    id: 'flow-diagram',
+    when: 'A process / how-it-works flow with ordered steps (3–6). Nodes stacked vertically (or a branch row) connected by arrows. Optionally a small emoji icon per node. Position:absolute / SVG is allowed here for connectors.',
+    skeleton: `
+<div class="flow">
+  <h1 class="flow__title">Come funziona <span class="accent-green">X</span></h1>
+  <ol class="flow__steps">
+    <li class="flow__node flow__node--blue"><span class="flow__icon">💰</span><div><div class="flow__node-title">Step 1 — short label</div><p class="flow__node-desc">One line explaining the step.</p></div></li>
+    <li class="flow__arrow" aria-hidden="true">↓</li>
+    <li class="flow__node flow__node--violet"><span class="flow__icon">👤</span><div><div class="flow__node-title">Step 2</div><p class="flow__node-desc">…</p></div></li>
+    <li class="flow__arrow" aria-hidden="true">↓</li>
+    <li class="flow__node flow__node--green"><span class="flow__icon">✅</span><div><div class="flow__node-title">Step 3 — outcome</div><p class="flow__node-desc">…</p></div></li>
+  </ol>
+</div>`.trim(),
+  },
+  {
+    id: 'breakdown-chart',
+    when: 'Show proportions or a step-down breakdown with bars (e.g. revenue → margin → EBITDA → net). Horizontal bars whose WIDTHS are proportional (use width:NN% of the row, never viewport units). Green = what remains, red = what is subtracted; label every bar with what it is and its value.',
+    skeleton: `
+<div class="bars">
+  <div class="bars__eyebrow">TOPICAL LABEL</div>
+  <h1 class="bars__title">Hook headline</h1>
+  <ul class="bars__list">
+    <li class="bars__row"><span class="bars__label">Ricavi</span><span class="bars__track"><span class="bars__fill bars__fill--green" style="width:100%"></span></span><span class="bars__value">100</span></li>
+    <li class="bars__row"><span class="bars__label">Margine lordo</span><span class="bars__track"><span class="bars__fill bars__fill--green" style="width:62%"></span><span class="bars__fill bars__fill--red" style="width:38%"></span></span><span class="bars__value">62</span></li>
+    <li class="bars__row"><span class="bars__label">EBITDA</span><span class="bars__track"><span class="bars__fill bars__fill--green" style="width:40%"></span><span class="bars__fill bars__fill--red" style="width:22%"></span></span><span class="bars__value">40</span></li>
+  </ul>
+  <p class="bars__note">One line stating what the breakdown shows.</p>
+</div>`.trim(),
+  },
+  {
     id: 'quote',
     when: 'A single quote, principle, or framework statement from a known figure or source.',
     skeleton: `

@@ -31,6 +31,20 @@ export interface PipelineArgs {
   slideTotal?: number;
   /** Per-agent model overrides. Each key falls back to `model` if not set. */
   models?: Partial<AgentModels>;
+  /** Context about sibling slides in the same carousel (recipes used, cover/cta echo) — guides the design planner toward variety and coherence. */
+  designContext?: string;
+  /** True for a standalone single post: the (cover) slide must be self-contained and richer, not a sparse carousel cover. */
+  selfContained?: boolean;
+  /**
+   * Surgical revision mode: reuse an already-approved design + HTML and apply a
+   * single editorial fix instead of regenerating the slide from scratch. Skips
+   * the design phase (Agent 1 + 2) entirely.
+   */
+  revision?: {
+    designSpec: SlideDesignSpec;
+    previousHtml: { bodyHtml: string; css: string };
+    editorialFix: string;
+  };
 }
 
 export type PipelineWarning =
@@ -43,6 +57,9 @@ export interface PipelineSuccess {
   ok: true;
   file: string;
   html: string;
+  /** Renderer output before shell-wrapping — kept so a later surgical revision can reuse it. */
+  bodyHtml: string;
+  css: string;
   intent: string;
   designSpec: SlideDesignSpec;
   warnings: PipelineWarning[];
@@ -81,52 +98,27 @@ export async function runSlidePipeline(args: PipelineArgs): Promise<PipelineResu
   let totalRenderMs = 0;
 
   // ── Phase 1: Design (Agent 1 → Agent 2) — best effort ─────────────────────
+  // Revision mode reuses an already-approved design and skips the design phase.
   let designSpec: SlideDesignSpec;
   let designAttempts = 0;
-  let designFeedback: string | undefined;
 
-  {
-    let lastSpec: SlideDesignSpec | null = null;
-    let lastIssues: string[] = [];
-    for (let da = 1; da <= MAX_DESIGN_RETRIES; da++) {
-      designAttempts = da;
-      const t1 = Date.now();
-      try {
-        lastSpec = await planSlideDesign({ client, model: pick('designPlan'), reasoningEffort, brandContext, userPrompt, role, feedback: designFeedback, meter });
-      } catch (err) {
-        return { ok: false, code: 'LLM_FAILURE', detail: (err as Error).message };
-      }
-      totalLlmMs += Date.now() - t1;
-      log.info('pipeline.design.planned', { recipe: lastSpec.recipe, attempt: da });
-
-      const t2 = Date.now();
-      let review;
-      try {
-        review = await reviewSlideDesign({ client, model: pick('designReview'), reasoningEffort, originalPrompt: userPrompt, designSpec: lastSpec, meter });
-      } catch (err) {
-        return { ok: false, code: 'LLM_FAILURE', detail: (err as Error).message };
-      }
-      totalLlmMs += Date.now() - t2;
-      log.info('pipeline.design.reviewed', { approved: review.approved, issueCount: review.issues.length, attempt: da });
-
-      if (review.approved) { lastIssues = []; break; }
-      lastIssues = review.issues;
-      designFeedback = review.issues.join('; ');
-    }
-    if (!lastSpec) {
-      return { ok: false, code: 'LLM_FAILURE', detail: 'MAX_DESIGN_RETRIES must be >= 1' };
-    }
-    designSpec = lastSpec;
-    if (lastIssues.length > 0) {
-      warnings.push({ kind: 'design-review', issues: lastIssues });
-      log.warn('pipeline.design.best_effort', { issues: lastIssues });
-    }
+  if (args.revision) {
+    designSpec = args.revision.designSpec;
+  } else {
+    const design = await runDesignPhase({ client, pick, reasoningEffort, brandContext, userPrompt, role, meter, designContext: args.designContext, selfContained: args.selfContained });
+    if (!design.ok) return { ok: false, code: 'LLM_FAILURE', detail: design.detail };
+    designSpec = design.designSpec;
+    designAttempts = design.attempts;
+    totalLlmMs += design.llmMs;
+    if (design.warning) warnings.push(design.warning);
   }
 
   // ── Phase 2: Render + Quality (Agent 3 → render → Agent 4) — best effort ──
-  const systemPrompt = buildHtmlSystemPrompt(brandContext, role);
+  const systemPrompt = buildHtmlSystemPrompt(brandContext, role, args.selfContained);
   let renderAttempts = 0;
-  let renderFeedback: string | undefined;
+  // In revision mode, seed the renderer with the editorial fix + the prior HTML so it edits surgically.
+  let renderFeedback: string | undefined = args.revision ? buildEditorialFeedback(args.revision.editorialFix) : undefined;
+  let previousHtml: { bodyHtml: string; css: string } | undefined = args.revision?.previousHtml;
 
   for (let ra = 1; ra <= MAX_RENDER_RETRIES; ra++) {
     renderAttempts = ra;
@@ -137,13 +129,15 @@ export async function runSlidePipeline(args: PipelineArgs): Promise<PipelineResu
     try {
       generated = await generateSlideHtml({
         client, model: pick('htmlRender'), systemPrompt, reasoningEffort,
-        userPrompt: buildRendererPrompt(designSpec, renderFeedback),
+        userPrompt: buildRendererPrompt(designSpec, renderFeedback, previousHtml),
         feedback: renderFeedback, meter,
       });
     } catch (err) {
       return { ok: false, code: 'LLM_FAILURE', detail: (err as Error).message };
     }
     totalLlmMs += Date.now() - t3;
+    // Remember this attempt so the next retry can correct it instead of starting from scratch.
+    previousHtml = { bodyHtml: generated.bodyHtml, css: generated.css };
 
     // Validation → corrective feedback (no longer a hard failure).
     const validationErr = validateGeneratedHtml(generated.bodyHtml, generated.css);
@@ -164,6 +158,7 @@ export async function runSlidePipeline(args: PipelineArgs): Promise<PipelineResu
       force: isLastAttempt,
       dir: output?.dir,
       fileName: output?.fileName,
+      ctaArrow: showArrow,
     });
     totalRenderMs += Date.now() - t4;
 
@@ -176,29 +171,29 @@ export async function runSlidePipeline(args: PipelineArgs): Promise<PipelineResu
     // Forced render that still had layout issues → ship best-effort, skip quality review.
     if (renderOutcome.issues.length > 0) {
       warnings.push({ kind: 'layout', issues: renderOutcome.issues });
-      return finalize(renderOutcome.file, html, generated.intent);
+      return finalize(renderOutcome.file, html, generated);
     }
 
     // Agent 4: quality review
     const t5 = Date.now();
     let qualityReview;
     try {
-      qualityReview = await reviewRenderedSlide({ client, model: pick('qualityReview'), reasoningEffort, pngPath: renderOutcome.file, html, designSpec, meter, slideContext });
+      qualityReview = await reviewRenderedSlide({ client, model: pick('qualityReview'), reasoningEffort, pngPath: renderOutcome.file, bodyHtml: generated.bodyHtml, css: generated.css, designSpec, meter, slideContext });
     } catch (err) {
       totalLlmMs += Date.now() - t5;
       log.warn('pipeline.quality.review_error', { error: (err as Error).message, attempt: ra });
-      return finalize(renderOutcome.file, html, generated.intent);
+      return finalize(renderOutcome.file, html, generated);
     }
     totalLlmMs += Date.now() - t5;
     log.info('pipeline.quality.reviewed', { approved: qualityReview.approved, issueCount: qualityReview.issues.length, attempt: ra });
 
     if (qualityReview.approved) {
-      return finalize(renderOutcome.file, html, generated.intent);
+      return finalize(renderOutcome.file, html, generated);
     }
 
     if (isLastAttempt) {
       warnings.push({ kind: 'quality', issues: qualityReview.issues });
-      return finalize(renderOutcome.file, html, generated.intent);
+      return finalize(renderOutcome.file, html, generated);
     }
 
     renderFeedback = qualityReview.rendererFeedback
@@ -208,17 +203,80 @@ export async function runSlidePipeline(args: PipelineArgs): Promise<PipelineResu
   /* istanbul ignore next */
   return { ok: false, code: 'LLM_FAILURE', detail: 'pipeline_exhausted' };
 
-  function finalize(file: string, html: string, intent: string): PipelineSuccess {
+  function finalize(file: string, html: string, generated: { intent: string; bodyHtml: string; css: string }): PipelineSuccess {
     const usage = meter.totals;
     log.info('pipeline.usage', { breakdown: meter.breakdown, total: usage });
     return {
       ok: true,
-      file, html, intent, designSpec, warnings,
+      file, html, intent: generated.intent, bodyHtml: generated.bodyHtml, css: generated.css,
+      designSpec, warnings,
       attempts: { design: designAttempts, render: renderAttempts },
       durationMs: { llm: totalLlmMs, render: totalRenderMs, total: totalLlmMs + totalRenderMs },
       usage,
     };
   }
+}
+
+type DesignPhaseResult =
+  | { ok: true; designSpec: SlideDesignSpec; attempts: number; llmMs: number; warning?: PipelineWarning }
+  | { ok: false; detail: string };
+
+/** Agent 1 → Agent 2 design loop, best effort. Extracted to keep runSlidePipeline readable. */
+async function runDesignPhase(a: {
+  client: OpenAI;
+  pick: (agent: keyof AgentModels) => string;
+  reasoningEffort?: ReasoningEffort;
+  brandContext: string;
+  userPrompt: string;
+  role?: SlideRole;
+  meter: UsageMeter;
+  designContext?: string;
+  selfContained?: boolean;
+}): Promise<DesignPhaseResult> {
+  let llmMs = 0;
+  let designFeedback: string | undefined;
+  let lastSpec: SlideDesignSpec | null = null;
+  let lastIssues: string[] = [];
+
+  for (let da = 1; da <= MAX_DESIGN_RETRIES; da++) {
+    const t1 = Date.now();
+    try {
+      lastSpec = await planSlideDesign({ client: a.client, model: a.pick('designPlan'), reasoningEffort: a.reasoningEffort, brandContext: a.brandContext, userPrompt: a.userPrompt, role: a.role, feedback: designFeedback, meter: a.meter, designContext: a.designContext, selfContained: a.selfContained });
+    } catch (err) {
+      return { ok: false, detail: (err as Error).message };
+    }
+    llmMs += Date.now() - t1;
+    log.info('pipeline.design.planned', { recipe: lastSpec.recipe, attempt: da });
+
+    const t2 = Date.now();
+    let review;
+    try {
+      review = await reviewSlideDesign({ client: a.client, model: a.pick('designReview'), reasoningEffort: a.reasoningEffort, originalPrompt: a.userPrompt, designSpec: lastSpec, meter: a.meter });
+    } catch (err) {
+      return { ok: false, detail: (err as Error).message };
+    }
+    llmMs += Date.now() - t2;
+    log.info('pipeline.design.reviewed', { approved: review.approved, issueCount: review.issues.length, attempt: da });
+
+    if (review.approved) return { ok: true, designSpec: lastSpec, attempts: da, llmMs };
+    lastIssues = review.issues;
+    designFeedback = review.issues.join('; ');
+  }
+
+  if (!lastSpec) return { ok: false, detail: 'MAX_DESIGN_RETRIES must be >= 1' };
+  log.warn('pipeline.design.best_effort', { issues: lastIssues });
+  return {
+    ok: true,
+    designSpec: lastSpec,
+    attempts: MAX_DESIGN_RETRIES,
+    llmMs,
+    warning: lastIssues.length > 0 ? { kind: 'design-review', issues: lastIssues } : undefined,
+  };
+}
+
+/** Frame a single review fix as surgical corrective feedback for the renderer. */
+function buildEditorialFeedback(editorialFix: string): string {
+  return `REVISION REQUESTED — apply this fix making the SMALLEST change that fully addresses it. Preserve everything that already works (keep the recipe, the layout structure, and the parts not mentioned). If the fix is about content, change only that copy; if it is about layout/visual issues, adjust only what is needed to resolve them:\n${editorialFix}`;
 }
 
 function buildLayoutFeedback(issues: LayoutIssue[]): string {
@@ -234,6 +292,11 @@ function buildLayoutFeedback(issues: LayoutIssue[]): string {
     lines.push('CLIPPED TEXT (text is cut off — reduce font-size within the minimums or shorten the copy; do not put text in a fixed-height box):');
     lines.push(...clipped);
   }
+  const wrapped = byType('wrapped-text');
+  if (wrapped.length) {
+    lines.push('BAD WRAP (a short value broke onto multiple lines, e.g. the "%" dropped to its own line — give the value enough width with white-space:nowrap or a larger container, or reduce its font-size within the minimums):');
+    lines.push(...wrapped);
+  }
   const exceeds = byType('exceeds-canvas');
   if (exceeds.length) {
     lines.push('EXCEEDS CANVAS (keep all content within 1080×1350):');
@@ -248,7 +311,11 @@ function buildLayoutFeedback(issues: LayoutIssue[]): string {
   return lines.join('\n');
 }
 
-function buildRendererPrompt(designSpec: SlideDesignSpec, feedback: string | undefined): string {
+function buildRendererPrompt(
+  designSpec: SlideDesignSpec,
+  feedback: string | undefined,
+  previousHtml?: { bodyHtml: string; css: string },
+): string {
   const base = `Here is the approved design specification to implement as HTML+CSS:
 
 <designSpec>
@@ -262,5 +329,19 @@ Implement this design faithfully:
 - Follow the color plan exactly
 - Include all assets listed in useAssets using {{asset:<id>}} tokens`;
 
-  return feedback ? `${base}\n\n---\nCORRECTIONS REQUIRED (from previous attempt):\n${feedback}` : base;
+  if (!feedback) return base;
+
+  // On a retry, hand the renderer its own previous output so it can fix surgically
+  // instead of rebuilding from scratch (and risk regressing what already worked).
+  const previous = previousHtml
+    ? `\n\n---\nYOUR PREVIOUS ATTEMPT (the one that has the issues below). Start FROM this and apply the smallest changes that fix the corrections — keep everything that already works, do not redesign:
+<previousBodyHtml>
+${previousHtml.bodyHtml}
+</previousBodyHtml>
+<previousCss>
+${previousHtml.css}
+</previousCss>`
+    : '';
+
+  return `${base}${previous}\n\n---\nCORRECTIONS REQUIRED (from previous attempt):\n${feedback}`;
 }

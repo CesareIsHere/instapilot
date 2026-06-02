@@ -17,16 +17,20 @@ const PLAN_REVIEWER_PROMPT = `Sei un caporedattore di Finvestire. Valuti il PIAN
 Controlla:
 1. Struttura: rispetta il formato richiesto (numero di slide, ruoli cover/body/cta)?
 2. Arco narrativo: cover con hook forte → sviluppo logico → cta che chiude con invito?
-3. Una idea per slide: nessuna slide sovraccarica; niente ripetizioni tra slide.
-4. Qualità dei brief: ogni brief è autosufficiente, con headline, dati concreti, hint di layout, taglio?
-5. Aderenza alla ricerca e all'argomento: i brief usano il materiale del dossier e rispondono al tema?
-6. Fattibilità: il contenuto di ogni slide è sintetizzabile in 1080×1350 senza overflow?
-7. Struttura narrativa: il framework dichiarato è adatto al contenuto? La sequenza dei narrativeFunction è coerente con quel framework?
-8. Foreshadowing: cover e slide 2 sono coerenti (la slide 2 apre il loop / spiega perché conta)?
-9. Mini-loop: ogni domanda/loop aperto viene chiuso entro 1-2 slide?
-10. Payoff: c'è un recap (3-4 bullet) nella penultima slide, prima della CTA, che richiama la cover?
-11. CTA: ce n'è UNA sola, chiara, e solo nell'ultima slide?
-12. Ritmo: il numero di slide è ragionevole per il framework (tipicamente 6-9; non imporre ≈7 ai framework a lista o roadmap, dove il numero dipende dagli elementi)?
+3. Una idea per slide MA sviluppata: nessuna slide sovraccarica E nessuna slide vuota/troppo magra (ogni body deve insegnare qualcosa di completo: mini-headline + spiegazione + eventuale prova).
+4. NIENTE RIPETIZIONI: nessuna slide rispiega con parole diverse un concetto già dato. Ogni slide aggiunge informazione NUOVA.
+5. Obiettivo per-slide: ogni slide dichiara cosa deve ottenere nell'arco? Se non è chiaro, è un problema.
+6. Dati con significato: ogni numero ha etichetta (cos'è) e takeaway (cosa comunica)? Niente numeri nudi né accumulo di cifre (max ~1 dato chiave per slide)?
+7. Registro: linguaggio conversazionale (tu), termini tecnici spiegati o sostituiti (pubblico a zero)? Niente gergo non spiegato?
+8. Quantità: headline ≤ ~12 parole, corpo ≈ ≤ 300 caratteri per slide? Se un brief sembra un paragrafo, va asciugato.
+9. Confronti/colonne: gli elementi sono simmetrici (stesso numero di voci, struttura parallela, lunghezze simili)?
+10. Qualità dei brief: ogni brief è autosufficiente, con headline, hint di layout, taglio, e aderente al dossier/argomento?
+11. Fattibilità: il contenuto di ogni slide sta in 1080×1350 senza overflow?
+12. Framework: la struttura dichiarata è adatta? La sequenza dei narrativeFunction è coerente con quel framework?
+13. Foreshadowing: cover e slide 2 coerenti (la slide 2 apre il loop / spiega perché conta)?
+14. Mini-loop e payoff: ogni loop aperto si chiude entro 1-2 slide; c'è un recap nella penultima slide, prima della CTA, che richiama la cover?
+15. CTA: UNA sola, chiara, solo nell'ultima slide?
+16. Ritmo: numero di slide ragionevole per il framework (tipicamente 6-9; non imporre ≈7 ai framework a lista o roadmap)?
 
 Sii esigente ma equo. Approva se il piano è solido. Boccia solo per problemi reali.
 Se NON approvi, elenca gli issue e fornisci in planFeedback istruzioni concrete e azionabili per rifare il piano.

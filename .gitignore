@@ -8,3 +8,9 @@ public/generated/*
 dist/
 .DS_Store
 .claude 
+
+# PromptOps context snapshot
+.promptops/
+
+# PromptOps session assets
+.promptops-assets/

@@ -10,6 +10,14 @@ describe('buildHtmlDocument', () => {
     expect(html).toContain('--paper:       #FFFFFF');
   });
 
+  it('injects the extended palette (accents + surfaces) for rich layouts', () => {
+    const html = buildHtmlDocument('<div>x</div>', '');
+    expect(html).toContain('--surface-blue:');
+    expect(html).toContain('--surface-amber:');
+    expect(html).toContain('--accent-amber:');
+    expect(html).toContain('--accent-violet:');
+  });
+
   it('includes .canvas with correct dimensions', () => {
     const html = buildHtmlDocument('<p>hello</p>', '');
     expect(html).toContain('width: 1080px');

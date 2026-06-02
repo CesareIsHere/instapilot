@@ -139,7 +139,8 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
   const states: SlideState[] = [];
   for (let i = 0; i < plan.slides.length; i++) {
     const planned = plan.slides[i];
-    const result = await generateOneSlide(args, planned.role, planned.brief, [], slideOutput(i), slideCtx(i, planned.narrativeFunction));
+    const designContext = isCarousel ? buildSiblingContext(states, plan, total) : undefined;
+    const result = await generateOneSlide(args, planned.role, planned.brief, [], slideOutput(i), slideCtx(i, planned.narrativeFunction), designContext);
     if (!result.ok) {
       return {
         ok: false,
@@ -156,7 +157,7 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
   for (let round = 1; round <= MAX_REVIEW_ROUNDS; round++) {
     reviewRounds = round;
     const reviewable: ReviewableSlide[] = states.map((s, idx) => ({
-      index: idx, role: s.role, brief: composeBrief(s), intent: s.result.intent, designSpec: s.result.designSpec,
+      index: idx, role: s.role, brief: composeBrief(s), intent: s.result.intent, designSpec: s.result.designSpec, file: s.result.file,
     }));
 
     let review;
@@ -175,7 +176,9 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
       const state = states[fix.slideIndex];
       if (!state) continue;
       state.fixes.push(fix.fix);
-      const regenerated = await generateOneSlide(args, state.role, state.baseBrief, state.fixes, slideOutput(fix.slideIndex), slideCtx(fix.slideIndex, plan.slides[fix.slideIndex]?.narrativeFunction));
+      // Surgical revision: reuse the approved design + HTML and apply only this fix,
+      // instead of regenerating the slide from scratch (which would risk regressing the layout).
+      const regenerated = await reviseOneSlide(args, state, fix.fix, slideOutput(fix.slideIndex), slideCtx(fix.slideIndex, plan.slides[fix.slideIndex]?.narrativeFunction));
       if (!regenerated.ok) {
         return {
           ok: false,
@@ -282,6 +285,7 @@ async function generateOneSlide(
   fixes: string[],
   output: { dir?: string; fileName?: string },
   ctx: { narrativeFunction?: string; index: number; total: number; showCtaArrow: boolean },
+  designContext?: string,
 ) {
   const brief = fixes.length === 0
     ? baseBrief
@@ -301,5 +305,65 @@ async function generateOneSlide(
     slideTotal: ctx.total,
     showCtaArrow: ctx.showCtaArrow,
     models: args.models,
+    designContext,
+    selfContained: args.format === 'single',
+  });
+}
+
+/**
+ * Summarise the already-designed sibling slides so the design planner can keep the
+ * series visually coherent: vary recipes, keep a consistent typographic scale, and
+ * make the CTA echo the cover. Returns undefined when there is nothing yet to report.
+ */
+function buildSiblingContext(states: SlideState[], plan: ContentPlan, total: number): string | undefined {
+  const lines: string[] = [`This is slide ${states.length + 1} of ${total} in a "${plan.framework}" carousel titled "${plan.title}".`];
+
+  if (states.length > 0) {
+    lines.push('Slides already designed (keep the look consistent and avoid repeating the same recipe back-to-back):');
+    states.forEach((s, idx) => {
+      lines.push(`- Slide ${idx + 1} (${s.role}): recipe="${s.result.designSpec.recipe}", headline="${s.result.designSpec.headline.text}"`);
+    });
+    const cover = states[0];
+    lines.push(`The cover used recipe="${cover.result.designSpec.recipe}" with headline="${cover.result.designSpec.headline.text}". The closing CTA slide should visually echo it (similar scale/treatment) to bookend the carousel.`);
+  } else {
+    lines.push('This is the COVER — it sets the typographic scale and visual tone for the whole series.');
+  }
+
+  lines.push('Keep font sizes, spacing and color usage consistent with the slides above; vary the recipe to avoid monotony unless the content genuinely calls for the same layout.');
+  return lines.join('\n');
+}
+
+/**
+ * Apply a single editorial fix to an already-generated slide WITHOUT redoing the
+ * design phase: reuse the approved designSpec + rendered HTML and let the renderer
+ * edit surgically. Preserves the validated layout and saves the design-loop tokens.
+ */
+async function reviseOneSlide(
+  args: GenerateContentArgs,
+  state: SlideState,
+  editorialFix: string,
+  output: { dir?: string; fileName?: string },
+  ctx: { narrativeFunction?: string; index: number; total: number; showCtaArrow: boolean },
+) {
+  return runSlidePipeline({
+    client: args.client,
+    model: args.model,
+    reasoningEffort: args.reasoningEffort,
+    brandContext: args.brandContext,
+    userPrompt: state.baseBrief,
+    role: state.role,
+    outputId: shortId(),
+    output,
+    narrativeFunction: ctx.narrativeFunction,
+    slideIndex: ctx.index,
+    slideTotal: ctx.total,
+    showCtaArrow: ctx.showCtaArrow,
+    models: args.models,
+    selfContained: args.format === 'single',
+    revision: {
+      designSpec: state.result.designSpec,
+      previousHtml: { bodyHtml: state.result.bodyHtml, css: state.result.css },
+      editorialFix,
+    },
   });
 }

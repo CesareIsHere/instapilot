@@ -1,17 +1,22 @@
 import { buildRecipesBlock } from './recipes';
+import { buildPaletteDocs } from './palette';
 import { manifest } from '@/assets/manifest';
 
 export type SlideRole = 'cover' | 'body' | 'cta';
 
-export function buildHtmlSystemPrompt(brandContext: string, role?: SlideRole): string {
+export function buildHtmlSystemPrompt(brandContext: string, role?: SlideRole, selfContained = false): string {
   const assetList = Object.entries(manifest)
     .map(([id, e]) => `- \`{{asset:${id}}}\` — ${e.description}`)
     .join('\n');
 
+  const coverHint = selfContained
+    ? 'This is a STANDALONE single post — there are no following slides, so it must be SELF-CONTAINED: a strong hook AND the key insight AND (if it helps) one supporting data point AND a soft takeaway, all in one image. Richer and more complete than a carousel cover, but still ONE focal point and skimmable. Do not leave it sparse.'
+    : 'Open strong: dominant hero title, minimal text, one focal point. Logo at top center.';
+
   const roleHint = role
     ? `\n# SLIDE ROLE\nThis page is a **${role}** slide. ${
         role === 'cover'
-          ? 'Open strong: dominant hero title, minimal text, one focal point. Logo at top center.'
+          ? coverHint
           : role === 'cta'
           ? 'Closing slide: reinforce the key message, invite to follow/save. Logo visible. Clean and spacious.'
           : 'Develop one idea clearly. Use a structured layout (list, comparison, KPI, or grid). One concept per slide.'
@@ -44,8 +49,15 @@ var(--muted)        /* #767676 — secondary text, captions, footnotes */
 - Use **green** (\`var(--brand-green)\`) only for: positive keywords in titles, growth metrics, favorable verdicts.
 - Use **red** (\`var(--danger)\`) only for: negative keywords, risk/loss metrics, unfavorable verdicts.
 - A single title can have **mixed colors**: navy for most words, green for the positive word, red for the negative word. This is the Finvestire signature style.
-- Never use gold, orange, yellow, purple, or any color outside the palette above.
-- Maximum 3 colors active per slide (navy + green + red is the hardest case; usually 2 suffice).
+- Maximum 3 colors active on a SIMPLE slide (cover, kpi-hero, compare-2col, quote, cta); usually 2 suffice.
+
+## Extended palette for rich layouts (card-grid, flow-diagram, breakdown-chart, concept-breakdown)
+For these richer recipes you MAY use a wider, structured set of CSS variables to distinguish cards / diagram nodes / chart blocks. ALWAYS reference them as \`var(--…)\` — never hardcode hex.
+${buildPaletteDocs()}
+Rules: the CANVAS background stays pure white — surface fills go ONLY on cards / diagram nodes / chart segments, never on \`.canvas\`. Use accents/surfaces SEMANTICALLY (e.g. one color family per node type), not as random decoration. Keep text on a light surface dark (var(--ink)/var(--brand-navy)) for contrast. On simple slides, stick to the core palette.
+
+## Emoji (optional, sparing)
+In flow-diagram nodes and lists you may use ONE small, meaningful emoji per node/item as an icon (e.g. 💰 for capital, 👤 for an investor, ✅ for the outcome). Keep them consistent and never decorative clutter. No emoji in titles.
 
 ## Typography
 
@@ -102,6 +114,12 @@ The canvas MUST use all 1350px without large empty areas.
 - For rows of cards/columns: each child gets \`flex:1\`. Use \`gap\` for gutters, never fixed margins between flex children.
 - >100px of unintentional empty space = design failure. Enlarge fonts, increase padding, add content.
 
+## VERTICAL BALANCE (critical for text-light slides — covers, CTAs, short body)
+A slide with little content (a title + 1–2 lines, a CTA) must NOT pile everything at the top and leave a big empty band below. Make the main content area \`flex:1\` and CENTER its content vertically (\`display:flex; flex-direction:column; justify-content:center\`), or distribute the blocks with \`justify-content:space-between\`, so the composition sits in the optical middle and fills the height. The logo stays pinned top, the footer/CTA reserve stays bottom; the message lives in a balanced middle — never floating just under the title with emptiness beneath.
+
+## BOTTOM-RIGHT KEEP-OUT (swipe arrow)
+The shell draws a swipe arrow in the bottom-right corner (an 88×88 circle ~48px from the bottom and ~56px from the right). Keep ALL content clear of that corner: never let a card, diagram node, chart bar or text block enter the bottom ~160px band, especially the bottom-right. In flow-diagram / breakdown-chart, size the nodes/bars so the LAST one ends above this reserve — do not run the diagram into the arrow.
+
 # ANTI-OVERFLOW & POSITIONING RULES (CRITICAL — read twice)
 
 Content that overflows 1080×1350 forces a regeneration. Be meticulous.
@@ -117,7 +135,7 @@ Content that overflows 1080×1350 forces a regeneration. Be meticulous.
 
 ## Units & sizing
 - NEVER use \`100vw\`, \`100vh\`, \`vmin\`, \`vmax\`, or \`%\` of the viewport. The canvas is exactly 1080×1350px — use those fixed numbers.
-- No \`position:absolute\` for layout (decorative accents only).
+- No \`position:absolute\` for layout in simple slides (decorative accents only). EXCEPTION: in flow-diagram and breakdown-chart you may use \`position:absolute\` or inline SVG to draw connectors/arrows between nodes — keep them clear of the text.
 
 ## Text wrapping
 - Long words, URLs, tickers, big numbers: add \`overflow-wrap:anywhere\` (and \`hyphens:auto\` where natural) so they never push width.
@@ -142,7 +160,7 @@ If the content does not fit: FIRST shorten the copy, THEN compact the layout (sm
 
 - All CSS scoped under \`.canvas\` (e.g. \`.canvas .hero { ... }\`).
 - No \`@font-face\`, \`@import\`, \`:root\`, or \`<script>\` — provided by the shell.
-- No \`position:absolute\` for layout (only for decorative accents if needed). Use flex for structure.
+- No \`position:absolute\` for layout, except connectors/arrows in flow-diagram & breakdown-chart (decorative accents otherwise). Use flex for structure.
 - No \`box-shadow\` or heavy visual effects — the brand is clean and flat.
 - Cards: white background with \`border: 2px solid var(--brand-navy)\` and \`border-radius: 12–16px\`. No shadows.
 

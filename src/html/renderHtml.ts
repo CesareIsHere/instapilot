@@ -1,10 +1,17 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import { getBrowser } from './browser';
-import { analyzeLayout, type LayoutIssue, type LayoutMeasurements } from './layoutAudit';
+import { analyzeLayout, type LayoutIssue, type LayoutMeasurements, type ReservedZone } from './layoutAudit';
 import { log } from '@/lib/log';
 
 const OUTPUT_DIR = process.env.OUTPUT_DIR ?? path.resolve(process.cwd(), 'output');
+
+// The shell injects the swipe arrow as `.canvas::after` at bottom:48 right:56, size 88×88.
+// It is a pseudo-element invisible to the DOM measurement, so we reserve its rect explicitly.
+const CTA_ARROW_ZONE: ReservedZone = {
+  label: 'swipe arrow (bottom-right)',
+  left: 1080 - 56 - 88, top: 1350 - 48 - 88, right: 1080 - 56, bottom: 1350 - 48,
+};
 const RENDER_TIMEOUT_MS = Number(process.env.HTML_RENDER_TIMEOUT_MS ?? 15_000);
 const DEVICE_SCALE_FACTOR = Number(process.env.HTML_DEVICE_SCALE_FACTOR ?? 1);
 export interface RenderHtmlResult {
@@ -26,6 +33,8 @@ export interface RenderHtmlOpts {
   dir?: string;
   /** Output file name including extension (defaults to `HtmlSlide-<outputId>.png`). */
   fileName?: string;
+  /** True when the shell injects the bottom-right swipe arrow — reserves its zone so content can't collide with it. */
+  ctaArrow?: boolean;
 }
 
 export type RenderHtmlOutcome =
@@ -61,6 +70,8 @@ export async function renderHtmlStill(
       if (!canvas) return result;
       const cr = canvas.getBoundingClientRect();
       const CLIP_VALUES = new Set(['hidden', 'clip', 'auto', 'scroll']);
+      const measured = new Map<Element, number>();
+      let nextId = 0;
       for (const el of Array.from(canvas.querySelectorAll('*'))) {
         const node = el as HTMLElement;
         const cs = getComputedStyle(node);
@@ -70,7 +81,21 @@ export async function renderHtmlStill(
         if (r.width === 0 && r.height === 0) continue;
         const ownText = (node.textContent ?? '').trim();
         const childHasText = Array.from(node.children).some((c) => (c.textContent ?? '').trim().length > 0);
+        // Nearest already-measured ancestor (querySelectorAll is in document order, so it exists if measured).
+        let ancestor: Element | null = node.parentElement;
+        let parentId = -1;
+        while (ancestor && ancestor !== canvas.parentElement) {
+          const found = measured.get(ancestor);
+          if (found !== undefined) { parentId = found; break; }
+          ancestor = ancestor.parentElement;
+        }
+        const id = nextId++;
+        measured.set(node, id);
+        const fontSize = Number.parseFloat(cs.fontSize) || 0;
+        let lineHeight = Number.parseFloat(cs.lineHeight);
+        if (!lineHeight || Number.isNaN(lineHeight)) lineHeight = fontSize * 1.2;
         result.elements.push({
+          id, parentId,
           tag: node.tagName.toLowerCase(),
           cls: typeof node.className === 'string' && node.className ? node.className.split(/\s+/)[0] : '',
           text: ownText.slice(0, 60),
@@ -79,12 +104,14 @@ export async function renderHtmlStill(
           scrollW: node.scrollWidth, scrollH: node.scrollHeight,
           clipped: CLIP_VALUES.has(cs.overflowX) || CLIP_VALUES.has(cs.overflowY),
           isTextLeaf: ownText.length > 0 && !childHasText,
+          fontSize, lineHeight,
         });
       }
       return result;
     })) as unknown as LayoutMeasurements;
 
-    const issues = analyzeLayout(measurements, { width: 1080, height: 1350 });
+    const reservedZones = opts.ctaArrow ? [CTA_ARROW_ZONE] : [];
+    const issues = analyzeLayout(measurements, { width: 1080, height: 1350 }, { reservedZones });
 
     if (issues.length > 0 && !opts.force) {
       const durationMs = Date.now() - start;

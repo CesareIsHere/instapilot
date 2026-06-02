@@ -45,4 +45,64 @@ describe('validateGeneratedHtml', () => {
     const err = validateGeneratedHtml('<img src="data:image/png;base64,abc">', '');
     expect(err).toBeNull();
   });
+
+  it('accepts inline SVG with the W3C namespace (for diagram connectors)', () => {
+    const err = validateGeneratedHtml('<svg xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="0" x2="10" y2="10"/></svg>', '');
+    expect(err).toBeNull();
+  });
+
+  describe('brand CSS rules (deterministic)', () => {
+    it('rejects hardcoded hex colors', () => {
+      const err = validateGeneratedHtml('<div>x</div>', '.canvas .t { color: #012A78; }');
+      expect(err).not.toBeNull();
+      expect(err?.detail).toMatch(/hex|var\(/i);
+    });
+
+    it('rejects hex colors in inline style', () => {
+      const err = validateGeneratedHtml('<div style="color:#fff">x</div>', '');
+      expect(err).not.toBeNull();
+      expect(err?.detail).toMatch(/hex/i);
+    });
+
+    it('rejects :root in css', () => {
+      const err = validateGeneratedHtml('<div>x</div>', ':root { --x: 1px; } .canvas { color: var(--ink); }');
+      expect(err).not.toBeNull();
+      expect(err?.detail).toMatch(/:root/i);
+    });
+
+    it('rejects @import and @font-face', () => {
+      expect(validateGeneratedHtml('<div>x</div>', '@import url(x);')?.detail).toMatch(/@import/i);
+      expect(validateGeneratedHtml('<div>x</div>', '@font-face { font-family: X; }')?.detail).toMatch(/@font-face/i);
+    });
+
+    it('rejects box-shadow (but allows box-shadow: none)', () => {
+      expect(validateGeneratedHtml('<div>x</div>', '.canvas .c { box-shadow: 0 2px 4px #000; }')).not.toBeNull();
+      expect(validateGeneratedHtml('<div>x</div>', '.canvas .c { box-shadow: none; }')).toBeNull();
+    });
+
+    it('rejects gradients', () => {
+      const err = validateGeneratedHtml('<div>x</div>', '.canvas { background: linear-gradient(#fff, #000); }');
+      expect(err).not.toBeNull();
+      expect(err?.detail).toMatch(/gradient/i);
+    });
+
+    it('rejects viewport units', () => {
+      const err = validateGeneratedHtml('<div>x</div>', '.canvas .t { width: 100vw; height: 50vh; }');
+      expect(err).not.toBeNull();
+      expect(err?.detail).toMatch(/viewport|vw|vh/i);
+    });
+
+    it('does not flag id selectors as hex colors', () => {
+      const err = validateGeneratedHtml('<div id="main">x</div>', '.canvas #main { color: var(--ink); }');
+      expect(err).toBeNull();
+    });
+
+    it('reports multiple violations together', () => {
+      const err = validateGeneratedHtml('<div>x</div>', '.canvas { color: #012A78; box-shadow: 0 0 2px #000; width: 100vw; }');
+      expect(err).not.toBeNull();
+      expect(err?.detail).toMatch(/hex/i);
+      expect(err?.detail).toMatch(/box-shadow/i);
+      expect(err?.detail).toMatch(/viewport|vw/i);
+    });
+  });
 });

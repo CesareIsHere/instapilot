@@ -23,6 +23,8 @@ function pipelineSuccess(file: string) {
     ok: true as const,
     file,
     html: '<!DOCTYPE html>',
+    bodyHtml: '<div class="canvas-root">x</div>',
+    css: '.canvas .canvas-root { color: var(--ink); }',
     intent: 'intent',
     designSpec: DESIGN_SPEC,
     warnings: [] as never[],
@@ -155,9 +157,13 @@ describe('POST /generate/content', () => {
     // 3 initial slides + 1 regeneration of the flagged slide = 4 pipeline calls.
     expect((runSlidePipeline as ReturnType<typeof vi.fn>)).toHaveBeenCalledTimes(4);
 
-    // The regeneration prompt must contain the editorial fix.
+    // The fix is applied surgically: revision mode reuses the approved design + HTML
+    // and carries the editorial fix, instead of stuffing it into the from-scratch prompt.
     const lastCall = (runSlidePipeline as ReturnType<typeof vi.fn>).mock.calls[3][0];
-    expect(lastCall.userPrompt).toContain('aggiungi esempio numerico');
+    expect(lastCall.revision).toBeDefined();
+    expect(lastCall.revision.editorialFix).toContain('aggiungi esempio numerico');
+    expect(lastCall.revision.designSpec).toBeDefined();
+    expect(lastCall.revision.previousHtml).toBeDefined();
     expect(lastCall.role).toBe('body');
   });
 
