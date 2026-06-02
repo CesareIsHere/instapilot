@@ -60,7 +60,7 @@ export async function renderHtmlStill(
       };
       if (!canvas) return result;
       const cr = canvas.getBoundingClientRect();
-      const clip = (v: string) => v === 'hidden' || v === 'clip' || v === 'auto' || v === 'scroll';
+      const CLIP_VALUES = new Set(['hidden', 'clip', 'auto', 'scroll']);
       for (const el of Array.from(canvas.querySelectorAll('*'))) {
         const node = el as HTMLElement;
         const cs = getComputedStyle(node);
@@ -77,7 +77,7 @@ export async function renderHtmlStill(
           left: r.left - cr.left, top: r.top - cr.top, right: r.right - cr.left, bottom: r.bottom - cr.top,
           clientW: node.clientWidth, clientH: node.clientHeight,
           scrollW: node.scrollWidth, scrollH: node.scrollHeight,
-          clipped: clip(cs.overflowX) || clip(cs.overflowY),
+          clipped: CLIP_VALUES.has(cs.overflowX) || CLIP_VALUES.has(cs.overflowY),
           isTextLeaf: ownText.length > 0 && !childHasText,
         });
       }
