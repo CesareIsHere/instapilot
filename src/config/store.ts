@@ -10,9 +10,11 @@ export interface StoredConfig {
   models?: Partial<AgentModels>;
 }
 
-const CONFIG_FILE = process.env.APP_CONFIG_FILE ?? path.resolve(process.cwd(), 'data', 'config.json');
+function configFile() {
+  return process.env.APP_CONFIG_FILE ?? path.resolve(process.cwd(), 'data', 'config.json');
+}
 
-export function readStoredConfig(file: string = CONFIG_FILE): StoredConfig {
+export function readStoredConfig(file: string = configFile()): StoredConfig {
   try {
     return JSON.parse(fs.readFileSync(file, 'utf8')) as StoredConfig;
   } catch {
@@ -20,7 +22,7 @@ export function readStoredConfig(file: string = CONFIG_FILE): StoredConfig {
   }
 }
 
-export function writeStoredConfig(patch: StoredConfig, file: string = CONFIG_FILE): StoredConfig {
+export function writeStoredConfig(patch: StoredConfig, file: string = configFile()): StoredConfig {
   const current = readStoredConfig(file);
   const merged: StoredConfig = { ...current, ...patch };
   if (patch.models) merged.models = { ...current.models, ...patch.models };
