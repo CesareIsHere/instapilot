@@ -45,9 +45,11 @@ async function main() {
   // Generated artifacts (PNG + HTML) — served read-only to the UI.
   app.use('/output', express.static(OUTPUT_DIR));
 
-  // Web UI (zero-build static SPA). SPA fallback to index.html for client-side routes.
+  // Web UI (zero-build static SPA). SPA fallback to index.html for any GET that
+  // didn't match an API/static route above (API + artifact paths fall through to 404).
   app.use(express.static(WEB_DIR));
-  app.get(/^\/(?!api\/|output\/|render\/|generate\/|compositions|primitives|layouts|theme|assets|health).*/, (_req, res) => {
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/') || req.path.startsWith('/output/')) return next();
     res.sendFile(path.join(WEB_DIR, 'index.html'));
   });
 

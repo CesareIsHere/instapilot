@@ -1,6 +1,7 @@
 import type { Express, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import crypto from 'node:crypto';
+import path from 'node:path';
 import { createLlmClient, readLlmConfig } from '@/llm/client';
 import { loadBrandContext } from '@/llm/brandContext';
 import { generateContent, type GenerateContentSuccess } from '@/content/orchestrate';
@@ -58,10 +59,24 @@ const GenerateBodySchema = z
   }));
 
 function runJob(job: Job, body: z.infer<typeof GenerateBodySchema>): void {
-  const cfg = readLlmConfig();
-  const client = createLlmClient(cfg);
-  const brand = body.brandContext
-    ?? loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'docs/contesto-progetto-finvestire.md');
+  // Build the client synchronously but never let it throw out of the (un-awaited)
+  // runner: a config error (e.g. missing API key) must mark the job errored, not
+  // leave a phantom "running" job in the map.
+  let cfg: ReturnType<typeof readLlmConfig>;
+  let client: ReturnType<typeof createLlmClient>;
+  let brand: string;
+  try {
+    cfg = readLlmConfig();
+    client = createLlmClient(cfg);
+    brand = body.brandContext
+      ?? loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'docs/contesto-progetto-finvestire.md');
+  } catch (err) {
+    job.status = 'error';
+    job.error = { message: (err as Error).message };
+    job.updatedAt = now();
+    log.error('job.failed', { id: job.id, message: (err as Error).message });
+    return;
+  }
 
   generateContent({
     client,
@@ -100,6 +115,9 @@ function runJob(job: Job, body: z.infer<typeof GenerateBodySchema>): void {
 
 function toJobResult(result: GenerateContentSuccess) {
   return {
+    // Directory basename (e.g. "carousel-ab12" / "post-ab12") — this is the id the
+    // library + UI use, NOT the bare hex carouselId.
+    contentId: result.carouselDir ? path.basename(result.carouselDir) : undefined,
     carouselId: result.carouselId,
     carouselDir: result.carouselDir,
     topic: result.topic,
@@ -126,7 +144,7 @@ function jobSummary(job: Job) {
     input: job.input,
     progress: job.progress,
     error: job.error,
-    contentId: job.status === 'done' ? (job.result as { carouselId?: string } | undefined)?.carouselId : undefined,
+    contentId: job.status === 'done' ? (job.result as { contentId?: string } | undefined)?.contentId : undefined,
   };
 }
 

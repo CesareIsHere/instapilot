@@ -24,6 +24,7 @@ interface ManifestSlide {
   warnings?: unknown;
   usage?: unknown;
   editedAt?: string;
+  lastEditSummary?: string;
 }
 
 interface Manifest {
@@ -104,8 +105,10 @@ function hasCtaArrow(html: string): boolean {
   return html.includes("content: '→'") || html.includes('content: "→"');
 }
 
-async function rerenderSlide(dir: string, slide: ManifestSlide, html: string): Promise<void> {
-  fs.writeFileSync(path.join(dir, slide.htmlFile), html, 'utf8');
+/** Re-render a slide's PNG from HTML. Returns the number of (best-effort) layout warnings. */
+async function rerenderSlide(dir: string, slide: ManifestSlide, html: string): Promise<number> {
+  // Render first (force = best effort): if the browser throws we keep the previous
+  // HTML+PNG intact instead of leaving an edited HTML with a stale image.
   const outcome = await renderHtmlStill(html, slide.file.replace(/\.png$/, ''), {
     force: true,
     dir,
@@ -118,6 +121,8 @@ async function rerenderSlide(dir: string, slide: ManifestSlide, html: string): P
     err.detail = outcome.issues;
     throw err;
   }
+  fs.writeFileSync(path.join(dir, slide.htmlFile), html, 'utf8');
+  return outcome.issues.length;
 }
 
 const SaveHtmlSchema = z.object({ html: z.string().min(1).max(500_000) });
@@ -217,12 +222,12 @@ export function mountLibraryRoutes(app: Express): void {
         return;
       }
       const { html } = SaveHtmlSchema.parse(req.body);
-      await rerenderSlide(dir, slide, html);
+      const warnings = await rerenderSlide(dir, slide, html);
       slide.editedAt = new Date().toISOString();
       m.updatedAt = slide.editedAt;
       writeManifest(dir, m);
-      log.info('library.slide.saved', { id: req.params.id, slide: idx });
-      res.json({ ok: true, imageUrl: `/output/${req.params.id}/${slide.file}`, editedAt: slide.editedAt });
+      log.info('library.slide.saved', { id: req.params.id, slide: idx, warnings });
+      res.json({ ok: true, imageUrl: `/output/${req.params.id}/${slide.file}`, editedAt: slide.editedAt, warnings });
     } catch (err) {
       next(err);
     }
@@ -266,18 +271,21 @@ export function mountLibraryRoutes(app: Express): void {
         throw e;
       }
 
-      await rerenderSlide(dir, slide, edited.html);
+      const warnings = await rerenderSlide(dir, slide, edited.html);
       slide.editedAt = new Date().toISOString();
-      slide.intent = edited.summary;
+      // Keep the original design `intent`; record the edit summary separately so
+      // repeated AI edits don't clobber the slide's design intent in the manifest.
+      slide.lastEditSummary = edited.summary;
       m.updatedAt = slide.editedAt;
       writeManifest(dir, m);
-      log.info('library.slide.ai_edited', { id: req.params.id, slide: idx });
+      log.info('library.slide.ai_edited', { id: req.params.id, slide: idx, warnings });
       res.json({
         ok: true,
         summary: edited.summary,
         html: edited.html,
         imageUrl: `/output/${req.params.id}/${slide.file}`,
         editedAt: slide.editedAt,
+        warnings,
       });
     } catch (err) {
       next(err);

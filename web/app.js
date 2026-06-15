@@ -16,7 +16,8 @@ function h(tag, attrs = {}, ...children) {
   }
   for (const c of children.flat()) {
     if (c == null || c === false) continue;
-    node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    const isText = typeof c === 'string' || typeof c === 'number';
+    node.appendChild(isText ? document.createTextNode(String(c)) : c);
   }
   return node;
 }
@@ -30,7 +31,7 @@ async function api(path, opts = {}) {
   let data;
   try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
   if (!res.ok) {
-    const msg = data.message || data.error || `Errore ${res.status}`;
+    const msg = data.message || data.error || (text && text.slice(0, 200)) || `Errore ${res.status}`;
     throw new Error(msg);
   }
   return data;
@@ -78,6 +79,10 @@ const routes = [
 ];
 
 async function router() {
+  // Cancel any pending poll from the view we're leaving so a late timer can't
+  // repaint a stale view over the new one.
+  clearTimeout(jobsTimer);
+  clearTimeout(jobTimer);
   const hash = location.hash || '#/';
   for (const r of routes) {
     const m = hash.match(r.re);
@@ -303,6 +308,16 @@ async function renderDetail(id) {
   const data = await api(`/api/library/${id}`);
   let active = 0;
 
+  if (!data.slides || !data.slides.length) {
+    view.innerHTML = '';
+    view.appendChild(h('div', { class: 'empty' },
+      h('h2', {}, 'Nessuna slide'),
+      h('p', {}, 'Questo contenuto non ha slide renderizzate.'),
+      h('a', { class: 'btn btn-ghost', href: '#/', style: { marginTop: '12px' } }, '← Libreria'),
+    ));
+    return;
+  }
+
   view.innerHTML = '';
   view.appendChild(h('div', { class: 'view-header' },
     h('div', {},
@@ -320,11 +335,15 @@ async function renderDetail(id) {
   const strip = h('div', { class: 'slide-strip' });
   const metaPanel = h('div', { class: 'meta-panel' });
 
-  // Reloads the active slide image (cache-busted) + metadata after an edit.
+  // Reloads the active slide image (cache-busted) + thumbnail + download link + metadata.
   function refreshActive() {
     const s = data.slides[active];
-    stageImg.src = s.imageUrl + '?t=' + Date.now();
-    dlLink.href = s.imageUrl;
+    const bust = s.imageUrl + '?t=' + Date.now();
+    stageImg.src = bust;
+    dlLink.href = bust;
+    dlLink.setAttribute('download', `${id}-slide-${active + 1}.png`);
+    const thumb = strip.children[active];
+    if (thumb) thumb.style.backgroundImage = `url(${bust})`;
     renderMeta();
   }
 
@@ -342,6 +361,7 @@ async function renderDetail(id) {
       ['Ruolo', s.role],
       ['Funzione', s.narrativeFunction],
       ['Intent', s.intent],
+      ['Ultima modifica AI', s.lastEditSummary],
       ['Modificata', s.editedAt ? fmtDate(s.editedAt) : null],
     ];
     for (const [k, v] of rows) if (v) metaPanel.appendChild(h('div', { class: 'meta-row' }, h('span', { class: 'k' }, k), h('span', { class: 'v' }, String(v))));
@@ -397,7 +417,7 @@ async function openEditor(id, data, idx, onSaved) {
     frame.srcdoc = textarea.value;
     // scale to fit pane width
     const avail = previewPane.clientWidth - 32;
-    const scale = Math.min(1, avail / 1080);
+    const scale = Math.max(0.05, Math.min(1, avail / 1080));
     frame.style.transform = `scale(${scale})`;
     previewPane.style.minHeight = (1350 * scale + 32) + 'px';
     // keep pane height bounded by scaled frame
