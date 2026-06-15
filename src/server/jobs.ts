@@ -192,4 +192,45 @@ export function mountJobRoutes(app: Express): void {
     }
     res.json({ ...jobSummary(job), result: job.result });
   });
+
+  // Re-run a job with the same input (e.g. after a transient failure). Creates a
+  // brand-new job so the original stays in the history.
+  app.post('/api/generate/:id/retry', (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const prev = jobs.get(req.params.id);
+      if (!prev) {
+        res.status(404).json({ error: 'job_not_found' });
+        return;
+      }
+      const body = GenerateBodySchema.parse({
+        topic: prev.input.topic,
+        instructions: prev.input.instructions,
+        format: prev.input.format,
+        slideCount: prev.input.slideCount,
+        model: prev.input.model,
+      });
+      const id = crypto.randomBytes(6).toString('hex');
+      const job: Job = {
+        id,
+        status: 'running',
+        createdAt: now(),
+        updatedAt: now(),
+        input: {
+          topic: body.topic,
+          format: body.format,
+          slideCount: body.slideCount,
+          instructions: body.instructions,
+          model: body.model,
+        },
+        progress: { phase: 'queued', detail: 'In coda' },
+      };
+      jobs.set(id, job);
+      pruneJobs();
+      log.info('job.retried', { id, from: prev.id, topic: body.topic });
+      runJob(job, body);
+      res.status(202).json(jobSummary(job));
+    } catch (err) {
+      next(err);
+    }
+  });
 }

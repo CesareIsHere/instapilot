@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, CheckCircle2, XCircle, Plus, ArrowRight } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Plus, ArrowRight, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 import { api, type Job } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +32,7 @@ function StatusIcon({ status }: { status: Job['status'] }) {
   return <XCircle size={16} className="text-destructive" />;
 }
 
-function JobRow({ job }: { job: Job }) {
+function JobRow({ job, onRetry }: { job: Job; onRetry: (job: Job) => void }) {
   const phaseTxt = job.status === 'error'
     ? (job.error?.message ?? 'Errore')
     : `${PHASE_LABEL[job.progress.phase] ?? job.progress.phase}${job.progress.detail ? ` — ${job.progress.detail}` : ''}`;
@@ -75,7 +76,10 @@ function JobRow({ job }: { job: Job }) {
           </Button>
         )}
         {job.status === 'error' && (
-          <Badge variant="destructive" className="text-xs">Errore</Badge>
+          <Button size="sm" variant="outline" onClick={() => onRetry(job)}>
+            <RefreshCw size={13} />
+            Riprova
+          </Button>
         )}
       </div>
     </div>
@@ -93,6 +97,17 @@ export function Jobs() {
       setJobs(data.jobs);
     } catch (err) {
       setError((err as Error).message);
+    }
+  };
+
+  const handleRetry = async (job: Job) => {
+    const toastId = toast.loading('Riavvio generazione…');
+    try {
+      await api.generate.retry(job.id);
+      toast.success('Generazione riavviata', { id: toastId });
+      load();
+    } catch (err) {
+      toast.error((err as Error).message, { id: toastId });
     }
   };
 
@@ -146,7 +161,7 @@ export function Jobs() {
 
       {jobs !== null && jobs.length > 0 && (
         <div className="space-y-3">
-          {jobs.map(job => <JobRow key={job.id} job={job} />)}
+          {jobs.map(job => <JobRow key={job.id} job={job} onRetry={handleRetry} />)}
         </div>
       )}
     </div>

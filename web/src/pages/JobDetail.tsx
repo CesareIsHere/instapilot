@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Loader2, CheckCircle2, XCircle, ArrowLeft } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, ArrowLeft, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 import { api, type Job } from '@/lib/api';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -53,6 +54,18 @@ export function JobDetail() {
     load();
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [id]);
+
+  const handleRetry = async () => {
+    if (!id) return;
+    const toastId = toast.loading('Riavvio generazione…');
+    try {
+      const fresh = await api.generate.retry(id);
+      toast.success('Generazione riavviata', { id: toastId });
+      navigate(`/job/${fresh.id}`, { replace: true });
+    } catch (err) {
+      toast.error((err as Error).message, { id: toastId });
+    }
+  };
 
   if (error) return (
     <div className="p-8">
@@ -130,9 +143,15 @@ export function JobDetail() {
       </div>
 
       {job.status === 'error' && (
-        <Button asChild className="mt-4 w-full">
-          <Link to="/new">Riprova con un nuovo contenuto</Link>
-        </Button>
+        <div className="mt-4 flex gap-2">
+          <Button onClick={handleRetry} className="flex-1">
+            <RefreshCw size={14} />
+            Riprova generazione
+          </Button>
+          <Button variant="outline" asChild className="flex-1">
+            <Link to="/new">Nuovo contenuto</Link>
+          </Button>
+        </div>
       )}
     </div>
   );

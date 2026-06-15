@@ -30,12 +30,19 @@ export interface Slide {
   designSpec?: { recipe: string };
 }
 
+export interface Caption {
+  text: string;
+  hashtags: string[];
+  generatedAt: string;
+}
+
 export interface ContentDetail {
   id: string; carouselId?: string; topic: string;
   format: 'single' | 'carousel'; framework?: string;
   title: string; angle?: string; createdAt: string; updatedAt?: string;
   usage?: { totalTokens: number; promptTokens: number; completionTokens: number; calls: number };
   warnings?: { research: string[]; plan: string[] };
+  caption?: Caption;
   slides: Slide[];
 }
 
@@ -78,6 +85,9 @@ export const api = {
         `/api/library/${id}/slides/${n}/ai-edit`,
         { method: 'POST', body: JSON.stringify({ instruction, model: model || undefined }) },
       ),
+    generateCaption: (id: string) =>
+      apiFetch<{ ok: boolean; caption: Caption }>(`/api/library/${id}/caption`, { method: 'POST', body: '{}' }),
+    exportUrl: (id: string) => `/api/library/${id}/export`,
   },
 
   generate: {
@@ -85,5 +95,6 @@ export const api = {
       apiFetch<Job>('/api/generate', { method: 'POST', body: JSON.stringify(body) }),
     list: () => apiFetch<{ jobs: Job[] }>('/api/generate'),
     get: (id: string) => apiFetch<Job>(`/api/generate/${id}`),
+    retry: (id: string) => apiFetch<Job>(`/api/generate/${id}/retry`, { method: 'POST', body: '{}' }),
   },
 };

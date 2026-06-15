@@ -2,10 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Download, Trash2, Code2, Sparkles, Loader2,
-  AlertTriangle, ChevronLeft, ChevronRight,
+  AlertTriangle, ChevronLeft, ChevronRight, FileArchive, Copy, MessageSquareText, RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { api, type ContentDetail as IContentDetail, type Slide } from '@/lib/api';
+import { api, type ContentDetail as IContentDetail, type Caption, type Slide } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -209,6 +209,10 @@ export function ContentDetail() {
   const [active, setActive] = useState(0);
   const [editorOpen, setEditorOpen] = useState(false);
   const [slideVersions, setSlideVersions] = useState<Record<number, string>>({});
+  const [caption, setCaption] = useState<Caption | null>(null);
+  const [captionLoading, setCaptionLoading] = useState(false);
+
+  useEffect(() => { setCaption(data?.caption ?? null); }, [data?.caption]);
 
   useEffect(() => {
     if (!id) return;
@@ -243,6 +247,34 @@ export function ContentDetail() {
       navigate('/', { replace: true });
     } catch (err) {
       toast.error((err as Error).message);
+    }
+  };
+
+  const handleGenerateCaption = async () => {
+    if (!id) return;
+    setCaptionLoading(true);
+    const toastId = toast.loading(caption ? 'Rigenero la caption…' : 'Genero la caption…');
+    try {
+      const r = await api.library.generateCaption(id);
+      setCaption(r.caption);
+      toast.success('Caption pronta', { id: toastId });
+    } catch (err) {
+      toast.error((err as Error).message, { id: toastId });
+    } finally {
+      setCaptionLoading(false);
+    }
+  };
+
+  const captionFullText = caption
+    ? `${caption.text}\n\n${caption.hashtags.map(h => `#${h}`).join(' ')}`
+    : '';
+
+  const copyCaption = async () => {
+    try {
+      await navigator.clipboard.writeText(captionFullText);
+      toast.success('Caption copiata negli appunti');
+    } catch {
+      toast.error('Impossibile copiare');
     }
   };
 
@@ -292,10 +324,18 @@ export function ContentDetail() {
             {data.angle && <span className="text-xs text-muted-foreground">· {data.angle}</span>}
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={handleDelete} className="shrink-0 text-destructive border-destructive/30 hover:bg-destructive/5">
-          <Trash2 size={14} />
-          Elimina
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <a href={id ? api.library.exportUrl(id) : '#'} className="inline-flex">
+            <Button variant="outline" size="sm">
+              <FileArchive size={14} />
+              Esporta ZIP
+            </Button>
+          </a>
+          <Button variant="outline" size="sm" onClick={handleDelete} className="text-destructive border-destructive/30 hover:bg-destructive/5">
+            <Trash2 size={14} />
+            Elimina
+          </Button>
+        </div>
       </div>
 
       {/* Slide strip */}
@@ -426,6 +466,46 @@ export function ContentDetail() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Caption */}
+      <div className="mt-8 rounded-xl border bg-card p-5 shadow-sm max-w-3xl">
+        <div className="flex items-center justify-between mb-3 gap-3">
+          <div className="flex items-center gap-2">
+            <MessageSquareText size={16} className="text-primary" />
+            <p className="text-sm font-semibold">Didascalia Instagram</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {caption && (
+              <Button variant="ghost" size="sm" onClick={copyCaption}>
+                <Copy size={13} />
+                Copia
+              </Button>
+            )}
+            <Button variant={caption ? 'outline' : 'default'} size="sm" onClick={handleGenerateCaption} disabled={captionLoading}>
+              {captionLoading
+                ? <Loader2 size={13} className="animate-spin" />
+                : caption ? <RefreshCw size={13} /> : <Sparkles size={13} />}
+              {caption ? 'Rigenera' : 'Genera caption'}
+            </Button>
+          </div>
+        </div>
+
+        {caption ? (
+          <div className="space-y-3">
+            <p className="text-sm whitespace-pre-wrap leading-relaxed">{caption.text}</p>
+            {caption.hashtags.length > 0 && (
+              <p className="text-sm text-primary/90 font-medium break-words">
+                {caption.hashtags.map(h => `#${h}`).join(' ')}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground pt-1">Generata il {fmtDate(caption.generatedAt)}</p>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Genera una didascalia pronta da incollare, con hook, corpo e hashtag, a partire dal contenuto delle slide.
+          </p>
+        )}
       </div>
 
       {/* HTML Editor Dialog */}

@@ -5,7 +5,9 @@ import path from 'node:path';
 import { readLlmConfig, createLlmClient } from '@/llm/client';
 import { loadBrandContext } from '@/llm/brandContext';
 import { editSlideHtml } from '@/llm/editSlide';
+import { generateCaption } from '@/llm/generateCaption';
 import { renderHtmlStill } from '@/html/renderHtml';
+import { createZip, type ZipEntry } from '@/lib/zip';
 import { theme } from '@/theme';
 import { log } from '@/lib/log';
 
@@ -27,6 +29,12 @@ interface ManifestSlide {
   lastEditSummary?: string;
 }
 
+interface Caption {
+  text: string;
+  hashtags: string[];
+  generatedAt: string;
+}
+
 interface Manifest {
   carouselId: string;
   topic: string;
@@ -39,7 +47,25 @@ interface Manifest {
   usage?: unknown;
   warnings?: unknown;
   research?: string;
+  caption?: Caption;
   slides: ManifestSlide[];
+}
+
+/** Strip HTML to readable plain text for feeding the caption model. */
+function htmlToText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 1500);
 }
 
 /** Resolve and validate a content directory from its id, guarding against path traversal. */
@@ -180,6 +206,96 @@ export function mountLibraryRoutes(app: Express): void {
       fs.rmSync(dir, { recursive: true, force: true });
       log.info('library.deleted', { id: req.params.id });
       res.json({ ok: true });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Download all artifacts (PNGs + HTML + manifest + caption) as a single ZIP.
+  app.get('/api/library/:id/export', (req, res, next) => {
+    try {
+      const dir = contentDir(req.params.id);
+      if (!dir) {
+        res.status(404).json({ error: 'content_not_found' });
+        return;
+      }
+      const m = readManifest(dir);
+      const entries: ZipEntry[] = [];
+      for (const slide of m.slides) {
+        const png = path.join(dir, slide.file);
+        if (fs.existsSync(png)) entries.push({ name: `images/${slide.file}`, data: fs.readFileSync(png) });
+        const htmlPath = path.join(dir, slide.htmlFile);
+        if (fs.existsSync(htmlPath)) entries.push({ name: `html/${slide.htmlFile}`, data: fs.readFileSync(htmlPath) });
+      }
+      entries.push({ name: 'manifest.json', data: Buffer.from(JSON.stringify(m, null, 2), 'utf8') });
+      if (m.caption) {
+        const tags = m.caption.hashtags.map((h) => `#${h}`).join(' ');
+        const captionTxt = `${m.caption.text}\n\n${tags}\n`;
+        entries.push({ name: 'caption.txt', data: Buffer.from(captionTxt, 'utf8') });
+      }
+
+      const zip = createZip(entries);
+      const safeTitle = (m.title || m.topic || req.params.id)
+        .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || req.params.id;
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename="${safeTitle}.zip"`);
+      res.setHeader('Content-Length', String(zip.length));
+      log.info('library.exported', { id: req.params.id, files: entries.length });
+      res.end(zip);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Generate (or regenerate) an Instagram caption from the content of the slides.
+  app.post('/api/library/:id/caption', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const dir = contentDir(req.params.id);
+      if (!dir) {
+        res.status(404).json({ error: 'content_not_found' });
+        return;
+      }
+      const m = readManifest(dir);
+      const slidesText = m.slides.map((s) => {
+        try {
+          return htmlToText(fs.readFileSync(path.join(dir, s.htmlFile), 'utf8'));
+        } catch {
+          return s.intent ?? '';
+        }
+      });
+
+      const cfg = readLlmConfig();
+      const client = createLlmClient(cfg);
+      const brand = loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'docs/contesto-progetto-finvestire.md');
+
+      let generated;
+      try {
+        generated = await generateCaption({
+          client,
+          model: cfg.models.editorialReview ?? cfg.model,
+          reasoningEffort: cfg.reasoningEffort,
+          topic: m.topic,
+          title: m.title,
+          angle: m.angle,
+          slidesText,
+          brandContext: brand,
+        });
+      } catch (err) {
+        const e: Error & { code?: string } = new Error((err as Error).message);
+        e.code = 'LLM_FAILURE';
+        throw e;
+      }
+
+      const caption: Caption = {
+        text: generated.caption,
+        hashtags: generated.hashtags.map((h) => h.replace(/^#/, '')),
+        generatedAt: new Date().toISOString(),
+      };
+      m.caption = caption;
+      m.updatedAt = caption.generatedAt;
+      writeManifest(dir, m);
+      log.info('library.caption.generated', { id: req.params.id });
+      res.json({ ok: true, caption });
     } catch (err) {
       next(err);
     }
