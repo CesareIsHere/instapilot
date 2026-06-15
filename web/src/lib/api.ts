@@ -121,7 +121,7 @@ export interface Meta {
 
 /* ── API ────────────────────────────────────────────────────── */
 export const api = {
-  health: () => apiFetch<{ status: string; bundleReady: boolean }>('/health'),
+  health: () => apiFetch<{ status: string; bundleReady: boolean; hasApiKey?: boolean }>('/health'),
   meta: () => apiFetch<Meta>('/api/meta'),
 
   library: {

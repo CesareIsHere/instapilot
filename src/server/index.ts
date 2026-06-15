@@ -11,6 +11,7 @@ import { mountConfigRoutes } from './config';
 import { mountUploadRoutes } from './upload';
 import { closeBrowser } from '@/html/browser';
 import { errorHandler } from './errors';
+import { readStoredConfig } from '@/config/store';
 
 const WEB_DIR = path.resolve(process.cwd(), 'web', 'dist');
 
@@ -34,7 +35,9 @@ async function main() {
   app.locals.bundleReady = true;
 
   app.get('/health', (_req, res) => {
-    res.json({ status: 'ok', bundleReady: app.locals.bundleReady === true });
+    const stored = readStoredConfig();
+    const hasApiKey = Boolean(stored.apiKey) || Boolean(process.env.LITELLM_API_KEY) || Boolean(process.env.OPENAI_API_KEY);
+    res.json({ status: 'ok', bundleReady: app.locals.bundleReady === true, hasApiKey });
   });
 
   mountDiscoveryRoutes(app);
