@@ -9,7 +9,7 @@ import { mountJobRoutes } from './jobs';
 import { closeBrowser } from '@/html/browser';
 import { errorHandler } from './errors';
 
-const WEB_DIR = path.resolve(process.cwd(), 'web');
+const WEB_DIR = path.resolve(process.cwd(), 'web', 'dist');
 
 const PORT = Number(process.env.PORT ?? 3001);
 

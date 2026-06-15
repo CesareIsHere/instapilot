@@ -6,6 +6,7 @@ public/generated/*
 .env
 *.log
 dist/
+!web/dist/
 .DS_Store
 .claude 
 
