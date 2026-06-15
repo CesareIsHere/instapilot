@@ -100,7 +100,7 @@ export function mountDynamicRoutes(app: Express): void {
       const cfg = readLlmConfig();
       const client = createLlmClient(cfg);
       const brand = body.brandContext
-        ?? loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'docs/contesto-progetto-finvestire.md');
+        ?? loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'examples/finvestire/brand-context.md');
       const systemPrompt = buildSystemPrompt(brand);
 
       const llmStart = Date.now();
@@ -151,7 +151,7 @@ export function mountHtmlRoutes(app: Express): void {
       const cfg = readLlmConfig();
       const client = createLlmClient(cfg);
       const brand = body.brandContext
-        ?? loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'docs/contesto-progetto-finvestire.md');
+        ?? loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'examples/finvestire/brand-context.md');
 
       const result = await runSlidePipeline({
         client,
