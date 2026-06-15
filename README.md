@@ -19,6 +19,42 @@ npm run studio
 npm test
 ```
 
+Avviato il server (`npm run dev`), apri **http://localhost:3001** per la UI di gestione.
+
+## UI Studio (web)
+
+Interfaccia web servita dallo stesso server Express (nessun build step). Permette di gestire
+l'intero ciclo di vita dei contenuti senza usare curl:
+
+- **Libreria** (`/`) — griglia di tutti i contenuti generati (post e caroselli) con anteprima cover.
+- **Nuovo contenuto** (`/new`) — form per avviare una generazione: argomento, istruzioni, formato
+  (post/carosello), numero di slide, modello LLM opzionale. Avvia un job asincrono.
+- **Generazioni** (`/jobs`) — stato dei job in corso con avanzamento per fase (ricerca → piano →
+  slide → revisione).
+- **Dettaglio contenuto** (`/content/:id`) — visualizza le slide, i metadati, e per ogni slide:
+  - **Visualizza / Edita HTML** — editor con anteprima live (iframe) e re-render del PNG al salvataggio.
+  - **Edit AI** — modifica chirurgica di una singola slide tramite istruzione in linguaggio naturale.
+  - Download del PNG, eliminazione del contenuto.
+
+### Endpoint UI (JSON)
+
+| Metodo | Path | Scopo |
+|---|---|---|
+| `POST` | `/api/generate` | Avvia un job di generazione (ritorna `202` + jobId) |
+| `GET` | `/api/generate` | Lista dei job recenti |
+| `GET` | `/api/generate/:id` | Stato + risultato di un job |
+| `GET` | `/api/library` | Lista dei contenuti generati |
+| `GET` | `/api/library/:id` | Manifest completo di un contenuto |
+| `DELETE` | `/api/library/:id` | Elimina un contenuto |
+| `GET` | `/api/library/:id/slides/:n/html` | HTML grezzo di una slide |
+| `PUT` | `/api/library/:id/slides/:n/html` | Salva l'HTML editato e ri-renderizza il PNG |
+| `POST` | `/api/library/:id/slides/:n/ai-edit` | Modifica una slide via AI e ri-renderizza |
+| `GET` | `/api/meta` | Metadati per la UI (modello di default, palette, range slide) |
+| `GET` | `/output/...` | Artefatti generati (PNG + HTML) serviti staticamente |
+
+> Nota: dalla pipeline ora **anche i post singoli** producono una cartella dedicata
+> (`output/post-<id>/`) con `manifest.json`, così la libreria li gestisce in modo uniforme ai caroselli.
+
 ## Endpoint
 
 | Metodo | Path | Scopo |

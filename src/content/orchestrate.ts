@@ -29,6 +29,8 @@ export interface GenerateContentArgs {
   slideCount?: number;
   /** Per-agent model overrides. Each key falls back to `model` if not set. */
   models?: Partial<AgentModels>;
+  /** Optional progress reporter — called at each pipeline phase boundary (used by the async job runner / UI). */
+  onProgress?: (p: { phase: string; detail?: string; current?: number; total?: number }) => void;
 }
 
 export interface ContentSlideResult {
@@ -78,11 +80,14 @@ interface SlideState {
 export async function generateContent(args: GenerateContentArgs): Promise<GenerateContentResult> {
   const { client, model, reasoningEffort, brandContext, topic, instructions, format, slideCount } = args;
   const pick = (agent: keyof AgentModels) => args.models?.[agent] ?? model;
+  const report = (phase: string, detail?: string, current?: number, total?: number) =>
+    args.onProgress?.({ phase, detail, current, total });
   const start = Date.now();
   const meter = new UsageMeter();
   const contentWarnings = { research: [] as string[], plan: [] as string[] };
 
   // ── Phase A: Research + review loop (best effort) ─────────────────────────
+  report('research', 'Ricerca e approfondimento dell\'argomento');
   let research: string;
   try {
     research = await researchTopic({ client, model: pick('research'), reasoningEffort, topic, instructions, meter });
@@ -98,6 +103,7 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
   }
 
   // ── Phase B: Plan + review loop (best effort) ─────────────────────────────
+  report('plan', 'Strutturazione del contenuto in slide');
   let plan: ContentPlan;
   try {
     plan = await planContent({ client, model: pick('plan'), reasoningEffort, format, slideCount, topic, instructions, research, meter });
@@ -114,13 +120,13 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
   }
   log.info('content.plan.done', { title: plan.title, slides: plan.slides.length });
 
-  // ── Carousel output folder (single posts stay flat) ───────────────────────
+  // ── Output folder — both carousels and single posts get their own folder ──
+  // so the library can list, view and edit them uniformly via the UI.
   const isCarousel = format === 'carousel';
-  const carouselId = isCarousel ? shortId() : undefined;
-  const carouselDir = carouselId ? path.join(OUTPUT_DIR, `carousel-${carouselId}`) : undefined;
+  const carouselId = shortId();
+  const carouselDir = path.join(OUTPUT_DIR, `${isCarousel ? 'carousel' : 'post'}-${carouselId}`);
 
   function slideOutput(index: number): { dir?: string; fileName?: string } {
-    if (!carouselDir) return {};
     return { dir: carouselDir, fileName: `slide-${String(index + 1).padStart(2, '0')}.png` };
   }
 
@@ -138,6 +144,7 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
   // ── Phase C: Per-slide generation (4-agent pipeline) ──────────────────────
   const states: SlideState[] = [];
   for (let i = 0; i < plan.slides.length; i++) {
+    report('slides', `Generazione slide ${i + 1} di ${total}`, i + 1, total);
     const planned = plan.slides[i];
     const designContext = isCarousel ? buildSiblingContext(states, plan, total) : undefined;
     const result = await generateOneSlide(args, planned.role, planned.brief, [], slideOutput(i), slideCtx(i, planned.narrativeFunction), designContext);
@@ -156,6 +163,7 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
   let reviewRounds = 0;
   for (let round = 1; round <= MAX_REVIEW_ROUNDS; round++) {
     reviewRounds = round;
+    report('review', `Revisione editoriale (giro ${round})`);
     const reviewable: ReviewableSlide[] = states.map((s, idx) => ({
       index: idx, role: s.role, brief: composeBrief(s), intent: s.result.intent, designSpec: s.result.designSpec, file: s.result.file,
     }));

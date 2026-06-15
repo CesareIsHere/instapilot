@@ -1,10 +1,15 @@
 import 'dotenv/config';
+import path from 'node:path';
 import express from 'express';
 import { log } from '@/lib/log';
 import { buildBundle } from '@/remotion/bundler';
 import { mountDiscoveryRoutes, mountRenderRoutes, mountDynamicRoutes, mountHtmlRoutes, mountContentRoutes } from './routes';
+import { mountLibraryRoutes, OUTPUT_DIR } from './library';
+import { mountJobRoutes } from './jobs';
 import { closeBrowser } from '@/html/browser';
 import { errorHandler } from './errors';
+
+const WEB_DIR = path.resolve(process.cwd(), 'web');
 
 const PORT = Number(process.env.PORT ?? 3001);
 
@@ -34,6 +39,18 @@ async function main() {
   mountDynamicRoutes(app);
   mountHtmlRoutes(app);
   mountContentRoutes(app);
+  mountJobRoutes(app);
+  mountLibraryRoutes(app);
+
+  // Generated artifacts (PNG + HTML) — served read-only to the UI.
+  app.use('/output', express.static(OUTPUT_DIR));
+
+  // Web UI (zero-build static SPA). SPA fallback to index.html for client-side routes.
+  app.use(express.static(WEB_DIR));
+  app.get(/^\/(?!api\/|output\/|render\/|generate\/|compositions|primitives|layouts|theme|assets|health).*/, (_req, res) => {
+    res.sendFile(path.join(WEB_DIR, 'index.html'));
+  });
+
   app.use(errorHandler);
 
   const server = app.listen(PORT, () => {

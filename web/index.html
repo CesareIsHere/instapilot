@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Instapilot — Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">◆</span>
+      <span class="brand-name">Instapilot</span>
+    </div>
+    <nav>
+      <a href="#/" data-nav="library">📚 Libreria</a>
+      <a href="#/new" data-nav="new">✨ Nuovo contenuto</a>
+      <a href="#/jobs" data-nav="jobs">⚙️ Generazioni</a>
+    </nav>
+    <div class="sidebar-foot">
+      <span id="health-dot" class="dot"></span>
+      <span id="health-text">…</span>
+    </div>
+  </aside>
+
+  <main id="view" class="view">
+    <div class="loading">Caricamento…</div>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
