@@ -7,6 +7,7 @@ import { buildHtmlSystemPrompt } from './htmlSystemPrompt';
 import { validateGeneratedHtml } from './validate';
 import { buildHtmlDocument } from './template';
 import { renderHtmlStill } from './renderHtml';
+import { readBrandKit, defaultBrandKit } from '@/server/brand';
 import { reviewRenderedSlide, type QualityIssue } from './qualityReview';
 import type { LayoutIssue } from './layoutAudit';
 import { UsageMeter, type UsageTotals } from '@/llm/usage';
@@ -151,7 +152,8 @@ export async function runSlidePipeline(args: PipelineArgs): Promise<PipelineResu
       log.warn('pipeline.render.invalid_html_best_effort', { detail: validationErr.detail });
     }
 
-    const html = buildHtmlDocument(generated.bodyHtml, generated.css, showArrow);
+    const kit = readBrandKit() ?? defaultBrandKit();
+    const html = buildHtmlDocument(generated.bodyHtml, generated.css, showArrow, kit.brandColors, kit.font);
 
     const t4 = Date.now();
     const renderOutcome = await renderHtmlStill(html, outputId, {

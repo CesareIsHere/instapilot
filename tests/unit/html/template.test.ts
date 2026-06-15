@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { buildHtmlDocument } from '@/html/template';
+import type { BrandColors, BrandFont } from '@/server/brand';
+
+const defaultColors: BrandColors = {
+  primary: '#012A78', positive: '#00B373', negative: '#DC2626',
+  paper: '#FFFFFF', ink: '#101010', muted: '#767676',
+};
+const defaultFont: BrandFont = { family: 'Montserrat', source: 'bundled' };
 
 describe('buildHtmlDocument', () => {
   it('injects brand CSS custom properties', () => {
@@ -63,5 +70,29 @@ describe('buildHtmlDocument', () => {
     const html = buildHtmlDocument('<div></div>', '.canvas{}', false);
     expect(html).not.toContain('.canvas::after');
     expect(html).not.toContain("content: '→'");
+  });
+});
+
+describe('buildHtmlDocument brand injection', () => {
+  it('inietta i colori del brand nelle CSS var', () => {
+    const html = buildHtmlDocument('<p>test</p>', '', false, defaultColors, defaultFont);
+    expect(html).toContain('--brand-navy:  #012A78');
+    expect(html).toContain('--brand-green: #00B373');
+    expect(html).toContain('--danger:      #DC2626');
+  });
+
+  it('usa i colori custom quando specificati', () => {
+    const custom: BrandColors = { ...defaultColors, primary: '#FF0000', positive: '#00FF00' };
+    const html = buildHtmlDocument('<p>test</p>', '', false, custom, defaultFont);
+    expect(html).toContain('--brand-navy:  #FF0000');
+    expect(html).toContain('--brand-green: #00FF00');
+    expect(html).not.toContain('#012A78');
+    expect(html).not.toContain('#00B373');
+  });
+
+  it('inietta il font-family configurato', () => {
+    const font: BrandFont = { family: 'Inter', source: 'bundled' };
+    const html = buildHtmlDocument('<p>test</p>', '', false, defaultColors, font);
+    expect(html).toContain("--font-family: 'Inter'");
   });
 });

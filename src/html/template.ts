@@ -1,4 +1,5 @@
-import { theme } from '@/theme';
+import type { BrandColors, BrandFont } from '@/server/brand';
+import { defaultBrandKit } from '@/server/brand';
 import { manifest } from '@/assets/manifest';
 import { buildFontFaceBlock } from './fonts';
 import { buildPaletteCss } from './palette';
@@ -17,16 +18,12 @@ function assetToDataUri(assetPath: string): string | null {
   return `data:${mime};base64,${buf.toString('base64')}`;
 }
 
-let cachedAssetUris: Record<string, string> | null = null;
-
 function buildAssetDataUris(): Record<string, string> {
-  if (cachedAssetUris !== null) return cachedAssetUris;
   const result: Record<string, string> = {};
   for (const [id, entry] of Object.entries(manifest)) {
     const uri = assetToDataUri(entry.path);
     if (uri) result[id] = uri;
   }
-  cachedAssetUris = result;
   return result;
 }
 
@@ -37,8 +34,17 @@ function substituteTokens(str: string, dataUris: Record<string, string>): string
   });
 }
 
-export function buildHtmlDocument(bodyHtml: string, css: string, showArrow = true): string {
-  const fontFaces = buildFontFaceBlock();
+export function buildHtmlDocument(
+  bodyHtml: string,
+  css: string,
+  showArrow = true,
+  brandColors?: BrandColors,
+  brandFont?: BrandFont,
+): string {
+  const kit = defaultBrandKit();
+  const colors = brandColors ?? kit.brandColors;
+  const font = brandFont ?? kit.font;
+  const fontFaces = buildFontFaceBlock(font.family);
   const assetUris = buildAssetDataUris();
 
   const resolvedBodyHtml = substituteTokens(bodyHtml, assetUris);
@@ -47,9 +53,6 @@ export function buildHtmlDocument(bodyHtml: string, css: string, showArrow = tru
   const assetCssVars = Object.entries(assetUris)
     .map(([id, uri]) => `  --asset-${id}: url('${uri}');`)
     .join('\n');
-
-  const c = theme.colors;
-  const sp = theme.spacing;
 
   const ctaArrowCss = showArrow
     ? `/* CTA arrow — swipe affordance, bottom-right (omitted on the last slide) */
@@ -89,19 +92,19 @@ ${fontFaces}
 }
 
 :root {
-  --brand-navy:  ${c['brand-navy']};
-  --brand-green: ${c['brand-green']};
-  --paper:       ${c['paper']};
-  --ink:         ${c['ink']};
-  --muted:       ${c['muted']};
-  --danger:      ${c['danger']};
-  --font-family: 'Montserrat', sans-serif;
-  --space-xs:  ${sp.xs}px;
-  --space-sm:  ${sp.sm}px;
-  --space-md:  ${sp.md}px;
-  --space-lg:  ${sp.lg}px;
-  --space-xl:  ${sp.xl}px;
-  --space-2xl: ${sp['2xl']}px;
+  --brand-navy:  ${colors.primary};
+  --brand-green: ${colors.positive};
+  --paper:       ${colors.paper};
+  --ink:         ${colors.ink};
+  --muted:       ${colors.muted};
+  --danger:      ${colors.negative};
+  --font-family: '${font.family}', sans-serif;
+  --space-xs:  8px;
+  --space-sm:  16px;
+  --space-md:  24px;
+  --space-lg:  40px;
+  --space-xl:  64px;
+  --space-2xl: 96px;
 ${buildPaletteCss()}
 ${assetCssVars}
 }
