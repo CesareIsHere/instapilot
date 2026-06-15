@@ -1,157 +1,70 @@
-# ig-auto-builder — Render Service
+# Instapilot
 
-Microservizio HTTP locale che trasforma uno `SlideSpec` JSON in PNG via Remotion.
-Parte della pipeline di automazione contenuti Finvestire.
+Generatore automatico di carousel e post Instagram per creator educativi.
+Pipeline AI end-to-end: ricerca → struttura narrativa → design → rendering → revisione editoriale.
 
-## Quickstart
+## Quickstart (5 minuti)
+
+### 1. Clona e installa
 
 ```bash
+git clone https://github.com/CesareIsHere/instapilot.git
+cd instapilot
 npm install
-cp .env.example .env
+npx playwright install chromium
+```
 
-# Sviluppo Express (con tsx watch)
+### 2. Avvia
+
+```bash
 npm run dev
-
-# Remotion Studio per iterare visualmente
-npm run studio
-
-# Run test suite
-npm test
 ```
 
-Avviato il server (`npm run dev`), apri **http://localhost:3001** per la UI di gestione.
+Apri [http://localhost:3001](http://localhost:3001) nel browser.
 
-## UI Studio (web)
+### 3. Configura la API key
 
-Interfaccia web servita dallo stesso server Express (nessun build step). Permette di gestire
-l'intero ciclo di vita dei contenuti senza usare curl:
+Vai in **Impostazioni** (barra laterale) e incolla la tua OpenAI API key.
+Il banner arancione in alto scompare non appena la key viene salvata.
 
-- **Libreria** (`/`) — griglia di tutti i contenuti generati (post e caroselli) con anteprima cover.
-- **Nuovo contenuto** (`/new`) — form per avviare una generazione: argomento, istruzioni, formato
-  (post/carosello), numero di slide, modello LLM opzionale. Avvia un job asincrono.
-- **Generazioni** (`/jobs`) — stato dei job in corso con avanzamento per fase (ricerca → piano →
-  slide → revisione).
-- **Dettaglio contenuto** (`/content/:id`) — visualizza le slide, i metadati, e per ogni slide:
-  - **Visualizza / Edita HTML** — editor con anteprima live (iframe) e re-render del PNG al salvataggio.
-  - **Edit AI** — modifica chirurgica di una singola slide tramite istruzione in linguaggio naturale.
-  - Download del PNG, eliminazione del contenuto.
+> Alternativa: crea un file `.env` (vedi `.env.example`) con `OPENAI_API_KEY=sk-...`
 
-### Endpoint UI (JSON)
+### 4. Configura il brand
 
-| Metodo | Path | Scopo |
-|---|---|---|
-| `POST` | `/api/generate` | Avvia un job di generazione (ritorna `202` + jobId) |
-| `GET` | `/api/generate` | Lista dei job recenti |
-| `GET` | `/api/generate/:id` | Stato + risultato di un job |
-| `GET` | `/api/library` | Lista dei contenuti generati |
-| `GET` | `/api/library/:id` | Manifest completo di un contenuto |
-| `DELETE` | `/api/library/:id` | Elimina un contenuto |
-| `GET` | `/api/library/:id/slides/:n/html` | HTML grezzo di una slide |
-| `PUT` | `/api/library/:id/slides/:n/html` | Salva l'HTML editato e ri-renderizza il PNG |
-| `POST` | `/api/library/:id/slides/:n/ai-edit` | Modifica una slide via AI e ri-renderizza |
-| `GET` | `/api/meta` | Metadati per la UI (modello di default, palette, range slide) |
-| `GET` | `/output/...` | Artefatti generati (PNG + HTML) serviti staticamente |
+Vai in **Brand kit** e imposta:
+- Nome del brand e tono di voce
+- 6 colori (ruoli semantici: primario, positivo, negativo, sfondo, testo, secondario)
+- Font e logo
 
-> Nota: dalla pipeline ora **anche i post singoli** producono una cartella dedicata
-> (`output/post-<id>/`) con `manifest.json`, così la libreria li gestisce in modo uniforme ai caroselli.
+Poi vai in **Nuovo contenuto** e genera il primo carousel.
 
-## Endpoint
+## Provider LLM supportati
 
-| Metodo | Path | Scopo |
-|---|---|---|
-| `POST` | `/render/still` | Renderizza 1 PNG da uno `SlideSpec` |
-| `POST` | `/render/carousel` | Renderizza N PNG da `SlideSpec[]` |
-| `POST` | `/render/dynamic` | Genera TSX via LLM e renderizza un PNG dinamico |
-| `POST` | `/render/html` | Genera HTML+CSS via LLM e renderizza un PNG via Playwright |
-| `POST` | `/generate/content` | Genera un contenuto completo (post singolo o carosello) end-to-end |
-| `GET` | `/compositions` | Metadati composition `Slide` |
-| `GET` | `/primitives` | Catalogo primitive + JSON Schema |
-| `GET` | `/layouts` | Catalogo layout preset |
-| `GET` | `/theme` | Token brand (colori, font, spacing) |
-| `GET` | `/assets` | Manifest asset library |
-| `GET` | `/health` | Health check |
+- **OpenAI** (default): GPT-4o, GPT-5.4, o3-mini, ecc.
+- **Qualsiasi proxy LiteLLM**: Claude, Gemini, Llama, ecc.
 
-## Esempio request
+Imposta `LITELLM_BASE_URL` e `LITELLM_API_KEY` nel `.env` o dalla UI Impostazioni.
 
-```bash
-curl -X POST http://localhost:3001/render/still \
-  -H "Content-Type: application/json" \
-  --data-binary @examples/leva-del-tempo.json
+## Struttura del progetto
+
+```
+src/
+  config/      # config store (API key, modelli)
+  content/     # pipeline contenuto (research → plan → review)
+  html/        # generazione HTML/CSS slide + rendering
+  server/      # Express API + route
+web/           # UI React (Vite, Tailwind, shadcn)
+examples/      # esempio brand Finvestire (pronto all'uso)
+public/        # asset statici (font, logo default)
+output/        # slide generate (gitignored)
+data/          # config locale (gitignored)
 ```
 
-Risposta: `{ "file": "/abs/path/output/Slide-XXXX.png", "durationMs": 1820 }`
+## Esempio: Finvestire
 
-## Esempio dynamic render
+La directory `examples/finvestire/` contiene un brand completo funzionante.
+Segui le istruzioni in `examples/finvestire/README.md` per importarlo.
 
-```bash
-curl -X POST http://localhost:3001/render/dynamic \
-  -H "Content-Type: application/json" \
-  --data-binary @examples/dynamic-prompt.json
-```
+## Licenza
 
-Risposta: `{ "file": "...", "intent": "...", "code": "...", "durationMs": 4200, "llmDurationMs": 1800, "renderDurationMs": 2400 }`
-
-Richiede un proxy litellm in ascolto su `LITELLM_BASE_URL`. Le variabili minime sono in `.env.example` (`LITELLM_BASE_URL`, `LITELLM_API_KEY`, `LITELLM_MODEL`).
-
-## Esempio html render
-
-```bash
-curl -X POST http://localhost:3001/render/html \
-  -H "Content-Type: application/json" \
-  --data-binary @examples/html-prompt.json
-```
-
-Risposta: `{ "file": "...", "intent": "...", "html": "...", "attempts": 1, "durationMs": 3800, "llmDurationMs": 1600, "renderDurationMs": 2200 }`
-
-Richiede Playwright installato (`npm install && npx playwright install chromium`). Usa le stesse variabili LLM di `/render/dynamic`. Variabili opzionali: `HTML_MAX_ATTEMPTS` (default 3), `HTML_RENDER_TIMEOUT_MS` (default 15000), `HTML_DEVICE_SCALE_FACTOR` (default 1).
-
-## Esempio content generation (end-to-end)
-
-Crea un contenuto completo partendo solo dall'argomento. Pipeline:
-**1)** un agente *ricercatore* approfondisce l'argomento via web search (OpenAI Responses API) →
-**2)** un agente *content planner* struttura il contenuto in slide (cosa va in quale slide) →
-**3)** ogni slide passa nella pipeline a 4 agenti di `/render/html` →
-**4)** un *caporedattore* fa la revisione editoriale finale (aderenza all'argomento, scorrevolezza, qualità) e, se serve, rimanda la correzione all'agente della singola slide.
-
-```bash
-# Carosello da 6 slide
-curl -X POST http://localhost:3001/generate/content \
-  -H "Content-Type: application/json" \
-  -d '{
-    "topic": "La leva del tempo negli investimenti",
-    "instructions": "Tono educativo, pubblico principiante. Usa un esempio numerico sull'\''interesse composto.",
-    "format": "carousel",
-    "slideCount": 6
-  }'
-
-# Post singolo
-curl -X POST http://localhost:3001/generate/content \
-  -H "Content-Type: application/json" \
-  -d '{ "topic": "Cos'\''è l'\''ETF", "format": "single" }'
-```
-
-Risposta: `{ "title": "...", "angle": "...", "files": ["...", ...], "slides": [...], "reviewRounds": 1, "durationMs": 42000 }`
-
-`format` è `single` (1 slide) o `carousel` (`slideCount` 3–10, default 6). Variabili opzionali: `CONTENT_MAX_REVIEW_ROUNDS` (default 2), `OPENAI_WEB_SEARCH_TOOL` (default `web_search_preview`). La web search nativa richiede un modello OpenAI hosted; con un proxy senza web search l'agente ricercatore degrada sulla conoscenza del modello.
-
-## Stack
-
-- Node + TypeScript
-- Remotion 4 (rendering)
-- Express 4 (HTTP)
-- Zod (validation)
-- Vitest + pixelmatch (test + snapshot diff)
-
-## Asset richiesti
-
-Prima di poter renderizzare, posiziona i file in `public/`:
-- `public/brand/logo-f.svg` — logo monogramma Finvestire
-- `public/illustrations/money-time-flow.svg` — illustrazione slide campione
-
-## Documenti
-
-- Design v1: `docs/superpowers/specs/2026-05-24-render-service-v1-design.md`
-- Piano implementazione: `docs/superpowers/plans/2026-05-24-render-service-v1.md`
-- Design dynamic render: `docs/superpowers/specs/2026-05-24-render-dynamic-v1-design.md`
-- Piano dynamic render: `docs/superpowers/plans/2026-05-24-render-dynamic-v1.md`
-- Contesto brand: `docs/contesto-progetto-finvestire.md`
+MIT — vedi [LICENSE](LICENSE).
