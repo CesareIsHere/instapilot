@@ -12,6 +12,7 @@ function buildResearchPrompt(
   instructions: string | undefined,
   format: 'single' | 'carousel',
   slideCount: number | undefined,
+  brandName: string,
   feedback?: string,
 ): string {
   const corrections = feedback
@@ -37,7 +38,7 @@ function buildResearchPrompt(
 5. ANGOLI E HOOK — 2-3 angoli narrativi forti e ganci d'apertura utilizzabili per un post Instagram.
 6. FONTI — le fonti principali consultate.`;
 
-  return `Sei un ricercatore senior di finanza personale e investimenti per Finvestire (contenuti educativi in italiano), rivolto a un pubblico NON esperto.
+  return `Sei un ricercatore senior di finanza personale e investimenti per ${brandName} (contenuti educativi in italiano), rivolto a un pubblico NON esperto.
 
 ${formatHint}
 
@@ -63,6 +64,7 @@ export interface ResearchArgs {
   useWebSearch?: boolean;
   meter?: UsageMeter;
   feedback?: string;
+  brandName?: string;
 }
 
 /**
@@ -73,7 +75,7 @@ export interface ResearchArgs {
  */
 export async function researchTopic(args: ResearchArgs): Promise<string> {
   const { client, model, reasoningEffort, topic, instructions, format, slideCount } = args;
-  const prompt = buildResearchPrompt(topic, instructions, format, slideCount, args.feedback);
+  const prompt = buildResearchPrompt(topic, instructions, format, slideCount, args.brandName ?? 'il brand', args.feedback);
 
   // Evergreen topics don't need fresh web data — skip the search tool to save tokens/latency.
   if (args.useWebSearch === false) {

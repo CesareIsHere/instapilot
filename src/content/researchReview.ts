@@ -10,12 +10,12 @@ export const ResearchReviewSchema = z.object({
 });
 export type ResearchReview = z.infer<typeof ResearchReviewSchema>;
 
-function buildReviewerPrompt(format: 'single' | 'carousel'): string {
+function buildReviewerPrompt(format: 'single' | 'carousel', brandName: string): string {
   const depthHint = format === 'single'
     ? `Il dossier è per un SINGOLO POST (1 slide). Valuta se contiene i concetti chiave essenziali, almeno 1 dato utile e 1-2 angoli/hook. NON richiedere le 6 sezioni complete né approfondimenti accademici: la profondità richiesta è intenzionalmente ridotta.`
     : `Il dossier è per un CAROSELLO multi-slide. Valuta se è abbastanza completo da alimentare più slide in modo progressivo: concetti chiave, dati con anno/fonte, esempi, errori comuni, angoli/hook.`;
 
-  return `Sei un revisore di ricerca per Finvestire (finanza educativa in italiano).
+  return `Sei un revisore di ricerca per ${brandName} (finanza educativa in italiano).
 Valuti un dossier di ricerca PRIMA che venga usato per scrivere un post Instagram.
 
 ${depthHint}
@@ -39,6 +39,7 @@ export async function reviewResearch(args: {
   research: string;
   format: 'single' | 'carousel';
   meter?: UsageMeter;
+  brandName?: string;
 }): Promise<ResearchReview> {
   const jsonSchema = zodToJsonSchema(ResearchReviewSchema, { name: 'ResearchReview', nameStrategy: 'title' });
   const userContent = `ARGOMENTO: ${args.topic}
@@ -49,7 +50,7 @@ ${args.research}`;
   const request: Record<string, unknown> = {
     model: args.model,
     messages: [
-      { role: 'system', content: buildReviewerPrompt(args.format) },
+      { role: 'system', content: buildReviewerPrompt(args.format, args.brandName ?? 'il brand') },
       { role: 'user', content: userContent },
     ],
     response_format: { type: 'json_schema', json_schema: { name: 'ResearchReview', strict: true, schema: jsonSchema } },

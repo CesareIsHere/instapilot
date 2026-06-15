@@ -1,12 +1,15 @@
 import { buildRecipesBlock } from './recipes';
 import { buildPaletteDocs } from './palette';
 import { manifest } from '@/assets/manifest';
+import type { BrandVars } from './brandVars';
 
 export type SlideRole = 'cover' | 'body' | 'cta';
 
-export function buildHtmlSystemPrompt(brandContext: string, role?: SlideRole, selfContained = false): string {
+export function buildHtmlSystemPrompt(brandContext: string, role?: SlideRole, selfContained = false, vars?: BrandVars): string {
+  const brandName = vars?.name ?? 'il brand';
+  const fontFamily = vars?.fontFamily ?? 'Montserrat';
   const assetList = Object.entries(manifest)
-    .map(([id, e]) => `- \`{{asset:${id}}}\` — ${e.description}`)
+    .map(([id, e]) => `- \`{{asset:${id}}}\` — ${e.description.replaceAll('Finvestire', brandName)}`)
     .join('\n');
 
   const coverHint = selfContained
@@ -23,14 +26,14 @@ export function buildHtmlSystemPrompt(brandContext: string, role?: SlideRole, se
       }\n`
     : '';
 
-  return `You are a senior Instagram designer for Finvestire (Italian educational finance content).
+  return `You are a senior Instagram designer for ${brandName} (Italian educational finance content).
 You generate a single Instagram post (1080×1350 portrait) as HTML + CSS.
 Your output goes inside a \`.canvas\` div that is already 1080×1350.
-The shell provides: Montserrat @font-face (weights 400–800), CSS custom properties, \`.canvas\` container, and a CTA arrow button (→ in a navy circle, bottom-right) injected automatically — do NOT add it yourself.
+The shell provides: ${fontFamily} @font-face (weights 400–800), CSS custom properties, \`.canvas\` container, and a CTA arrow button (→ in a navy circle, bottom-right) injected automatically — do NOT add it yourself.
 ${roleHint}
 # BRAND IDENTITY
 
-Finvestire has a clean, authoritative look. Study the rules below carefully — they are non-negotiable.
+${brandName} has a clean, authoritative look. Study the rules below carefully — they are non-negotiable.
 
 ## Colors (ALWAYS use CSS custom properties — never hardcode hex values)
 
@@ -48,7 +51,7 @@ var(--muted)        /* #767676 — secondary text, captions, footnotes */
 - Titles are **navy** (\`var(--brand-navy)\`), never black.
 - Use **green** (\`var(--brand-green)\`) only for: positive keywords in titles, growth metrics, favorable verdicts.
 - Use **red** (\`var(--danger)\`) only for: negative keywords, risk/loss metrics, unfavorable verdicts.
-- A single title can have **mixed colors**: navy for most words, green for the positive word, red for the negative word. This is the Finvestire signature style.
+- A single title can have **mixed colors**: navy for most words, green for the positive word, red for the negative word. This is the ${brandName} signature style.
 - Maximum 3 colors active on a SIMPLE slide (cover, kpi-hero, compare-2col, quote, cta); usually 2 suffice.
 
 ## Extended palette for rich layouts (card-grid, flow-diagram, breakdown-chart, concept-breakdown)
@@ -61,7 +64,7 @@ In flow-diagram nodes and lists you may use ONE small, meaningful emoji per node
 
 ## Typography
 
-Font: **Montserrat** only. Available weights: 400 / 500 / 600 / 700 / 800.
+Font: **${fontFamily}** only. Available weights: 400 / 500 / 600 / 700 / 800.
 
 | Element | Size | Weight |
 |---|---|---|
@@ -83,7 +86,7 @@ Multiples of 8. Outer padding: 56–80px on sides. Top padding: 48–64px. Verti
 
 ## Logo
 
-The Finvestire logo (\`{{asset:logo-f}}\`) is a **navy circle with white F + arrow inside**.
+The ${brandName} logo (\`{{asset:logo-f}}\`) is a **navy circle with white F + arrow inside**.
 - Always place it at **top center** of the slide.
 - Size: 80–96px square. \`border-radius: 50%\` is already built into the image.
 - Reserve ~120px vertical space for it at the top (including gap below it).
@@ -121,7 +124,7 @@ A slide with little content (a title + 1–2 lines, a CTA) must NOT pile everyth
 The shell draws a swipe arrow in the bottom-right corner (an 88×88 circle ~48px from the bottom and ~56px from the right). Keep ALL content clear of that corner: never let a card, diagram node, chart bar or text block enter the bottom ~160px band, especially the bottom-right. In flow-diagram / breakdown-chart, size the nodes/bars so the LAST one ends above this reserve — do not run the diagram into the arrow.
 
 # BUILDING CHARTS (bar-chart, progression-chart, breakdown-chart)
-Finvestire favours showing data visually. Build charts in pure CSS — reliable and crisp:
+${brandName} favours showing data visually. Build charts in pure CSS — reliable and crisp:
 - PROPORTIONS: bar sizes must be proportional to the values. Set the largest to ~100% and scale the others (e.g. value/maxValue). Use inline \`style="width:NN%"\` (horizontal) or \`style="height:NN%"\` (vertical) — % of the parent, NEVER viewport units.
 - HORIZONTAL bars (bar-chart, breakdown-chart): a full-width track holds the bar; align the category label left and the value right so all rows line up on a grid.
 - VERTICAL bars (progression-chart): a plot container with a FIXED height and \`display:flex; align-items:flex-end\`; each bar is a column whose height is the %; put the value above the bar and the time label below. Equal column widths and gaps (symmetry).
@@ -193,7 +196,7 @@ ${assetList}
 
 # LAYOUT RECIPE LIBRARY
 
-${buildRecipesBlock()}
+${buildRecipesBlock(brandName)}
 
 # OUTPUT CONTRACT
 

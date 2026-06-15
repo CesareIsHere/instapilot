@@ -6,6 +6,7 @@ import { shortId } from '@/lib/render';
 import { runSlidePipeline, type PipelineSuccess, type PipelineWarning } from '@/html/pipeline';
 import type { SlideRole } from '@/html/htmlSystemPrompt';
 import { UsageMeter, type UsageTotals } from '@/llm/usage';
+import { getBrandVars } from '@/html/brandVars';
 import { researchTopic } from './research';
 import { reviewResearch } from './researchReview';
 import { planContent, type ContentFormat, type ContentPlan } from './plan';
@@ -23,6 +24,7 @@ export interface GenerateContentArgs {
   model: string;
   reasoningEffort?: ReasoningEffort;
   brandContext: string;
+  brandName?: string;
   topic: string;
   instructions?: string;
   format: ContentFormat;
@@ -80,7 +82,8 @@ interface SlideState {
 }
 
 export async function generateContent(args: GenerateContentArgs): Promise<GenerateContentResult> {
-  const { client, model, reasoningEffort, brandContext, topic, instructions, format, slideCount } = args;
+  const { client, model, reasoningEffort, topic, instructions, format, slideCount } = args;
+  const brandName = args.brandName ?? getBrandVars().name;
   const pick = (agent: keyof AgentModels) => args.models?.[agent] ?? model;
   const report = (phase: string, detail?: string, current?: number, total?: number) =>
     args.onProgress?.({ phase, detail, current, total });
@@ -92,17 +95,17 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
   report('research', 'Ricerca e approfondimento dell\'argomento');
   let research: string;
   try {
-    research = await researchTopic({ client, model: pick('research'), reasoningEffort, topic, instructions, format, slideCount, useWebSearch: args.useWebSearch, meter });
+    research = await researchTopic({ client, model: pick('research'), reasoningEffort, topic, instructions, format, slideCount, useWebSearch: args.useWebSearch, meter, brandName });
     // Without web search the dossier comes from model knowledge on (typically evergreen)
     // topics, where the accuracy/freshness risk reviewResearch guards against is low —
     // skip the review loop entirely to save its (dossier-sized) tokens.
     const reviewResearchRounds = args.useWebSearch === false ? 0 : MAX_RESEARCH_ROUNDS;
     for (let round = 1; round <= reviewResearchRounds; round++) {
-      const review = await reviewResearch({ client, model: pick('researchReview'), reasoningEffort, topic, instructions, research, format, meter });
+      const review = await reviewResearch({ client, model: pick('researchReview'), reasoningEffort, topic, instructions, research, format, meter, brandName });
       log.info('content.research.reviewed', { approved: review.approved, issues: review.issues.length, round });
       if (review.approved || review.issues.length === 0) break;
       if (round === MAX_RESEARCH_ROUNDS) { contentWarnings.research = review.issues; break; }
-      research = await researchTopic({ client, model: pick('research'), reasoningEffort, topic, instructions, format, slideCount, useWebSearch: args.useWebSearch, feedback: review.issues.join('; '), meter });
+      research = await researchTopic({ client, model: pick('research'), reasoningEffort, topic, instructions, format, slideCount, useWebSearch: args.useWebSearch, feedback: review.issues.join('; '), meter, brandName });
     }
   } catch (err) {
     return { ok: false, code: 'LLM_FAILURE', detail: `research: ${(err as Error).message}` };
@@ -112,14 +115,14 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
   report('plan', 'Strutturazione del contenuto in slide');
   let plan: ContentPlan;
   try {
-    plan = await planContent({ client, model: pick('plan'), reasoningEffort, format, slideCount, topic, instructions, research, meter });
+    plan = await planContent({ client, model: pick('plan'), reasoningEffort, format, slideCount, topic, instructions, research, meter, brandName });
     for (let round = 1; round <= MAX_PLAN_ROUNDS; round++) {
-      const review = await reviewPlan({ client, model: pick('planReview'), reasoningEffort, topic, instructions, format, slideCount, research, plan, meter });
+      const review = await reviewPlan({ client, model: pick('planReview'), reasoningEffort, topic, instructions, format, slideCount, research, plan, meter, brandName });
       log.info('content.plan.reviewed', { approved: review.approved, issues: review.issues.length, round });
       if (review.approved || review.issues.length === 0) break;
       if (round === MAX_PLAN_ROUNDS) { contentWarnings.plan = review.issues; break; }
       const feedback = review.planFeedback ?? review.issues.join('; ');
-      plan = await planContent({ client, model: pick('plan'), reasoningEffort, format, slideCount, topic, instructions, research, feedback, meter });
+      plan = await planContent({ client, model: pick('plan'), reasoningEffort, format, slideCount, topic, instructions, research, feedback, meter, brandName });
     }
   } catch (err) {
     return { ok: false, code: 'LLM_FAILURE', detail: `plan: ${(err as Error).message}` };
@@ -181,7 +184,7 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
 
     let review;
     try {
-      review = await reviewContent({ client, model: pick('editorialReview'), reasoningEffort, topic, instructions, title: plan.title, angle: plan.angle, slides: reviewable, meter });
+      review = await reviewContent({ client, model: pick('editorialReview'), reasoningEffort, topic, instructions, title: plan.title, angle: plan.angle, slides: reviewable, meter, brandName });
     } catch (err) {
       log.warn('content.review.error', { reason: (err as Error).message, round });
       break;

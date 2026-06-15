@@ -34,7 +34,8 @@ export interface ReviewableSlide {
   file: string;
 }
 
-const REVIEWER_PROMPT = `Sei il caporedattore E direttore artistico finale di Finvestire. Esegui la revisione finale di un contenuto Instagram (singolo post o carosello) già renderizzato. Ricevi l'IMMAGINE di OGNI slide e i suoi metadati: giudichi sia il testo sia la resa visiva, e soprattutto l'INSIEME.
+function buildReviewerPrompt(brandName: string): string {
+  return `Sei il caporedattore E direttore artistico finale di ${brandName}. Esegui la revisione finale di un contenuto Instagram (singolo post o carosello) già renderizzato. Ricevi l'IMMAGINE di OGNI slide e i suoi metadati: giudichi sia il testo sia la resa visiva, e soprattutto l'INSIEME.
 
 Questo contenuto verrà pubblicato a un pubblico mondiale: lo standard è altissimo. Di default NON approvare; approva solo se è davvero pronto da mostrare al mondo. Nel dubbio, non approvare.
 
@@ -72,6 +73,7 @@ Per OGNI slide con un problema (editoriale o visivo) fornisci:
 
 Output JSON (ContentReview): { approved, generalNotes, slideFixes }
 Approva (slideFixes vuoto) SOLO se ogni slide è editorialmente solida E visivamente impeccabile E l'insieme è coerente. Non inventare problemi inesistenti, ma non lasciar passare nulla che non pubblicheresti con orgoglio.`;
+}
 
 export async function reviewContent(args: {
   client: OpenAI;
@@ -83,6 +85,7 @@ export async function reviewContent(args: {
   angle: string;
   slides: ReviewableSlide[];
   meter?: UsageMeter;
+  brandName?: string;
 }): Promise<ContentReview> {
   const { client, model, reasoningEffort } = args;
   const jsonSchema = zodToJsonSchema(ContentReviewSchema, { name: 'ContentReview', nameStrategy: 'title' });
@@ -92,7 +95,7 @@ export async function reviewContent(args: {
   const request: Record<string, unknown> = {
     model,
     messages: [
-      { role: 'system', content: REVIEWER_PROMPT },
+      { role: 'system', content: buildReviewerPrompt(args.brandName ?? 'il brand') },
       { role: 'user', content: userContent },
     ],
     response_format: {

@@ -13,7 +13,7 @@ export const recipes: Recipe[] = [
   <div class="cover__eyebrow">CATEGORY LABEL</div>
   <h1 class="cover__title">The main hook in<br><span class="accent">two lines max</span></h1>
   <p class="cover__subtitle">Supporting sentence, optional</p>
-  <img class="cover__logo" src="{{asset:logo-f}}" alt="Finvestire">
+  <img class="cover__logo" src="{{asset:logo-f}}" alt="{{brandName}}">
 </div>`.trim(),
   },
   {
@@ -187,16 +187,16 @@ export const recipes: Recipe[] = [
   <h2 class="cta-slide__title">Closing headline</h2>
   <p class="cta-slide__body">One-sentence reinforcement or invitation to act.</p>
   <div class="cta-slide__action">FOLLOW / SAVE / SHARE</div>
-  <img class="cta-slide__logo" src="{{asset:logo-f}}" alt="Finvestire">
+  <img class="cta-slide__logo" src="{{asset:logo-f}}" alt="{{brandName}}">
 </div>`.trim(),
   },
 ];
 
-export function buildRecipesBlock(): string {
+export function buildRecipesBlock(brandName = 'il brand'): string {
   return recipes
     .map(
       (r) =>
-        `### Recipe: \`${r.id}\`\nWhen to use: ${r.when}\nHTML skeleton:\n\`\`\`html\n${r.skeleton}\n\`\`\``,
+        `### Recipe: \`${r.id}\`\nWhen to use: ${r.when}\nHTML skeleton:\n\`\`\`html\n${r.skeleton.replaceAll('{{brandName}}', brandName)}\n\`\`\``,
     )
     .join('\n\n');
 }

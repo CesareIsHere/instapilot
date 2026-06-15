@@ -8,6 +8,7 @@ import { validateGeneratedHtml } from './validate';
 import { buildHtmlDocument } from './template';
 import { renderHtmlStill } from './renderHtml';
 import { readBrandKit, defaultBrandKit } from '@/server/brand';
+import { getBrandVars } from './brandVars';
 import { reviewRenderedSlide, type QualityIssue } from './qualityReview';
 import type { LayoutIssue } from './layoutAudit';
 import { UsageMeter, type UsageTotals } from '@/llm/usage';
@@ -115,7 +116,7 @@ export async function runSlidePipeline(args: PipelineArgs): Promise<PipelineResu
   }
 
   // ── Phase 2: Render + Quality (Agent 3 → render → Agent 4) — best effort ──
-  const systemPrompt = buildHtmlSystemPrompt(brandContext, role, args.selfContained);
+  const systemPrompt = buildHtmlSystemPrompt(brandContext, role, args.selfContained, getBrandVars());
   let renderAttempts = 0;
   // In revision mode, seed the renderer with the editorial fix + the prior HTML so it edits surgically.
   let renderFeedback: string | undefined = args.revision ? buildEditorialFeedback(args.revision.editorialFix) : undefined;

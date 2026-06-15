@@ -12,7 +12,8 @@ export const PlanReviewSchema = z.object({
 });
 export type PlanReview = z.infer<typeof PlanReviewSchema>;
 
-const PLAN_REVIEWER_PROMPT = `Sei un caporedattore di Finvestire. Valuti il PIANO di un contenuto Instagram (la struttura in slide e i brief) PRIMA che le slide vengano generate.
+function buildPlanReviewerPrompt(brandName: string): string {
+  return `Sei un caporedattore di ${brandName}. Valuti il PIANO di un contenuto Instagram (la struttura in slide e i brief) PRIMA che le slide vengano generate.
 
 Controlla:
 1. Struttura: rispetta il formato richiesto (numero di slide, ruoli cover/body/cta)?
@@ -37,6 +38,7 @@ Sii esigente ma equo. Approva se il piano è solido. Boccia solo per problemi re
 Se NON approvi, elenca gli issue e fornisci in planFeedback istruzioni concrete e azionabili per rifare il piano.
 Output JSON: { "approved": boolean, "issues": string[], "planFeedback": string | null }.
 Se approvato, issues è vuoto e planFeedback è null.`;
+}
 
 export async function reviewPlan(args: {
   client: OpenAI;
@@ -49,6 +51,7 @@ export async function reviewPlan(args: {
   research: string;
   plan: ContentPlan;
   meter?: UsageMeter;
+  brandName?: string;
 }): Promise<PlanReview> {
   const jsonSchema = zodToJsonSchema(PlanReviewSchema, { name: 'PlanReview', nameStrategy: 'title' });
   const slidesText = args.plan.slides
@@ -66,7 +69,7 @@ ${slidesText}`;
   const request: Record<string, unknown> = {
     model: args.model,
     messages: [
-      { role: 'system', content: PLAN_REVIEWER_PROMPT },
+      { role: 'system', content: buildPlanReviewerPrompt(args.brandName ?? 'il brand') },
       { role: 'user', content: userContent },
     ],
     response_format: { type: 'json_schema', json_schema: { name: 'PlanReview', strict: true, schema: jsonSchema } },

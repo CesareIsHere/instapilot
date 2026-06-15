@@ -23,7 +23,7 @@ export const ContentPlanSchema = z.object({
 export type PlannedSlide = z.infer<typeof PlannedSlideSchema>;
 export type ContentPlan = z.infer<typeof ContentPlanSchema>;
 
-function buildPlannerSystemPrompt(format: ContentFormat, slideCount: number | undefined): string {
+function buildPlannerSystemPrompt(format: ContentFormat, slideCount: number | undefined, brandName: string): string {
   const formatRules =
     format === 'single'
       ? `Il formato è un SINGOLO POST: produci esattamente 1 slide (role "cover"). Tutto il messaggio deve stare in una sola immagine. Imposta framework="single".`
@@ -67,7 +67,7 @@ Scegli la struttura più adatta al contenuto e dichiarala nel campo "framework":
 # FUNZIONE NARRATIVA
 Assegna a ogni slide un "narrativeFunction" coerente con la struttura scelta (es. "hook", "why", "inform", "payoff", "cta", "setup", "conflict", "solution", "loop-open", "loop-close").`;
 
-  return `Sei un social media manager senior specializzato in post e caroselli Instagram educativi di finanza per Finvestire (italiano).
+  return `Sei un social media manager senior specializzato in post e caroselli Instagram educativi di finanza per ${brandName} (italiano).
 
 ${formatRules}
 
@@ -108,6 +108,7 @@ export async function planContent(args: {
   research: string;
   meter?: UsageMeter;
   feedback?: string;
+  brandName?: string;
 }): Promise<ContentPlan> {
   const { client, model, reasoningEffort, format, slideCount, topic, instructions, research } = args;
   const jsonSchema = zodToJsonSchema(ContentPlanSchema, { name: 'ContentPlan', nameStrategy: 'title' });
@@ -120,7 +121,7 @@ ${research}${args.feedback ? `\n\n--- REVISIONE DEL PIANO PRECEDENTE DA CORREGGE
   const request: Record<string, unknown> = {
     model,
     messages: [
-      { role: 'system', content: buildPlannerSystemPrompt(format, slideCount) },
+      { role: 'system', content: buildPlannerSystemPrompt(format, slideCount, args.brandName ?? 'il brand') },
       { role: 'user', content: userContent },
     ],
     response_format: {
