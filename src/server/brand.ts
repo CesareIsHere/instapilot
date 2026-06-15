@@ -3,18 +3,32 @@ import { z } from 'zod';
 import fs from 'node:fs';
 import path from 'node:path';
 import { loadBrandContext } from '@/llm/brandContext';
-import { colors } from '@/theme/colors';
 import { log } from '@/lib/log';
 
 const BRAND_KIT_FILE = process.env.BRAND_KIT_FILE ?? path.resolve(process.cwd(), 'data', 'brand-kit.json');
+
+export interface BrandColors {
+  primary: string;
+  positive: string;
+  negative: string;
+  paper: string;
+  ink: string;
+  muted: string;
+}
+
+export interface BrandFont {
+  family: string;
+  source: 'bundled' | 'custom';
+}
 
 export interface BrandKit {
   name: string;
   tagline: string;
   audience: string;
   tone: string;
-  colors: string[];
-  fonts: string[];
+  brandColors: BrandColors;
+  font: BrandFont;
+  logoPath?: string;
   hashtags: string[];
   ctas: string[];
   dos: string;
@@ -22,13 +36,28 @@ export interface BrandKit {
   notes: string;
 }
 
+const BrandColorsSchema = z.object({
+  primary: z.string().max(30).default('#012A78'),
+  positive: z.string().max(30).default('#00B373'),
+  negative: z.string().max(30).default('#DC2626'),
+  paper: z.string().max(30).default('#FFFFFF'),
+  ink: z.string().max(30).default('#101010'),
+  muted: z.string().max(30).default('#767676'),
+});
+
+const BrandFontSchema = z.object({
+  family: z.string().max(80).default('Montserrat'),
+  source: z.enum(['bundled', 'custom']).default('bundled'),
+});
+
 const BrandKitSchema = z.object({
   name: z.string().max(120).default(''),
   tagline: z.string().max(280).default(''),
   audience: z.string().max(500).default(''),
   tone: z.string().max(500).default(''),
-  colors: z.array(z.string().max(40)).max(20).default([]),
-  fonts: z.array(z.string().max(80)).max(20).default([]),
+  brandColors: BrandColorsSchema.default({}),
+  font: BrandFontSchema.default({}),
+  logoPath: z.string().max(500).optional(),
   hashtags: z.array(z.string().max(80)).max(40).default([]),
   ctas: z.array(z.string().max(200)).max(20).default([]),
   dos: z.string().max(2000).default(''),
@@ -36,21 +65,8 @@ const BrandKitSchema = z.object({
   notes: z.string().max(4000).default(''),
 });
 
-/** A blank kit pre-seeded with the project's theme colors, used when none is saved yet. */
-function defaultBrandKit(): BrandKit {
-  return {
-    name: '',
-    tagline: '',
-    audience: '',
-    tone: '',
-    colors: [colors['brand-navy'], colors['brand-green']],
-    fonts: [],
-    hashtags: [],
-    ctas: [],
-    dos: '',
-    donts: '',
-    notes: '',
-  };
+export function defaultBrandKit(): BrandKit {
+  return BrandKitSchema.parse({});
 }
 
 export function readBrandKit(): BrandKit | null {
@@ -73,8 +89,9 @@ export function brandKitToContext(kit: BrandKit): string {
   if (kit.tagline) lines.push(`Tagline: ${kit.tagline}`);
   if (kit.audience) lines.push(`Pubblico target: ${kit.audience}`);
   if (kit.tone) lines.push(`Tono di voce: ${kit.tone}`);
-  if (kit.colors.length) lines.push(`Palette colori: ${kit.colors.join(', ')}`);
-  if (kit.fonts.length) lines.push(`Font: ${kit.fonts.join(', ')}`);
+  const c = kit.brandColors;
+  lines.push(`Colori (ruoli semantici): primario ${c.primary}, positivo ${c.positive}, negativo ${c.negative}, sfondo ${c.paper}, testo ${c.ink}, secondario ${c.muted}`);
+  lines.push(`Font: ${kit.font.family}`);
   if (kit.hashtags.length) lines.push(`Hashtag ricorrenti: ${kit.hashtags.map((h) => `#${h.replace(/^#/, '')}`).join(' ')}`);
   if (kit.ctas.length) lines.push(`Call-to-action preferite:\n${kit.ctas.map((c) => `- ${c}`).join('\n')}`);
   if (kit.dos) lines.push(`Da fare:\n${kit.dos}`);
