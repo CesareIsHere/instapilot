@@ -3,16 +3,17 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Download, Trash2, Code2, Sparkles, Loader2,
   AlertTriangle, ChevronLeft, ChevronRight, FileArchive, Copy, MessageSquareText, RefreshCw,
+  History, RotateCcw,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { api, type ContentDetail as IContentDetail, type Caption, type Slide } from '@/lib/api';
+import { api, type ContentDetail as IContentDetail, type Caption, type Slide, type SlideVersion } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { fmtDate, cn } from '@/lib/utils';
+import { fmtDate, fmtCost, cn } from '@/lib/utils';
 
 /* ── Metadata row ──────────────────────────────────────────── */
 function MetaRow({ label, value }: { label: string; value?: string | number | null }) {
@@ -183,6 +184,83 @@ function HtmlEditorDialog({ open, onClose, contentId, slideIndex, slideLabel, on
   );
 }
 
+/* ── Slide version history dialog ──────────────────────────── */
+interface HistoryProps {
+  open: boolean;
+  onClose: () => void;
+  contentId: string;
+  slideIndex: number;
+  slideLabel: string;
+  onReverted: (imageUrl: string, editedAt: string) => void;
+}
+
+function HistoryDialog({ open, onClose, contentId, slideIndex, slideLabel, onReverted }: HistoryProps) {
+  const [versions, setVersions] = useState<SlideVersion[] | null>(null);
+  const [reverting, setReverting] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setVersions(null);
+    api.library.slideHistory(contentId, slideIndex)
+      .then(r => setVersions(r.versions))
+      .catch(err => { toast.error((err as Error).message); onClose(); });
+  }, [open, contentId, slideIndex]);
+
+  const handleRevert = async (versionId: string) => {
+    setReverting(versionId);
+    const toastId = toast.loading('Ripristino versione…');
+    try {
+      const r = await api.library.revertSlide(contentId, slideIndex, versionId);
+      toast.success('Versione ripristinata', { id: toastId });
+      onReverted(r.imageUrl, r.editedAt);
+      onClose();
+    } catch (err) {
+      toast.error((err as Error).message, { id: toastId });
+    } finally {
+      setReverting(null);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="text-sm flex items-center gap-2">
+            <History size={15} /> Cronologia — {slideLabel}
+          </DialogTitle>
+        </DialogHeader>
+
+        {versions === null ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 size={20} className="animate-spin text-muted-foreground" />
+          </div>
+        ) : versions.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">
+            Nessuna versione precedente. Le versioni vengono salvate automaticamente a ogni modifica.
+          </p>
+        ) : (
+          <div className="space-y-2.5 max-h-[60vh] overflow-y-auto pr-1">
+            {versions.map(v => (
+              <div key={v.id} className="flex items-center gap-3 rounded-lg border p-2.5">
+                <img src={v.imageUrl} alt={v.label} loading="lazy"
+                  className="rounded-md border object-cover shrink-0" style={{ width: 48, aspectRatio: '4/5' }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium truncate">{v.label}</p>
+                  <p className="text-[11px] text-muted-foreground">{fmtDate(v.at)}</p>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => handleRevert(v.id)} disabled={reverting !== null} className="shrink-0">
+                  {reverting === v.id ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
+                  Ripristina
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 /* ── Quick AI edit prompt ──────────────────────────────────── */
 async function quickAiEdit(
   contentId: string, slideIndex: number,
@@ -208,6 +286,7 @@ export function ContentDetail() {
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState(0);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [slideVersions, setSlideVersions] = useState<Record<number, string>>({});
   const [caption, setCaption] = useState<Caption | null>(null);
   const [captionLoading, setCaptionLoading] = useState(false);
@@ -407,6 +486,10 @@ export function ContentDetail() {
               <Sparkles size={14} />
               Modifica con AI
             </Button>
+            <Button variant="outline" size="sm" onClick={() => setHistoryOpen(true)}>
+              <History size={14} />
+              Cronologia
+            </Button>
             {imageUrl && (
               <a href={imageUrl} download={`slide-${active + 1}.png`} className="inline-flex">
                 <Button variant="ghost" size="sm">
@@ -427,6 +510,9 @@ export function ContentDetail() {
             <MetaRow label="Creato" value={fmtDate(data.createdAt)} />
             {data.usage?.totalTokens && (
               <MetaRow label="Token usati" value={data.usage.totalTokens.toLocaleString('it-IT')} />
+            )}
+            {typeof data.cost === 'number' && data.cost > 0 && (
+              <MetaRow label="Costo stimato" value={fmtCost(data.cost, data.currency)} />
             )}
             {data.warnings?.research && data.warnings.research.length > 0 && (
               <div className="mt-2 flex items-start gap-1.5 text-xs text-amber-600 bg-amber-50 rounded-lg p-2">
@@ -517,6 +603,18 @@ export function ContentDetail() {
           slideIndex={active}
           slideLabel={`Slide ${active + 1} — ${currentSlide.role}`}
           onSaved={handleSaved(active)}
+        />
+      )}
+
+      {/* Version history dialog */}
+      {id && currentSlide && (
+        <HistoryDialog
+          open={historyOpen}
+          onClose={() => setHistoryOpen(false)}
+          contentId={id}
+          slideIndex={active}
+          slideLabel={`Slide ${active + 1}`}
+          onReverted={(imgUrl, editedAt) => handleSaved(active)(imgUrl, editedAt)}
         />
       )}
     </div>

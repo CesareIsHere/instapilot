@@ -3,7 +3,7 @@ import { z } from 'zod';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { createLlmClient, readLlmConfig } from '@/llm/client';
-import { loadBrandContext } from '@/llm/brandContext';
+import { resolveBrandContext } from './brand';
 import { generateContent, type GenerateContentSuccess } from '@/content/orchestrate';
 import { log } from '@/lib/log';
 
@@ -68,8 +68,7 @@ function runJob(job: Job, body: z.infer<typeof GenerateBodySchema>): void {
   try {
     cfg = readLlmConfig();
     client = createLlmClient(cfg);
-    brand = body.brandContext
-      ?? loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'docs/contesto-progetto-finvestire.md');
+    brand = resolveBrandContext(body.brandContext);
   } catch (err) {
     job.status = 'error';
     job.error = { message: (err as Error).message };

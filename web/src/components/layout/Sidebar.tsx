@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutGrid, Plus, Activity, Diamond } from 'lucide-react';
+import { LayoutGrid, Plus, Activity, Diamond, Palette } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/api';
 
@@ -49,6 +49,7 @@ export function Sidebar() {
         <NavItem to="/" icon={<LayoutGrid size={16} />} label="Libreria" />
         <NavItem to="/new" icon={<Plus size={16} />} label="Nuovo contenuto" />
         <NavItem to="/jobs" icon={<Activity size={16} />} label="Generazioni" />
+        <NavItem to="/brand" icon={<Palette size={16} />} label="Brand kit" />
       </nav>
 
       {/* Health */}

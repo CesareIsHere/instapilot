@@ -1,6 +1,7 @@
 node_modules/
 output/*
 !output/.gitkeep
+data/
 public/generated/*
 !public/generated/.gitkeep
 .env

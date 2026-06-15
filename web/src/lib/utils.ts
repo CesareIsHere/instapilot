@@ -17,6 +17,17 @@ export function fmtDate(s: string | null | undefined): string {
   }
 }
 
+export function fmtCost(value: number | null | undefined, currency = 'USD'): string {
+  if (value == null) return '—';
+  try {
+    return new Intl.NumberFormat('it-IT', {
+      style: 'currency', currency, minimumFractionDigits: value < 1 ? 3 : 2, maximumFractionDigits: 4,
+    }).format(value);
+  } catch {
+    return `${value.toFixed(3)} ${currency}`;
+  }
+}
+
 export function fmtRelative(s: string | null | undefined): string {
   if (!s) return '—';
   try {

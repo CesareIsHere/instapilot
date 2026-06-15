@@ -19,6 +19,22 @@ export interface LibraryItem {
   format: 'single' | 'carousel'; framework?: string;
   slideCount: number; createdAt: string; updatedAt?: string;
   coverUrl: string | null;
+  totalTokens?: number; cost?: number;
+}
+
+export interface SlideVersion {
+  id: string; at: string; label: string;
+  imageUrl: string; htmlUrl: string;
+}
+
+export interface BrandKit {
+  name: string; tagline: string; audience: string; tone: string;
+  colors: string[]; fonts: string[]; hashtags: string[]; ctas: string[];
+  dos: string; donts: string; notes: string;
+}
+
+export interface Pricing {
+  inputPer1M: number; outputPer1M: number; currency: string;
 }
 
 export interface Slide {
@@ -43,6 +59,7 @@ export interface ContentDetail {
   usage?: { totalTokens: number; promptTokens: number; completionTokens: number; calls: number };
   warnings?: { research: string[]; plan: string[] };
   caption?: Caption;
+  cost?: number; currency?: string;
   slides: Slide[];
 }
 
@@ -59,6 +76,7 @@ export interface Job {
 export interface Meta {
   defaultModel: string | null;
   slideCount: { min: number; max: number; default: number };
+  pricing?: Pricing;
 }
 
 /* ── API ────────────────────────────────────────────────────── */
@@ -88,6 +106,19 @@ export const api = {
     generateCaption: (id: string) =>
       apiFetch<{ ok: boolean; caption: Caption }>(`/api/library/${id}/caption`, { method: 'POST', body: '{}' }),
     exportUrl: (id: string) => `/api/library/${id}/export`,
+    slideHistory: (id: string, n: number) =>
+      apiFetch<{ versions: SlideVersion[] }>(`/api/library/${id}/slides/${n}/history`),
+    revertSlide: (id: string, n: number, versionId: string) =>
+      apiFetch<{ ok: boolean; imageUrl: string; editedAt: string; warnings: number }>(
+        `/api/library/${id}/slides/${n}/revert`,
+        { method: 'POST', body: JSON.stringify({ id: versionId }) },
+      ),
+  },
+
+  brand: {
+    get: () => apiFetch<{ kit: BrandKit; saved: boolean }>('/api/brand'),
+    save: (kit: BrandKit) =>
+      apiFetch<{ ok: boolean; kit: BrandKit }>('/api/brand', { method: 'PUT', body: JSON.stringify(kit) }),
   },
 
   generate: {

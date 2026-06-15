@@ -3,16 +3,32 @@ import { z } from 'zod';
 import fs from 'node:fs';
 import path from 'node:path';
 import { readLlmConfig, createLlmClient } from '@/llm/client';
-import { loadBrandContext } from '@/llm/brandContext';
 import { editSlideHtml } from '@/llm/editSlide';
 import { generateCaption } from '@/llm/generateCaption';
 import { renderHtmlStill } from '@/html/renderHtml';
 import { createZip, type ZipEntry } from '@/lib/zip';
+import { readPricing, estimateCost } from '@/lib/pricing';
+import { resolveBrandContext } from './brand';
 import { theme } from '@/theme';
 import { log } from '@/lib/log';
 
 const OUTPUT_DIR = process.env.OUTPUT_DIR ?? path.resolve(process.cwd(), 'output');
 const ID_RE = /^(carousel|post)-[a-zA-Z0-9]+$/;
+
+interface SlideHistoryEntry {
+  id: string;
+  at: string;
+  htmlFile: string;
+  file: string;
+  label: string;
+}
+
+interface UsageLike {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  calls: number;
+}
 
 interface ManifestSlide {
   index: number;
@@ -27,7 +43,10 @@ interface ManifestSlide {
   usage?: unknown;
   editedAt?: string;
   lastEditSummary?: string;
+  history?: SlideHistoryEntry[];
 }
+
+const MAX_HISTORY = 8;
 
 interface Caption {
   text: string;
@@ -44,7 +63,7 @@ interface Manifest {
   angle?: string;
   createdAt: string;
   updatedAt?: string;
-  usage?: unknown;
+  usage?: UsageLike;
   warnings?: unknown;
   research?: string;
   caption?: Caption;
@@ -91,6 +110,7 @@ function listContent() {
     .readdirSync(OUTPUT_DIR, { withFileTypes: true })
     .filter((e) => e.isDirectory() && ID_RE.test(e.name));
 
+  const pricing = readPricing();
   const items = [];
   for (const e of entries) {
     const dir = path.join(OUTPUT_DIR, e.name);
@@ -109,6 +129,8 @@ function listContent() {
         createdAt: m.createdAt,
         updatedAt: m.updatedAt,
         coverUrl: cover ? `/output/${e.name}/${cover}` : null,
+        totalTokens: m.usage?.totalTokens ?? 0,
+        cost: estimateCost(m.usage, pricing),
       });
     } catch (err) {
       log.warn('library.manifest_read_error', { dir: e.name, message: (err as Error).message });
@@ -151,8 +173,40 @@ async function rerenderSlide(dir: string, slide: ManifestSlide, html: string): P
   return outcome.issues.length;
 }
 
+/**
+ * Snapshot the slide's CURRENT html+png into a `history/` folder before it is
+ * overwritten, so an edit can be reverted. Mutates `slide.history` (caller persists
+ * the manifest); trims to MAX_HISTORY and deletes the dropped files.
+ */
+function snapshotSlide(dir: string, slide: ManifestSlide, label: string): void {
+  const historyDir = path.join(dir, 'history');
+  const srcHtml = path.join(dir, slide.htmlFile);
+  const srcPng = path.join(dir, slide.file);
+  if (!fs.existsSync(srcHtml)) return; // nothing to snapshot
+
+  fs.mkdirSync(historyDir, { recursive: true });
+  const ts = Date.now();
+  const base = slide.file.replace(/\.png$/, '');
+  const histHtml = `history/${base}-${ts}.html`;
+  const histPng = `history/${base}-${ts}.png`;
+  fs.copyFileSync(srcHtml, path.join(dir, histHtml));
+  if (fs.existsSync(srcPng)) fs.copyFileSync(srcPng, path.join(dir, histPng));
+
+  const entry: SlideHistoryEntry = { id: String(ts), at: new Date().toISOString(), htmlFile: histHtml, file: histPng, label };
+  slide.history = [entry, ...(slide.history ?? [])];
+
+  // Trim oldest beyond the cap, removing their backing files.
+  for (const dropped of slide.history.slice(MAX_HISTORY)) {
+    for (const f of [dropped.htmlFile, dropped.file]) {
+      try { fs.rmSync(path.join(dir, f), { force: true }); } catch { /* best effort */ }
+    }
+  }
+  slide.history = slide.history.slice(0, MAX_HISTORY);
+}
+
 const SaveHtmlSchema = z.object({ html: z.string().min(1).max(500_000) });
 const AiEditSchema = z.object({ instruction: z.string().min(1).max(4000), model: z.string().optional() });
+const RevertSchema = z.object({ id: z.string().min(1).max(40) });
 
 export function mountLibraryRoutes(app: Express): void {
   // Serve generated artifacts (PNG + HTML) statically.
@@ -171,6 +225,7 @@ export function mountLibraryRoutes(app: Express): void {
       colors: theme.colors,
       formats: ['single', 'carousel'],
       slideCount: { min: 6, max: 9, default: 7 },
+      pricing: readPricing(),
     });
   });
 
@@ -190,7 +245,14 @@ export function mountLibraryRoutes(app: Express): void {
         return;
       }
       const m = readManifest(dir);
-      res.json({ id: req.params.id, ...m, slides: decorateSlides(req.params.id, m) });
+      const pricing = readPricing();
+      res.json({
+        id: req.params.id,
+        ...m,
+        cost: estimateCost(m.usage, pricing),
+        currency: pricing.currency,
+        slides: decorateSlides(req.params.id, m),
+      });
     } catch (err) {
       next(err);
     }
@@ -266,7 +328,7 @@ export function mountLibraryRoutes(app: Express): void {
 
       const cfg = readLlmConfig();
       const client = createLlmClient(cfg);
-      const brand = loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'docs/contesto-progetto-finvestire.md');
+      const brand = resolveBrandContext();
 
       let generated;
       try {
@@ -338,8 +400,10 @@ export function mountLibraryRoutes(app: Express): void {
         return;
       }
       const { html } = SaveHtmlSchema.parse(req.body);
+      snapshotSlide(dir, slide, slide.lastEditSummary ?? 'Versione precedente');
       const warnings = await rerenderSlide(dir, slide, html);
       slide.editedAt = new Date().toISOString();
+      slide.lastEditSummary = 'Modifica manuale HTML';
       m.updatedAt = slide.editedAt;
       writeManifest(dir, m);
       log.info('library.slide.saved', { id: req.params.id, slide: idx, warnings });
@@ -369,7 +433,7 @@ export function mountLibraryRoutes(app: Express): void {
 
       const cfg = readLlmConfig();
       const client = createLlmClient(cfg);
-      const brand = loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'docs/contesto-progetto-finvestire.md');
+      const brand = resolveBrandContext();
 
       let edited;
       try {
@@ -387,6 +451,7 @@ export function mountLibraryRoutes(app: Express): void {
         throw e;
       }
 
+      snapshotSlide(dir, slide, slide.lastEditSummary ?? 'Versione precedente');
       const warnings = await rerenderSlide(dir, slide, edited.html);
       slide.editedAt = new Date().toISOString();
       // Keep the original design `intent`; record the edit summary separately so
@@ -403,6 +468,69 @@ export function mountLibraryRoutes(app: Express): void {
         editedAt: slide.editedAt,
         warnings,
       });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Version history of a slide (previous html+png snapshots, newest first).
+  app.get('/api/library/:id/slides/:n/history', (req, res, next) => {
+    try {
+      const dir = contentDir(req.params.id);
+      if (!dir) {
+        res.status(404).json({ error: 'content_not_found' });
+        return;
+      }
+      const m = readManifest(dir);
+      const slide = m.slides[Number(req.params.n)];
+      if (!slide) {
+        res.status(404).json({ error: 'slide_not_found' });
+        return;
+      }
+      const versions = (slide.history ?? []).map((h) => ({
+        id: h.id,
+        at: h.at,
+        label: h.label,
+        imageUrl: `/output/${req.params.id}/${h.file}`,
+        htmlUrl: `/output/${req.params.id}/${h.htmlFile}`,
+      }));
+      res.json({ versions });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Restore a slide to a previous version. Snapshots the current state first so
+  // the revert is itself undoable, then re-renders from the stored HTML.
+  app.post('/api/library/:id/slides/:n/revert', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const dir = contentDir(req.params.id);
+      if (!dir) {
+        res.status(404).json({ error: 'content_not_found' });
+        return;
+      }
+      const m = readManifest(dir);
+      const idx = Number(req.params.n);
+      const slide = m.slides[idx];
+      if (!slide) {
+        res.status(404).json({ error: 'slide_not_found' });
+        return;
+      }
+      const { id: versionId } = RevertSchema.parse(req.body);
+      const entry = (slide.history ?? []).find((h) => h.id === versionId);
+      if (!entry) {
+        res.status(404).json({ error: 'version_not_found' });
+        return;
+      }
+      const html = fs.readFileSync(path.join(dir, entry.htmlFile), 'utf8');
+      snapshotSlide(dir, slide, slide.lastEditSummary ?? 'Versione precedente');
+      const warnings = await rerenderSlide(dir, slide, html);
+      slide.editedAt = new Date().toISOString();
+      slide.lastEditSummary = `Ripristino: ${entry.label}`;
+      m.updatedAt = slide.editedAt;
+      writeManifest(dir, m);
+      log.info('library.slide.reverted', { id: req.params.id, slide: idx, version: versionId });
+      res.json({ ok: true, imageUrl: `/output/${req.params.id}/${slide.file}`, editedAt: slide.editedAt, warnings });
     } catch (err) {
       next(err);
     }

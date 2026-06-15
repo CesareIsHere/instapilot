@@ -5,7 +5,7 @@ import { api, type LibraryItem } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { fmtRelative } from '@/lib/utils';
+import { fmtRelative, fmtCost } from '@/lib/utils';
 
 function ContentCard({ item }: { item: LibraryItem }) {
   return (
@@ -69,12 +69,16 @@ function LibrarySkeleton() {
 export function Library() {
   const [items, setItems] = useState<LibraryItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [currency, setCurrency] = useState('USD');
 
   useEffect(() => {
     api.library.list()
       .then(data => setItems(data.items))
       .catch(err => setError((err as Error).message));
+    api.meta().then(m => m.pricing && setCurrency(m.pricing.currency)).catch(() => {});
   }, []);
+
+  const totalCost = items?.reduce((sum, it) => sum + (it.cost ?? 0), 0) ?? 0;
 
   return (
     <div className="p-8 animate-fade-in">
@@ -84,6 +88,7 @@ export function Library() {
           {items !== null && (
             <p className="text-sm text-muted-foreground mt-1">
               {items.length} {items.length === 1 ? 'contenuto' : 'contenuti'} generati
+              {totalCost > 0 && <> · costo stimato <span className="font-medium text-foreground">{fmtCost(totalCost, currency)}</span></>}
             </p>
           )}
         </div>
