@@ -28,3 +28,21 @@ export function writeStoredConfig(patch: StoredConfig, file: string = CONFIG_FIL
   fs.writeFileSync(file, JSON.stringify(merged, null, 2), 'utf8');
   return merged;
 }
+
+export interface PublicConfig {
+  baseURL?: string;
+  model?: string;
+  reasoningEffort?: ReasoningEffort;
+  models?: Partial<AgentModels>;
+  hasApiKey: boolean;
+  apiKeyLast4?: string;
+}
+
+export function toPublicConfig(stored: StoredConfig): PublicConfig {
+  const { apiKey, ...rest } = stored;
+  return {
+    ...rest,
+    hasApiKey: typeof apiKey === 'string' && apiKey.length > 0,
+    apiKeyLast4: apiKey && apiKey.length >= 4 ? apiKey.slice(-4) : undefined,
+  };
+}
