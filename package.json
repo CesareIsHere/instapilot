@@ -1,7 +1,11 @@
 {
   "name": "instapilot",
   "version": "0.1.0",
-  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CesareIsHere/instapilot"
+  },
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server/index.ts",
