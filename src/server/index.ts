@@ -7,6 +7,7 @@ import { mountDiscoveryRoutes, mountRenderRoutes, mountDynamicRoutes, mountHtmlR
 import { mountLibraryRoutes, OUTPUT_DIR } from './library';
 import { mountJobRoutes } from './jobs';
 import { mountBrandRoutes } from './brand';
+import { mountConfigRoutes } from './config';
 import { closeBrowser } from '@/html/browser';
 import { errorHandler } from './errors';
 
@@ -43,6 +44,7 @@ async function main() {
   mountJobRoutes(app);
   mountLibraryRoutes(app);
   mountBrandRoutes(app);
+  mountConfigRoutes(app);
 
   // Generated artifacts (PNG + HTML) — served read-only to the UI.
   app.use('/output', express.static(OUTPUT_DIR));
