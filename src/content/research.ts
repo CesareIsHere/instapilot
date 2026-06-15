@@ -7,28 +7,48 @@ import { log } from '@/lib/log';
 // (web_search_preview is the broadly-supported variant for gpt-4o).
 const WEB_SEARCH_TOOL = process.env.OPENAI_WEB_SEARCH_TOOL ?? 'web_search_preview';
 
-function buildResearchPrompt(topic: string, instructions: string | undefined, feedback?: string): string {
+function buildResearchPrompt(
+  topic: string,
+  instructions: string | undefined,
+  format: 'single' | 'carousel',
+  slideCount: number | undefined,
+  feedback?: string,
+): string {
   const corrections = feedback
     ? `\n\n--- REVISIONE PRECEDENTE DA CORREGGERE ---\nIl dossier precedente è stato bocciato per questi motivi. Correggili in questa versione:\n${feedback}\n`
     : '';
-  return `Sei un ricercatore senior di finanza personale e investimenti per Finvestire (contenuti educativi in italiano), rivolto a un pubblico NON esperto.
 
-Approfondisci a fondo il seguente argomento con informazioni aggiornate, affidabili e verificabili:
+  const isSingle = format === 'single';
+  const formatHint = isSingle
+    ? `Il materiale servirà per un SINGOLO POST Instagram (1 sola immagine 1080×1350). Produci un dossier SNELLO: solo i concetti e i dati strettamente necessari a spiegare l'argomento in una slide. Niente sezioni accademiche o approfondimenti laterali.`
+    : `Il materiale servirà per un CAROSELLO da ${slideCount ?? 'alcune'} slide. Produci un dossier COMPLETO con tutti i concetti, dati ed esempi necessari a riempire più slide in modo progressivo.`;
 
-ARGOMENTO: ${topic}
-${instructions ? `\nISTRUZIONI SUL CONTENUTO: ${instructions}\n` : ''}${corrections}
-Produci un dossier di ricerca in italiano con QUESTE SEZIONI esplicite:
+  const sections = isSingle
+    ? `Produci un dossier di ricerca in italiano con QUESTE SEZIONI (brevi e focalizzate):
+1. CONCETTI CHIAVE — i 2-3 concetti essenziali, spiegati in modo accessibile a chi parte da zero. Niente sotto-sezioni.
+2. DATO CHIAVE — al massimo 1-2 statistiche concrete e recenti con anno e fonte. Solo quelle che rafforzano davvero il messaggio.
+3. ESEMPI — 1-2 analogie pratiche che rendano tangibile il concetto principale.
+4. ANGOLI E HOOK — 2 ganci d'apertura forti utilizzabili per un post Instagram.`
+    : `Produci un dossier di ricerca in italiano con QUESTE SEZIONI esplicite:
 1. CONCETTI CHIAVE — i concetti necessari, spiegati in modo accessibile a chi parte da zero.
 2. DATI E NUMERI — statistiche concrete e recenti. Ogni dato DEVE avere anno e fonte. Se non sei certo dell'aggiornamento, segnalalo esplicitamente con "[da verificare]".
 3. ESEMPI E ANALOGIE — almeno 2 esempi pratici o analogie concrete che rendano tangibili i concetti.
 4. ERRORI COMUNI — fraintendimenti diffusi da sfatare.
 5. ANGOLI E HOOK — 2-3 angoli narrativi forti e ganci d'apertura utilizzabili per un post Instagram.
-6. FONTI — le fonti principali consultate.
+6. FONTI — le fonti principali consultate.`;
+
+  return `Sei un ricercatore senior di finanza personale e investimenti per Finvestire (contenuti educativi in italiano), rivolto a un pubblico NON esperto.
+
+${formatHint}
+
+ARGOMENTO: ${topic}
+${instructions ? `\nISTRUZIONI SUL CONTENUTO: ${instructions}\n` : ''}${corrections}
+${sections}
 
 Regole di qualità:
 - Accuratezza prima di tutto: niente affermazioni inventate. Distingui i fatti dalle opinioni.
 - Niente contenuto generico o "filler": ogni riga deve essere utile a chi scriverà il post.
-- Non scrivere il post: produci solo materiale di ricerca ricco e strutturato.`;
+- Non scrivere il post: produci solo materiale di ricerca.`;
 }
 
 export interface ResearchArgs {
@@ -37,6 +57,8 @@ export interface ResearchArgs {
   reasoningEffort?: ReasoningEffort;
   topic: string;
   instructions?: string;
+  format: 'single' | 'carousel';
+  slideCount?: number;
   meter?: UsageMeter;
   feedback?: string;
 }
@@ -48,8 +70,8 @@ export interface ResearchArgs {
  * web-search tool is unavailable (e.g. a proxy that doesn't support it).
  */
 export async function researchTopic(args: ResearchArgs): Promise<string> {
-  const { client, model, reasoningEffort, topic, instructions } = args;
-  const prompt = buildResearchPrompt(topic, instructions, args.feedback);
+  const { client, model, reasoningEffort, topic, instructions, format, slideCount } = args;
+  const prompt = buildResearchPrompt(topic, instructions, format, slideCount, args.feedback);
 
   try {
     const request: Record<string, unknown> = {

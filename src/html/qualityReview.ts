@@ -89,6 +89,7 @@ Hardcoded hex, :root, @font-face, @import, box-shadow and gradients in the rende
 ## NARRATIVE / SLIDE-TYPE REVIEW (act as an expert content reviewer)
 You are told this slide's role, narrative function and position. Judge whether the CONTENT fits its type:
 - cover / hook: a strong hook + clear promise, minimal text, one focal point — NOT a dense body.
+- all-in-one (a STANDALONE single post — narrativeFunction "all-in-one", position "standalone"): this slide is the WHOLE content, so it is intentionally denser than a carousel cover. It must be SELF-CONTAINED. CRITICAL — LOOP CLOSURE: if the headline poses a question, a paradox or a promise (e.g. "an asset can be X"), the body MUST resolve it, not just hand the reader the tools to figure it out themselves. A slide whose title raises a tension that its body never pays off is a FAIL — flag it (category "content") with a concrete fix (e.g. add the missing example/answer that closes the loop). Do NOT flag it as "too dense for a cover": for a single post density is expected.
 - inform: exactly one clear idea, density appropriate to the recipe.
 - payoff: a concise recap (bullets), echoes the cover, introduces no new topic.
 - cta: one clear call-to-action / invite, closing tone.

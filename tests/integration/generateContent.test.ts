@@ -1,11 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import express from 'express';
 import request from 'supertest';
-import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs';
 
-process.env.OUTPUT_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'instapilot-test-'));
+// Must run BEFORE module imports evaluate (vi.hoisted is hoisted above imports), so the
+// orchestrator writes generated carousels into an isolated temp dir we wipe afterwards —
+// otherwise they leak into the real ./output folder.
+const TEST_OUTPUT_ROOT = '.vitest-tmp';
+vi.hoisted(() => {
+  process.env.OUTPUT_DIR = `.vitest-tmp/generate-content-${Date.now()}`;
+});
 
 const DESIGN_SPEC = {
   recipe: 'cover',
@@ -87,6 +92,11 @@ function buildApp() {
   app.use(errorHandler);
   return app;
 }
+
+// Remove every carousel the tests generated.
+afterAll(() => {
+  fs.rmSync(TEST_OUTPUT_ROOT, { recursive: true, force: true });
+});
 
 describe('POST /generate/content', () => {
   beforeEach(() => {

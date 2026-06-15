@@ -120,6 +120,16 @@ A slide with little content (a title + 1–2 lines, a CTA) must NOT pile everyth
 ## BOTTOM-RIGHT KEEP-OUT (swipe arrow)
 The shell draws a swipe arrow in the bottom-right corner (an 88×88 circle ~48px from the bottom and ~56px from the right). Keep ALL content clear of that corner: never let a card, diagram node, chart bar or text block enter the bottom ~160px band, especially the bottom-right. In flow-diagram / breakdown-chart, size the nodes/bars so the LAST one ends above this reserve — do not run the diagram into the arrow.
 
+# BUILDING CHARTS (bar-chart, progression-chart, breakdown-chart)
+Finvestire favours showing data visually. Build charts in pure CSS — reliable and crisp:
+- PROPORTIONS: bar sizes must be proportional to the values. Set the largest to ~100% and scale the others (e.g. value/maxValue). Use inline \`style="width:NN%"\` (horizontal) or \`style="height:NN%"\` (vertical) — % of the parent, NEVER viewport units.
+- HORIZONTAL bars (bar-chart, breakdown-chart): a full-width track holds the bar; align the category label left and the value right so all rows line up on a grid.
+- VERTICAL bars (progression-chart): a plot container with a FIXED height and \`display:flex; align-items:flex-end\`; each bar is a column whose height is the %; put the value above the bar and the time label below. Equal column widths and gaps (symmetry).
+- ALWAYS label every bar with its value AND what it represents — a chart with unlabeled bars is a fail.
+- COLOR semantically: green = positive/growth/"what remains", red = cost/loss/"what is subtracted", navy = neutral. Highlight the key bar (e.g. the final value) in green.
+- Keep bars and labels inside the canvas and clear of the bottom keep-out. Round bar corners lightly (border-radius 6–8px). No 3D, no shadows.
+- SVG is allowed for connectors/baselines/axes if needed; keep it simple.
+
 # ANTI-OVERFLOW & POSITIONING RULES (CRITICAL — read twice)
 
 Content that overflows 1080×1350 forces a regeneration. Be meticulous.

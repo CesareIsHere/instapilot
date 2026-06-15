@@ -30,9 +30,14 @@ describe('buildHtmlSystemPrompt — rich layouts & palette', () => {
   const prompt = buildHtmlSystemPrompt('CTX', 'body');
 
   it('documents the new recipes', () => {
-    for (const id of ['card-grid', 'flow-diagram', 'breakdown-chart', 'concept-breakdown']) {
+    for (const id of ['card-grid', 'flow-diagram', 'breakdown-chart', 'concept-breakdown', 'bar-chart', 'progression-chart']) {
       expect(prompt).toContain(id);
     }
+  });
+
+  it('includes chart-building guidance and a prefer-charts intent', () => {
+    expect(prompt.toLowerCase()).toContain('building charts');
+    expect(prompt).toMatch(/proportional/i);
   });
 
   it('documents the extended palette and keeps the canvas white', () => {

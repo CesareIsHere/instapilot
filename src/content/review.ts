@@ -41,6 +41,7 @@ Questo contenuto verrà pubblicato a un pubblico mondiale: lo standard è altiss
 ## REVISIONE EDITORIALE (testo + insieme)
 1. Aderenza all'argomento e alle istruzioni richieste.
 2. Scorrevolezza narrativa: cover che aggancia → sviluppo progressivo → cta che chiude. Nessun salto logico.
+2-bis. CHIUSURA DEL LOOP (vale anche per il SINGOLO POST da 1 sola slide): se l'headline pone una domanda, un paradosso o una promessa (es. "un'azione da 20€ può essere più cara"), il contenuto DEVE risolverla esplicitamente, non limitarsi a fornire gli strumenti perché il lettore ci arrivi da solo. Su un post autosufficiente la tensione aperta dal titolo va chiusa DENTRO la stessa slide (es. con un micro-esempio o la risposta diretta). Un titolo la cui promessa resta inevasa = contenuto NON pronto: segnalalo con un fix concreto.
 3. Qualità e livello: accurato, chiaro, non banale.
 4. Coerenza: niente ripetizioni inutili, contraddizioni, salti.
 5. Completezza: i punti chiave sono coperti.

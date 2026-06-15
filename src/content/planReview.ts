@@ -24,6 +24,7 @@ Controlla:
 7. Registro: linguaggio conversazionale (tu), termini tecnici spiegati o sostituiti (pubblico a zero)? Niente gergo non spiegato?
 8. Quantità: headline ≤ ~12 parole, corpo ≈ ≤ 300 caratteri per slide? Se un brief sembra un paragrafo, va asciugato.
 9. Confronti/colonne: gli elementi sono simmetrici (stesso numero di voci, struttura parallela, lunghezze simili)?
+9b. Visualizzazione dei dati: le slide che confrontano più numeri, mostrano proporzioni/ranking o un'evoluzione nel tempo usano un GRAFICO (bar-chart/progression-chart/breakdown-chart) e non solo testo o un singolo numero? Se i dati sono lasciati a testo, segnalalo.
 10. Qualità dei brief: ogni brief è autosufficiente, con headline, hint di layout, taglio, e aderente al dossier/argomento?
 11. Fattibilità: il contenuto di ogni slide sta in 1080×1350 senza overflow?
 12. Framework: la struttura dichiarata è adatta? La sequenza dei narrativeFunction è coerente con quel framework?

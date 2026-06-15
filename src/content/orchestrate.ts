@@ -90,13 +90,13 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
   report('research', 'Ricerca e approfondimento dell\'argomento');
   let research: string;
   try {
-    research = await researchTopic({ client, model: pick('research'), reasoningEffort, topic, instructions, meter });
+    research = await researchTopic({ client, model: pick('research'), reasoningEffort, topic, instructions, format, slideCount, meter });
     for (let round = 1; round <= MAX_RESEARCH_ROUNDS; round++) {
-      const review = await reviewResearch({ client, model: pick('researchReview'), reasoningEffort, topic, instructions, research, meter });
+      const review = await reviewResearch({ client, model: pick('researchReview'), reasoningEffort, topic, instructions, research, format, meter });
       log.info('content.research.reviewed', { approved: review.approved, issues: review.issues.length, round });
       if (review.approved || review.issues.length === 0) break;
       if (round === MAX_RESEARCH_ROUNDS) { contentWarnings.research = review.issues; break; }
-      research = await researchTopic({ client, model: pick('research'), reasoningEffort, topic, instructions, feedback: review.issues.join('; '), meter });
+      research = await researchTopic({ client, model: pick('research'), reasoningEffort, topic, instructions, format, slideCount, feedback: review.issues.join('; '), meter });
     }
   } catch (err) {
     return { ok: false, code: 'LLM_FAILURE', detail: `research: ${(err as Error).message}` };
@@ -279,6 +279,12 @@ function writeCarouselArtifacts(p: {
   };
   fs.writeFileSync(path.join(p.carouselDir, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
   log.info('content.carousel.written', { carouselId: p.carouselId, dir: p.carouselDir, slides: manifestSlides.length });
+}
+
+/** Folder id for a carousel: local date-time, e.g. "2026-06-02_23-18-25". */
+function carouselStamp(d = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}`;
 }
 
 function composeBrief(state: SlideState): string {

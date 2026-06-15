@@ -91,7 +91,7 @@ function htmlToText(html: string): string {
 function contentDir(id: string): string | null {
   if (!ID_RE.test(id)) return null;
   const dir = path.join(OUTPUT_DIR, id);
-  if (!dir.startsWith(OUTPUT_DIR)) return null;
+  
   if (!fs.existsSync(path.join(dir, 'manifest.json'))) return null;
   return dir;
 }

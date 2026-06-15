@@ -123,6 +123,38 @@ export const recipes: Recipe[] = [
 </div>`.trim(),
   },
   {
+    id: 'bar-chart',
+    when: 'Compare discrete quantities or rank options (e.g. average return by asset class, cost of A vs B vs C). Horizontal bars: each row is a category label + a proportional bar + its value. Bar widths are proportional to the values (the largest ≈ 100%). Always show the value on every bar.',
+    skeleton: `
+<div class="chart">
+  <div class="chart__eyebrow">TOPICAL LABEL</div>
+  <h1 class="chart__title">Hook headline</h1>
+  <p class="chart__subtitle">One line saying what the chart compares and the unit.</p>
+  <ul class="chart__bars">
+    <li class="chart__row"><span class="chart__cat">Azioni</span><span class="chart__track"><span class="chart__bar chart__bar--green" style="width:100%"></span></span><span class="chart__val">7,8%</span></li>
+    <li class="chart__row"><span class="chart__cat">Obbligazioni</span><span class="chart__track"><span class="chart__bar chart__bar--navy" style="width:42%"></span></span><span class="chart__val">3,3%</span></li>
+    <li class="chart__row"><span class="chart__cat">Liquidità</span><span class="chart__track"><span class="chart__bar chart__bar--navy" style="width:12%"></span></span><span class="chart__val">0,9%</span></li>
+  </ul>
+  <p class="chart__note">Fonte / one-line takeaway.</p>
+</div>`.trim(),
+  },
+  {
+    id: 'progression-chart',
+    when: 'Show growth / accumulation OVER TIME (compound interest, a portfolio reaching 100k, savings building up). Vertical rising bars, one per time milestone, heights proportional to the value; highlight the final bar. Label each bar with its year and value. Ideal for "il tempo fa crescere".',
+    skeleton: `
+<div class="growth">
+  <div class="growth__eyebrow">TOPICAL LABEL</div>
+  <h1 class="growth__title">Hook headline</h1>
+  <div class="growth__plot"><!-- fixed-height plot; columns align to the bottom -->
+    <div class="growth__col"><span class="growth__v">10k</span><span class="growth__bar" style="height:12%"></span><span class="growth__x">Anno 1</span></div>
+    <div class="growth__col"><span class="growth__v">28k</span><span class="growth__bar" style="height:34%"></span><span class="growth__x">Anno 5</span></div>
+    <div class="growth__col"><span class="growth__v">55k</span><span class="growth__bar" style="height:62%"></span><span class="growth__x">Anno 10</span></div>
+    <div class="growth__col"><span class="growth__v">100k</span><span class="growth__bar growth__bar--green" style="height:100%"></span><span class="growth__x">Anno 18</span></div>
+  </div>
+  <p class="growth__note">One line: what the trend means.</p>
+</div>`.trim(),
+  },
+  {
     id: 'breakdown-chart',
     when: 'Show proportions or a step-down breakdown with bars (e.g. revenue → margin → EBITDA → net). Horizontal bars whose WIDTHS are proportional (use width:NN% of the row, never viewport units). Green = what remains, red = what is subtracted; label every bar with what it is and its value.',
     skeleton: `

@@ -9,6 +9,7 @@ import { manifest } from '@/assets/manifest';
 const RECIPE_VALUES = [
   'cover', 'numbered-list', 'compare-2col', 'kpi-hero', 'card-grid-2x2', 'quote', 'cta',
   'card-grid', 'concept-breakdown', 'flow-diagram', 'breakdown-chart',
+  'bar-chart', 'progression-chart',
 ] as const;
 
 export const SlideDesignSpecSchema = z.object({
@@ -116,9 +117,14 @@ ${roleHint}
 - card-grid: 3–6 parallel concepts as cards (label + short explanation), 3 columns × N rows. Use for "N things/metrics/indicators".
 - concept-breakdown: Unpack ONE concept — definition box + formula/breakdown box + optional glossary box. For "what is X" explainers.
 - flow-diagram: A process / how-it-works flow with 3–6 ordered nodes connected by arrows (optional emoji per node).
+- bar-chart: Compare discrete quantities / rank options with proportional horizontal bars (each labeled with its value).
+- progression-chart: Growth/accumulation OVER TIME as rising vertical bars (compound interest, reaching 100k…).
 - breakdown-chart: Proportional bars / step-down breakdown (e.g. revenue → margin → EBITDA → net), each bar labeled with what it is and its value.
 - quote: Large pull quote + attribution.
 - cta: Closing call-to-action with key message + social invite.
+
+## PREFER CHARTS FOR DATA (important)
+Finvestire is a data-driven brand and currently UNDER-uses charts. Whenever the content involves numbers to compare, proportions, a ranking, or a change/growth over time, choose a CHART recipe (bar-chart, progression-chart, breakdown-chart) instead of plain paragraphs or a single kpi-hero. Show the data visually, don't just state it. Use kpi-hero only for ONE truly dominant figure; for 2+ comparable numbers or any trend, use a chart.
 
 ## BRAND RULES
 The CANVAS background is ALWAYS pure white. Titles are navy. Mixed-color titles (navy + 1–2 green/red words) are the Finvestire signature.
@@ -191,7 +197,7 @@ const DESIGN_CRITIC_PROMPT = `You are a design critic for Finvestire Instagram p
 Review the proposed slide design specification against the original content request.
 
 Check:
-1. Recipe fit: does the chosen layout match the content type? (numbered-list for tips, kpi-hero for stats)
+1. Recipe fit: does the chosen layout match the content type? (numbered-list for tips, kpi-hero for ONE dominant stat). DATA → CHART: if the slide compares 2+ numbers, shows proportions/ranking, or a trend over time but uses plain text / a single kpi instead of a chart (bar-chart, progression-chart, breakdown-chart), flag it and suggest the chart recipe.
 2. Headline: clear, ≤ ~12 words, says what the slide is about and why it matters?
 3. Completeness & density: one idea, FULLY developed — not a bare title on an empty slide, not a wall of text (body ≈ ≤ 300 chars)?
 4. Data with meaning: is every kpi/number given a label (what it is) AND a takeaway (what it means)? At most one key number? Flag bare numbers.
