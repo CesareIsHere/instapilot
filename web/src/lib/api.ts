@@ -27,10 +27,33 @@ export interface SlideVersion {
   imageUrl: string; htmlUrl: string;
 }
 
+export interface BrandColors {
+  primary: string;
+  positive: string;
+  negative: string;
+  paper: string;
+  ink: string;
+  muted: string;
+}
+
+export interface BrandFont {
+  family: string;
+  source: 'bundled' | 'custom';
+}
+
 export interface BrandKit {
-  name: string; tagline: string; audience: string; tone: string;
-  colors: string[]; fonts: string[]; hashtags: string[]; ctas: string[];
-  dos: string; donts: string; notes: string;
+  name: string;
+  tagline: string;
+  audience: string;
+  tone: string;
+  brandColors: BrandColors;
+  font: BrandFont;
+  logoPath?: string;
+  hashtags: string[];
+  ctas: string[];
+  dos: string;
+  donts: string;
+  notes: string;
 }
 
 export interface PublicConfig {

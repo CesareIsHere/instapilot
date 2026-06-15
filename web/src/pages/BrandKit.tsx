@@ -11,15 +11,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const EMPTY: IBrandKit = {
   name: '', tagline: '', audience: '', tone: '',
-  colors: [], fonts: [], hashtags: [], ctas: [],
+  brandColors: { primary: '#012A78', positive: '#00B373', negative: '#DC2626', paper: '#FFFFFF', ink: '#101010', muted: '#767676' },
+  font: { family: 'Montserrat', source: 'bundled' },
+  hashtags: [], ctas: [],
   dos: '', donts: '', notes: '',
 };
 
 /* ── Tag input (enter to add, click × to remove) ───────────────── */
 function TagInput({
-  values, onChange, placeholder, swatches,
+  values, onChange, placeholder,
 }: {
-  values: string[]; onChange: (v: string[]) => void; placeholder: string; swatches?: boolean;
+  values: string[]; onChange: (v: string[]) => void; placeholder: string;
 }) {
   const [draft, setDraft] = useState('');
 
@@ -34,9 +36,6 @@ function TagInput({
     <div className="rounded-md border bg-background px-2 py-2 flex flex-wrap gap-1.5">
       {values.map((v, i) => (
         <span key={i} className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-xs font-medium">
-          {swatches && (
-            <span className="w-3 h-3 rounded-full border border-black/10" style={{ backgroundColor: v }} />
-          )}
           {v}
           <button type="button" onClick={() => onChange(values.filter((_, j) => j !== i))}
             className="text-muted-foreground hover:text-destructive">
@@ -133,16 +132,103 @@ export function BrandKit() {
 
         <Separator />
 
-        {/* Visual */}
+        {/* Brand Colors */}
         <section className="space-y-4">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Visual</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Colori</h2>
+          {(
+            [
+              { key: 'primary',  label: 'Primario',   hint: 'Titoli, bordi, logo background' },
+              { key: 'positive', label: 'Positivo',   hint: 'Crescita, parole chiave positive' },
+              { key: 'negative', label: 'Negativo',   hint: 'Rischio, perdita' },
+              { key: 'paper',    label: 'Sfondo',     hint: 'Background del canvas (solitamente bianco)' },
+              { key: 'ink',      label: 'Testo',      hint: 'Testo corpo principale' },
+              { key: 'muted',    label: 'Secondario', hint: 'Caption, note, testo secondario' },
+            ] as const
+          ).map(({ key, label, hint }) => (
+            <div key={key} className="flex items-center gap-3">
+              <input
+                type="color"
+                value={kit.brandColors[key]}
+                onChange={e => set('brandColors', { ...kit.brandColors, [key]: e.target.value })}
+                className="w-10 h-10 rounded-md border cursor-pointer p-0.5 shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">{label}</p>
+                <p className="text-xs text-muted-foreground">{hint}</p>
+              </div>
+              <Input
+                className="w-28 font-mono text-sm shrink-0"
+                value={kit.brandColors[key]}
+                onChange={e => set('brandColors', { ...kit.brandColors, [key]: e.target.value })}
+              />
+            </div>
+          ))}
+        </section>
+
+        <Separator />
+
+        {/* Font */}
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Font</h2>
           <div className="space-y-2">
-            <Label>Palette colori</Label>
-            <TagInput values={kit.colors} onChange={v => set('colors', v)} placeholder="#012A78, poi Invio" swatches />
+            <Label htmlFor="fontFamily">Font principale</Label>
+            <select
+              id="fontFamily"
+              value={kit.font.family}
+              onChange={e => set('font', { ...kit.font, family: e.target.value, source: 'bundled' as const })}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            >
+              <option value="Montserrat">Montserrat (default)</option>
+              <option value="Inter">Inter</option>
+              <option value="Poppins">Poppins</option>
+            </select>
+            <p className="text-xs text-muted-foreground">
+              I font devono essere presenti in <code>public/fonts/</code> per essere usati nel rendering.
+            </p>
           </div>
-          <div className="space-y-2">
-            <Label>Font</Label>
-            <TagInput values={kit.fonts} onChange={v => set('fonts', v)} placeholder="Es. Inter, poi Invio" />
+        </section>
+
+        <Separator />
+
+        {/* Logo */}
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Logo</h2>
+          <div className="flex items-center gap-4">
+            <img
+              src={`/api/brand/logo?t=${Date.now()}`}
+              alt="logo attuale"
+              className="w-16 h-16 object-contain rounded-lg border bg-white p-1 shrink-0"
+            />
+            <div className="space-y-1">
+              <Label htmlFor="logoUpload" className="cursor-pointer">
+                <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('logoUpload')?.click()}>
+                  Carica logo (PNG/SVG, max 2 MB)
+                </Button>
+              </Label>
+              <input
+                id="logoUpload"
+                type="file"
+                accept="image/png,image/jpeg,image/svg+xml"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const fd = new FormData();
+                  fd.append('logo', file);
+                  try {
+                    const res = await fetch('/api/brand/logo', { method: 'POST', body: fd });
+                    if (!res.ok) throw new Error('Errore upload');
+                    toast.success('Logo caricato');
+                    // Forza reload dell'immagine aggiornando il timestamp
+                    const img = document.querySelector('img[alt="logo attuale"]') as HTMLImageElement | null;
+                    if (img) img.src = `/api/brand/logo?t=${Date.now()}`;
+                  } catch { toast.error('Errore caricamento logo'); }
+                  // Reset input per permettere ri-upload dello stesso file
+                  e.target.value = '';
+                }}
+              />
+              <p className="text-xs text-muted-foreground">Il logo viene incorporato in ogni slide generata.</p>
+            </div>
           </div>
         </section>
 
