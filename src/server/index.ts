@@ -1,10 +1,16 @@
 import 'dotenv/config';
+import path from 'node:path';
 import express from 'express';
 import { log } from '@/lib/log';
 import { buildBundle } from '@/remotion/bundler';
 import { mountDiscoveryRoutes, mountRenderRoutes, mountDynamicRoutes, mountHtmlRoutes, mountContentRoutes } from './routes';
+import { mountLibraryRoutes, OUTPUT_DIR } from './library';
+import { mountJobRoutes } from './jobs';
+import { mountBrandRoutes } from './brand';
 import { closeBrowser } from '@/html/browser';
 import { errorHandler } from './errors';
+
+const WEB_DIR = path.resolve(process.cwd(), 'web', 'dist');
 
 const PORT = Number(process.env.PORT ?? 3001);
 
@@ -34,6 +40,21 @@ async function main() {
   mountDynamicRoutes(app);
   mountHtmlRoutes(app);
   mountContentRoutes(app);
+  mountJobRoutes(app);
+  mountLibraryRoutes(app);
+  mountBrandRoutes(app);
+
+  // Generated artifacts (PNG + HTML) — served read-only to the UI.
+  app.use('/output', express.static(OUTPUT_DIR));
+
+  // Web UI (zero-build static SPA). SPA fallback to index.html for any GET that
+  // didn't match an API/static route above (API + artifact paths fall through to 404).
+  app.use(express.static(WEB_DIR));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/') || req.path.startsWith('/output/')) return next();
+    res.sendFile(path.join(WEB_DIR, 'index.html'));
+  });
+
   app.use(errorHandler);
 
   const server = app.listen(PORT, () => {
