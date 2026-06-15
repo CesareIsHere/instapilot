@@ -27,6 +27,8 @@ export interface GenerateContentArgs {
   instructions?: string;
   format: ContentFormat;
   slideCount?: number;
+  /** When false, the research agent skips web search and uses model knowledge only — saves tokens for evergreen topics. Defaults to true. */
+  useWebSearch?: boolean;
   /** Per-agent model overrides. Each key falls back to `model` if not set. */
   models?: Partial<AgentModels>;
   /** Optional progress reporter — called at each pipeline phase boundary (used by the async job runner / UI). */
@@ -90,13 +92,17 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
   report('research', 'Ricerca e approfondimento dell\'argomento');
   let research: string;
   try {
-    research = await researchTopic({ client, model: pick('research'), reasoningEffort, topic, instructions, format, slideCount, meter });
-    for (let round = 1; round <= MAX_RESEARCH_ROUNDS; round++) {
+    research = await researchTopic({ client, model: pick('research'), reasoningEffort, topic, instructions, format, slideCount, useWebSearch: args.useWebSearch, meter });
+    // Without web search the dossier comes from model knowledge on (typically evergreen)
+    // topics, where the accuracy/freshness risk reviewResearch guards against is low —
+    // skip the review loop entirely to save its (dossier-sized) tokens.
+    const reviewResearchRounds = args.useWebSearch === false ? 0 : MAX_RESEARCH_ROUNDS;
+    for (let round = 1; round <= reviewResearchRounds; round++) {
       const review = await reviewResearch({ client, model: pick('researchReview'), reasoningEffort, topic, instructions, research, format, meter });
       log.info('content.research.reviewed', { approved: review.approved, issues: review.issues.length, round });
       if (review.approved || review.issues.length === 0) break;
       if (round === MAX_RESEARCH_ROUNDS) { contentWarnings.research = review.issues; break; }
-      research = await researchTopic({ client, model: pick('research'), reasoningEffort, topic, instructions, format, slideCount, feedback: review.issues.join('; '), meter });
+      research = await researchTopic({ client, model: pick('research'), reasoningEffort, topic, instructions, format, slideCount, useWebSearch: args.useWebSearch, feedback: review.issues.join('; '), meter });
     }
   } catch (err) {
     return { ok: false, code: 'LLM_FAILURE', detail: `research: ${(err as Error).message}` };
@@ -160,8 +166,13 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
   }
 
   // ── Phase D: Final editorial review loop (existing) ───────────────────────
+  // On a single post there is exactly one slide, which qualityReview already judged
+  // visually + editorially; editorialReview would re-review the SAME image, adding a
+  // (multimodal) call with no extra coverage. Skip it — it earns its keep only on
+  // carousels, where it checks cross-slide coherence.
+  const editorialRounds = isCarousel ? MAX_REVIEW_ROUNDS : 0;
   let reviewRounds = 0;
-  for (let round = 1; round <= MAX_REVIEW_ROUNDS; round++) {
+  for (let round = 1; round <= editorialRounds; round++) {
     reviewRounds = round;
     report('review', `Revisione editoriale (giro ${round})`);
     const reviewable: ReviewableSlide[] = states.map((s, idx) => ({

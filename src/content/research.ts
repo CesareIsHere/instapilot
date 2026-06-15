@@ -59,6 +59,8 @@ export interface ResearchArgs {
   instructions?: string;
   format: 'single' | 'carousel';
   slideCount?: number;
+  /** When false, skip the web-search tool and rely on model knowledge — saves tokens/latency for evergreen topics. Defaults to true. */
+  useWebSearch?: boolean;
   meter?: UsageMeter;
   feedback?: string;
 }
@@ -72,6 +74,12 @@ export interface ResearchArgs {
 export async function researchTopic(args: ResearchArgs): Promise<string> {
   const { client, model, reasoningEffort, topic, instructions, format, slideCount } = args;
   const prompt = buildResearchPrompt(topic, instructions, format, slideCount, args.feedback);
+
+  // Evergreen topics don't need fresh web data — skip the search tool to save tokens/latency.
+  if (args.useWebSearch === false) {
+    log.info('content.research.web_disabled', {});
+    return researchWithoutWeb({ client, model, reasoningEffort, prompt, meter: args.meter });
+  }
 
   try {
     const request: Record<string, unknown> = {

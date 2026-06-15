@@ -66,7 +66,7 @@ export interface ContentDetail {
 export interface Job {
   id: string; status: 'running' | 'done' | 'error';
   createdAt: string; updatedAt: string;
-  input: { topic: string; format: 'single' | 'carousel'; slideCount: number; instructions?: string; model?: string };
+  input: { topic: string; format: 'single' | 'carousel'; slideCount: number; instructions?: string; model?: string; useWebSearch?: boolean };
   progress: { phase: string; detail?: string; current?: number; total?: number };
   error?: { code?: string; message: string };
   contentId?: string;
@@ -122,7 +122,7 @@ export const api = {
   },
 
   generate: {
-    start: (body: { topic: string; format: string; slideCount?: number; instructions?: string; model?: string }) =>
+    start: (body: { topic: string; format: string; slideCount?: number; instructions?: string; model?: string; useWebSearch?: boolean }) =>
       apiFetch<Job>('/api/generate', { method: 'POST', body: JSON.stringify(body) }),
     list: () => apiFetch<{ jobs: Job[] }>('/api/generate'),
     get: (id: string) => apiFetch<Job>(`/api/generate/${id}`),

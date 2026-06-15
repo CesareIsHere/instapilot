@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Layers, FileImage, ChevronDown, Loader2 } from 'lucide-react';
+import { Layers, FileImage, ChevronDown, Loader2, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, type Meta } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ export function NewContent() {
   const [slideCount, setSlideCount] = useState(7);
   const [topic, setTopic] = useState('');
   const [instructions, setInstructions] = useState('');
+  const [useWebSearch, setUseWebSearch] = useState(true);
   const [model, setModel] = useState('');
   const [advanced, setAdvanced] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -40,6 +41,7 @@ export function NewContent() {
         format,
         slideCount: format === 'carousel' ? slideCount : undefined,
         instructions: instructions.trim() || undefined,
+        useWebSearch,
         model: model.trim() || undefined,
       });
       toast.success('Generazione avviata');
@@ -143,6 +145,45 @@ export function NewContent() {
             Tono, pubblico target, stile, esempi specifici da includere…
           </p>
         </div>
+
+        {/* Web search toggle */}
+        <button
+          type="button"
+          onClick={() => setUseWebSearch(v => !v)}
+          aria-pressed={useWebSearch}
+          className={cn(
+            'w-full flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all',
+            useWebSearch
+              ? 'border-primary bg-primary/5'
+              : 'border-border hover:border-muted-foreground/40 bg-card',
+          )}
+        >
+          <Globe
+            size={20}
+            className={cn(useWebSearch ? 'text-primary' : 'text-muted-foreground')}
+          />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold">Ricerca web</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {useWebSearch
+                ? 'Attiva: il ricercatore cerca dati aggiornati online (più token).'
+                : 'Disattiva per concetti evergreen: usa solo la conoscenza del modello (meno token).'}
+            </p>
+          </div>
+          <span
+            className={cn(
+              'shrink-0 inline-flex h-6 w-11 items-center rounded-full transition-colors',
+              useWebSearch ? 'bg-primary' : 'bg-muted',
+            )}
+          >
+            <span
+              className={cn(
+                'inline-block h-5 w-5 rounded-full bg-white shadow transition-transform',
+                useWebSearch ? 'translate-x-5' : 'translate-x-0.5',
+              )}
+            />
+          </span>
+        </button>
 
         {/* Advanced toggle */}
         <div>

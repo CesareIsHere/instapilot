@@ -21,7 +21,7 @@ export interface Job {
   status: JobStatus;
   createdAt: string;
   updatedAt: string;
-  input: { topic: string; format: 'single' | 'carousel'; slideCount: number; instructions?: string; model?: string };
+  input: { topic: string; format: 'single' | 'carousel'; slideCount: number; instructions?: string; model?: string; useWebSearch?: boolean };
   progress: JobProgress;
   /** Set when status === 'done'. Mirrors the /generate/content response shape. */
   result?: unknown;
@@ -52,6 +52,7 @@ const GenerateBodySchema = z
     slideCount: z.number().int().min(1).max(20).optional(),
     brandContext: z.string().optional(),
     model: z.string().optional(),
+    useWebSearch: z.boolean().optional(),
   })
   .transform((b) => ({
     ...b,
@@ -86,6 +87,7 @@ function runJob(job: Job, body: z.infer<typeof GenerateBodySchema>): void {
     instructions: body.instructions,
     format: body.format,
     slideCount: body.slideCount,
+    useWebSearch: body.useWebSearch,
     models: body.model ? undefined : cfg.models,
     onProgress: (p) => {
       job.progress = p;
@@ -163,6 +165,7 @@ export function mountJobRoutes(app: Express): void {
           slideCount: body.slideCount,
           instructions: body.instructions,
           model: body.model,
+          useWebSearch: body.useWebSearch,
         },
         progress: { phase: 'queued', detail: 'In coda' },
       };
@@ -207,6 +210,7 @@ export function mountJobRoutes(app: Express): void {
         format: prev.input.format,
         slideCount: prev.input.slideCount,
         model: prev.input.model,
+        useWebSearch: prev.input.useWebSearch,
       });
       const id = crypto.randomBytes(6).toString('hex');
       const job: Job = {
@@ -220,6 +224,7 @@ export function mountJobRoutes(app: Express): void {
           slideCount: body.slideCount,
           instructions: body.instructions,
           model: body.model,
+          useWebSearch: body.useWebSearch,
         },
         progress: { phase: 'queued', detail: 'In coda' },
       };
