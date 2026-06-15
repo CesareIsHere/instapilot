@@ -7,6 +7,7 @@ import { Jobs } from '@/pages/Jobs';
 import { JobDetail } from '@/pages/JobDetail';
 import { ContentDetail } from '@/pages/ContentDetail';
 import { BrandKit } from '@/pages/BrandKit';
+import { Settings } from '@/pages/Settings';
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
             <Route path="/brand" element={<BrandKit />} />
             <Route path="/job/:id" element={<JobDetail />} />
             <Route path="/content/:id" element={<ContentDetail />} />
+            <Route path="/settings" element={<Settings />} />
           </Routes>
         </main>
       </div>
