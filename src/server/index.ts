@@ -2,7 +2,8 @@ import 'dotenv/config';
 import express from 'express';
 import { log } from '@/lib/log';
 import { buildBundle } from '@/remotion/bundler';
-import { mountDiscoveryRoutes, mountRenderRoutes, mountDynamicRoutes } from './routes';
+import { mountDiscoveryRoutes, mountRenderRoutes, mountDynamicRoutes, mountHtmlRoutes, mountContentRoutes } from './routes';
+import { closeBrowser } from '@/html/browser';
 import { errorHandler } from './errors';
 
 const PORT = Number(process.env.PORT ?? 3001);
@@ -31,11 +32,22 @@ async function main() {
   mountDiscoveryRoutes(app);
   mountRenderRoutes(app);
   mountDynamicRoutes(app);
+  mountHtmlRoutes(app);
+  mountContentRoutes(app);
   app.use(errorHandler);
 
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     log.info('server.listening', { port: PORT });
   });
+
+  const shutdown = async () => {
+    log.info('server.shutdown');
+    server.close();
+    await closeBrowser();
+    process.exit(0);
+  };
+  process.once('SIGTERM', shutdown);
+  process.once('SIGINT', shutdown);
 }
 
 main().catch((err) => {

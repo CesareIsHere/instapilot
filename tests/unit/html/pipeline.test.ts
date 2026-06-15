@@ -1,0 +1,209 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const SPEC = {
+  recipe: 'cover', rationale: 'r',
+  headline: { text: 'T', coloredSpans: null },
+  eyebrow: null, bodyElements: [], colorPlan: 'navy', useAssets: ['logo-f'], notes: null,
+};
+
+const {
+  planSlideDesign,
+  reviewSlideDesign,
+  generateSlideHtml,
+  reviewRenderedSlide,
+  renderHtmlStill,
+  validateGeneratedHtml: _validateGeneratedHtml,
+  buildHtmlDocument,
+} = vi.hoisted(() => ({
+  planSlideDesign: vi.fn(),
+  reviewSlideDesign: vi.fn(),
+  generateSlideHtml: vi.fn(),
+  reviewRenderedSlide: vi.fn(),
+  renderHtmlStill: vi.fn(),
+  validateGeneratedHtml: vi.fn(() => null),
+  buildHtmlDocument: vi.fn(() => '<html>doc</html>'),
+}));
+
+vi.mock('@/html/designSpec', () => ({ planSlideDesign, reviewSlideDesign }));
+vi.mock('@/html/generateHtml', () => ({ generateSlideHtml }));
+vi.mock('@/html/qualityReview', () => ({ reviewRenderedSlide }));
+vi.mock('@/html/renderHtml', () => ({ renderHtmlStill }));
+vi.mock('@/html/validate', () => ({ validateGeneratedHtml: _validateGeneratedHtml }));
+vi.mock('@/html/template', () => ({ buildHtmlDocument }));
+vi.mock('@/html/htmlSystemPrompt', () => ({ buildHtmlSystemPrompt: vi.fn(() => 'sys') }));
+
+import { runSlidePipeline } from '@/html/pipeline';
+import { validateGeneratedHtml } from '@/html/validate';
+
+const baseArgs = {
+  client: {} as never, model: 'm', brandContext: 'b', userPrompt: 'p', outputId: 'id1',
+};
+const GENERATED = { intent: 'i', bodyHtml: '<div></div>', css: '.canvas{}' };
+
+// Helper: wrap a resolved value in an impl that also records to meter so usage.calls > 0.
+type MeterArg = { meter?: { record: (label: string, usage: null) => void } };
+function withMeter<T>(label: string, value: T) {
+  return (args: MeterArg) => { args?.meter?.record(label, null); return Promise.resolve(value); };
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  planSlideDesign.mockImplementation(withMeter('design.plan', SPEC));
+  reviewSlideDesign.mockImplementation(withMeter('design.review', { approved: true, issues: [] }));
+  generateSlideHtml.mockImplementation(withMeter('html.generate', GENERATED));
+  renderHtmlStill.mockResolvedValue({ ok: true, file: '/out/x.png', durationMs: 5, issues: [] });
+  reviewRenderedSlide.mockImplementation(withMeter('quality.review', { approved: true, issues: [], rendererFeedback: null }));
+  (validateGeneratedHtml as ReturnType<typeof vi.fn>).mockReturnValue(null);
+});
+
+describe('runSlidePipeline — best effort', () => {
+  it('returns ok with no warnings on the happy path + usage present', async () => {
+    const res = await runSlidePipeline(baseArgs as never);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.warnings).toEqual([]);
+    expect(res.usage.calls).toBeGreaterThan(0);
+  });
+
+  it('ships best-effort with a design-review warning when Agent 2 never approves', async () => {
+    reviewSlideDesign.mockResolvedValue({ approved: false, issues: ['recipe mismatch'] });
+    const res = await runSlidePipeline(baseArgs as never);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.warnings.some((w) => w.kind === 'design-review')).toBe(true);
+    expect(res.file).toBe('/out/x.png');
+  });
+
+  it('forces a render and warns (layout) when issues never resolve', async () => {
+    const issue = { type: 'overlap', detail: 'A overlaps B' };
+    renderHtmlStill
+      .mockResolvedValueOnce({ ok: false, issues: [issue], durationMs: 5 })
+      .mockResolvedValueOnce({ ok: false, issues: [issue], durationMs: 5 })
+      .mockResolvedValueOnce({ ok: false, issues: [issue], durationMs: 5 })
+      .mockResolvedValueOnce({ ok: false, issues: [issue], durationMs: 5 })
+      .mockResolvedValueOnce({ ok: true, file: '/out/forced.png', durationMs: 5, issues: [issue] });
+    const res = await runSlidePipeline(baseArgs as never);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.file).toBe('/out/forced.png');
+    expect(res.warnings.some((w) => w.kind === 'layout')).toBe(true);
+    const lastCall = renderHtmlStill.mock.calls[renderHtmlStill.mock.calls.length - 1];
+    expect((lastCall as unknown[])[2]).toMatchObject({ force: true });
+  });
+
+  it('treats invalid HTML as retry feedback, not a hard failure', async () => {
+    (validateGeneratedHtml as ReturnType<typeof vi.fn>)
+      .mockReturnValueOnce({ code: 'INVALID_HTML', detail: '<script> tag not allowed' })
+      .mockReturnValue(null);
+    const res = await runSlidePipeline(baseArgs as never);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    // second generate attempt produced valid html → clean success
+    expect(generateSlideHtml).toHaveBeenCalledTimes(2);
+  });
+
+  it('returns LLM_FAILURE only when an LLM call throws', async () => {
+    planSlideDesign.mockRejectedValue(new Error('network down'));
+    const res = await runSlidePipeline(baseArgs as never);
+    expect(res.ok).toBe(false);
+    if (res.ok) return;
+    expect(res.code).toBe('LLM_FAILURE');
+  });
+
+  it('passes output dir/fileName through to the renderer', async () => {
+    await runSlidePipeline({ ...baseArgs, output: { dir: '/out/carousel-1', fileName: 'slide-01.png' } } as never);
+    expect(renderHtmlStill.mock.calls[0][2]).toMatchObject({ dir: '/out/carousel-1', fileName: 'slide-01.png' });
+  });
+
+  it('passes design feedback to the second planSlideDesign attempt', async () => {
+    reviewSlideDesign
+      .mockResolvedValueOnce({ approved: false, issues: ['recipe mismatch'] })
+      .mockResolvedValueOnce({ approved: true, issues: [] });
+    await runSlidePipeline(baseArgs as never);
+    const secondPlanCall = planSlideDesign.mock.calls[1][0];
+    expect(secondPlanCall.feedback).toContain('recipe mismatch');
+  });
+
+  it('passes renderer feedback to the next generateSlideHtml attempt on quality rejection', async () => {
+    reviewRenderedSlide
+      .mockResolvedValueOnce({ approved: false, issues: [{ category: 'brand-color', description: 'hardcoded hex', suggestion: 'use var' }], rendererFeedback: 'fix: use CSS vars' })
+      .mockResolvedValueOnce({ approved: true, issues: [], rendererFeedback: null });
+    await runSlidePipeline(baseArgs as never);
+    const secondGenerateCall = generateSlideHtml.mock.calls[1][0];
+    expect(secondGenerateCall.userPrompt).toContain('CORRECTIONS REQUIRED');
+  });
+
+  it('returns ok when quality review throws (non-fatal path)', async () => {
+    reviewRenderedSlide.mockRejectedValue(new Error('vision api down'));
+    const res = await runSlidePipeline(baseArgs as never);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.file).toBe('/out/x.png');
+    expect(res.warnings).toEqual([]);
+  });
+
+  it('omits the arrow when showCtaArrow is false', async () => {
+    await runSlidePipeline({ ...baseArgs, showCtaArrow: false } as never);
+    expect((buildHtmlDocument.mock.calls[0] as unknown[])[2]).toBe(false);
+  });
+
+  it('defaults showArrow to true when showCtaArrow is omitted', async () => {
+    await runSlidePipeline(baseArgs as never);
+    expect((buildHtmlDocument.mock.calls[0] as unknown[])[2]).toBe(true);
+  });
+
+  it('forwards narrative slide context to the quality reviewer', async () => {
+    await runSlidePipeline({
+      ...baseArgs, role: 'cta', narrativeFunction: 'cta', slideIndex: 4, slideTotal: 5,
+    } as never);
+    const reviewArgs = reviewRenderedSlide.mock.calls[0][0];
+    expect(reviewArgs.slideContext).toMatchObject({
+      role: 'cta', narrativeFunction: 'cta', index: 4, total: 5, isLast: true,
+    });
+  });
+
+  it('reviews the renderer OWN bodyHtml/css, not the shell-wrapped document', async () => {
+    await runSlidePipeline(baseArgs as never);
+    const reviewArgs = reviewRenderedSlide.mock.calls[0][0];
+    expect(reviewArgs.bodyHtml).toBe(GENERATED.bodyHtml);
+    expect(reviewArgs.css).toBe(GENERATED.css);
+    // The shell-wrapped doc (with the injected :root/hex/arrow) must NOT be what the reviewer sees.
+    expect(reviewArgs.html).toBeUndefined();
+  });
+
+  it('exposes bodyHtml/css on success so a later revision can reuse them', async () => {
+    const res = await runSlidePipeline(baseArgs as never);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.bodyHtml).toBe(GENERATED.bodyHtml);
+    expect(res.css).toBe(GENERATED.css);
+  });
+
+  describe('revision mode (surgical editorial fix)', () => {
+    const revisionArgs = {
+      ...baseArgs,
+      revision: {
+        designSpec: SPEC,
+        previousHtml: { bodyHtml: '<prev/>', css: '.prev{}' },
+        editorialFix: 'aggiungi un esempio numerico',
+      },
+    };
+
+    it('skips the design phase (Agent 1 + 2) and reuses the provided spec', async () => {
+      const res = await runSlidePipeline(revisionArgs as never);
+      expect(res.ok).toBe(true);
+      if (!res.ok) return;
+      expect(planSlideDesign).not.toHaveBeenCalled();
+      expect(reviewSlideDesign).not.toHaveBeenCalled();
+      expect(res.attempts.design).toBe(0);
+    });
+
+    it('seeds the renderer with the prior HTML and the editorial fix', async () => {
+      await runSlidePipeline(revisionArgs as never);
+      const firstGenerate = generateSlideHtml.mock.calls[0][0];
+      expect(firstGenerate.userPrompt).toContain('aggiungi un esempio numerico');
+      expect(firstGenerate.userPrompt).toContain('<prev/>');
+      expect(firstGenerate.userPrompt).toContain('REVISION REQUESTED');
+    });
+  });
+});

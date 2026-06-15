@@ -1,9 +1,10 @@
 export const colors = {
-  'brand-navy': '#1B3A6B',
-  'brand-gold': '#C9A24A',
-  'paper': '#F5F1E8',
-  'ink': '#1A1A1A',
-  'muted': '#6B6B6B',
+  'brand-navy':  '#012A78',
+  'brand-green': '#00B373',
+  'paper':       '#FFFFFF',
+  'ink':         '#101010',
+  'muted':       '#767676',
+  'danger':      '#DC2626',
 } as const;
 
 export type ColorToken = keyof typeof colors;

@@ -6,12 +6,15 @@ import { layouts } from '@/layouts';
 import { theme } from '@/theme';
 import { listAssets } from '@/assets';
 import { SlideSpecSchema } from '@/schema/slideSpec';
-import { renderSlideStill, renderDynamicStill } from '@/lib/render';
+import { renderSlideStill, renderDynamicStill, shortId } from '@/lib/render';
 import { generateSlideCode } from '@/llm/generate';
 import { createLlmClient, readLlmConfig } from '@/llm/client';
 import { buildSystemPrompt } from '@/llm/systemPrompt';
 import { loadBrandContext } from '@/llm/brandContext';
 import { validateTsx } from '@/dynamic/compile';
+import { runSlidePipeline } from '@/html/pipeline';
+import { generateContent } from '@/content/orchestrate';
+import { log } from '@/lib/log';
 
 export function mountDiscoveryRoutes(app: Express): void {
   app.get('/compositions', (_req, res) => {
@@ -83,6 +86,13 @@ const DynamicBodySchema = z.object({
   model: z.string().optional(),
 });
 
+const HtmlBodySchema = z.object({
+  prompt: z.string().min(1).max(8000),
+  brandContext: z.string().optional(),
+  model: z.string().optional(),
+  role: z.enum(['cover', 'body', 'cta']).optional(),
+});
+
 export function mountDynamicRoutes(app: Express): void {
   app.post('/render/dynamic', async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -97,7 +107,7 @@ export function mountDynamicRoutes(app: Express): void {
       let generated;
       try {
         generated = await generateSlideCode({
-          client, model: body.model ?? cfg.model, systemPrompt, userPrompt: body.prompt,
+          client, model: body.model ?? cfg.models?.dynamic ?? cfg.model, systemPrompt, userPrompt: body.prompt,
           reasoningEffort: cfg.reasoningEffort,
         });
       } catch (err) {
@@ -127,6 +137,117 @@ export function mountDynamicRoutes(app: Express): void {
         renderDurationMs,
         code: generated.code,
         intent: generated.intent,
+      });
+    } catch (err) {
+      next(err);
+    }
+  });
+}
+
+export function mountHtmlRoutes(app: Express): void {
+  app.post('/render/html', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const body = HtmlBodySchema.parse(req.body);
+      const cfg = readLlmConfig();
+      const client = createLlmClient(cfg);
+      const brand = body.brandContext
+        ?? loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'docs/contesto-progetto-finvestire.md');
+
+      const result = await runSlidePipeline({
+        client,
+        model: body.model ?? cfg.model,
+        reasoningEffort: cfg.reasoningEffort,
+        brandContext: brand,
+        userPrompt: body.prompt,
+        role: body.role,
+        outputId: shortId(),
+        showCtaArrow: false,
+        models: body.model ? undefined : cfg.models,
+      });
+
+      if (!result.ok) {
+        const e: Error & { code?: string; detail?: unknown } = new Error(result.code.toLowerCase());
+        e.code = result.code;
+        e.detail = result.detail;
+        throw e;
+      }
+
+      res.json({
+        file: result.file,
+        intent: result.intent,
+        html: result.html,
+        designSpec: result.designSpec,
+        warnings: result.warnings.length > 0 ? result.warnings : undefined,
+        attempts: result.attempts,
+        usage: result.usage,
+        durationMs: result.durationMs.total,
+        llmDurationMs: result.durationMs.llm,
+        renderDurationMs: result.durationMs.render,
+      });
+    } catch (err) {
+      next(err);
+    }
+  });
+}
+
+const ContentBodySchema = z
+  .object({
+    topic: z.string().min(1).max(2000),
+    instructions: z.string().max(4000).optional(),
+    format: z.enum(['single', 'carousel']),
+    // Permissive bound: carousel values are silently clamped to 6-9 in the transform below (not rejected).
+    slideCount: z.number().int().min(1).max(20).optional(),
+    brandContext: z.string().optional(),
+    model: z.string().optional(),
+  })
+  .transform((b) => ({
+    ...b,
+    // Carousel defaults to 7 slides (clamped 6-9); single is always 1.
+    slideCount: b.format === 'carousel' ? Math.min(9, Math.max(6, b.slideCount ?? 7)) : 1,
+  }));
+
+export function mountContentRoutes(app: Express): void {
+  app.post('/generate/content', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const body = ContentBodySchema.parse(req.body);
+      const cfg = readLlmConfig();
+      const client = createLlmClient(cfg);
+      const brand = body.brandContext
+        ?? loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'docs/contesto-progetto-finvestire.md');
+
+      const result = await generateContent({
+        client,
+        model: body.model ?? cfg.model,
+        reasoningEffort: cfg.reasoningEffort,
+        brandContext: brand,
+        topic: body.topic,
+        instructions: body.instructions,
+        format: body.format,
+        slideCount: body.slideCount,
+        models: body.model ? undefined : cfg.models,
+      });
+
+      if (!result.ok) {
+        const e: Error & { code?: string; detail?: unknown } = new Error(result.code.toLowerCase());
+        e.code = result.code;
+        e.detail = result.detail;
+        throw e;
+      }
+
+      res.json({
+        carouselId: result.carouselId,
+        carouselDir: result.carouselDir,
+        topic: result.topic,
+        format: result.format,
+        title: result.title,
+        angle: result.angle,
+        framework: result.framework,
+        files: result.slides.map((s) => s.file),
+        slides: result.slides,
+        reviewRounds: result.reviewRounds,
+        contentWarnings: result.contentWarnings,
+        usage: result.usage,
+        durationMs: result.durationMs,
       });
     } catch (err) {
       next(err);

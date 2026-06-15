@@ -4,7 +4,7 @@ import { resolveAsset, listAssets, assetExists } from '@/assets';
 describe('assets', () => {
   it('resolves known assetId to absolute-ish path', () => {
     const p = resolveAsset('logo-f');
-    expect(p).toContain('brand/logo-f.svg');
+    expect(p).toContain('brand/logo.png');
   });
 
   it('throws on unknown assetId', () => {
@@ -18,6 +18,6 @@ describe('assets', () => {
 
   it('lists all assets with metadata', () => {
     const all = listAssets();
-    expect(all['logo-f']).toMatchObject({ path: expect.stringContaining('brand/logo-f.svg') });
+    expect(all['logo-f']).toMatchObject({ path: expect.stringContaining('brand/logo.png') });
   });
 });
