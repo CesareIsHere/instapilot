@@ -33,6 +33,23 @@ export interface BrandKit {
   dos: string; donts: string; notes: string;
 }
 
+export interface PublicConfig {
+  baseURL?: string;
+  model?: string;
+  reasoningEffort?: 'minimal' | 'low' | 'medium' | 'high';
+  models?: Record<string, string>;
+  hasApiKey: boolean;
+  apiKeyLast4?: string;
+}
+
+export interface ConfigPatch {
+  baseURL?: string;
+  apiKey?: string;
+  model?: string;
+  reasoningEffort?: 'minimal' | 'low' | 'medium' | 'high';
+  models?: Record<string, string>;
+}
+
 export interface Pricing {
   inputPer1M: number; outputPer1M: number; currency: string;
 }
@@ -119,6 +136,12 @@ export const api = {
     get: () => apiFetch<{ kit: BrandKit; saved: boolean }>('/api/brand'),
     save: (kit: BrandKit) =>
       apiFetch<{ ok: boolean; kit: BrandKit }>('/api/brand', { method: 'PUT', body: JSON.stringify(kit) }),
+  },
+
+  config: {
+    get: () => apiFetch<PublicConfig>('/api/config'),
+    save: (patch: ConfigPatch) =>
+      apiFetch<PublicConfig>('/api/config', { method: 'PUT', body: JSON.stringify(patch) }),
   },
 
   generate: {
