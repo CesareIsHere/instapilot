@@ -1,4 +1,6 @@
 import OpenAI from 'openai';
+import type { StoredConfig } from '@/config/store';
+import { readStoredConfig } from '@/config/store';
 
 export type ReasoningEffort = 'minimal' | 'low' | 'medium' | 'high';
 
@@ -23,27 +25,31 @@ export interface LlmClientConfig {
   models: AgentModels;
 }
 
-export function readLlmConfig(env: NodeJS.ProcessEnv = process.env): LlmClientConfig {
-  const baseURL = env.LITELLM_BASE_URL;
-  const apiKey = env.LITELLM_API_KEY ?? env.OPENAI_API_KEY;
-  const model = env.LITELLM_MODEL ?? env.OPENAI_MODEL ?? 'gpt-4o';
+export function readLlmConfig(
+  env: NodeJS.ProcessEnv = process.env,
+  stored: StoredConfig = readStoredConfig(),
+): LlmClientConfig {
+  const baseURL = stored.baseURL ?? env.LITELLM_BASE_URL;
+  const apiKey = stored.apiKey ?? env.LITELLM_API_KEY ?? env.OPENAI_API_KEY;
+  const model = stored.model ?? env.LITELLM_MODEL ?? env.OPENAI_MODEL ?? 'gpt-4o';
   const raw = env.OPENAI_REASONING_EFFORT?.toLowerCase();
-  const reasoningEffort = (['minimal', 'low', 'medium', 'high'] as const).includes(raw as ReasoningEffort)
+  const envEffort = (['minimal', 'low', 'medium', 'high'] as const).includes(raw as ReasoningEffort)
     ? (raw as ReasoningEffort)
     : undefined;
-  if (!apiKey) throw new Error('LITELLM_API_KEY or OPENAI_API_KEY is required');
-  const m = (key: string) => env[key] ?? model;
+  const reasoningEffort = stored.reasoningEffort ?? envEffort;
+  if (!apiKey) throw new Error('API key is required (set it in Settings or via OPENAI_API_KEY)');
+  const m = (key: string, agent: keyof AgentModels) => stored.models?.[agent] ?? env[key] ?? model;
   const models: AgentModels = {
-    research:        m('MODEL_RESEARCH'),
-    researchReview:  m('MODEL_RESEARCH_REVIEW'),
-    plan:            m('MODEL_PLAN'),
-    planReview:      m('MODEL_PLAN_REVIEW'),
-    designPlan:      m('MODEL_DESIGN_PLAN'),
-    designReview:    m('MODEL_DESIGN_REVIEW'),
-    htmlRender:      m('MODEL_HTML_RENDER'),
-    qualityReview:   m('MODEL_QUALITY_REVIEW'),
-    editorialReview: m('MODEL_EDITORIAL_REVIEW'),
-    dynamic:         m('MODEL_DYNAMIC'),
+    research:        m('MODEL_RESEARCH', 'research'),
+    researchReview:  m('MODEL_RESEARCH_REVIEW', 'researchReview'),
+    plan:            m('MODEL_PLAN', 'plan'),
+    planReview:      m('MODEL_PLAN_REVIEW', 'planReview'),
+    designPlan:      m('MODEL_DESIGN_PLAN', 'designPlan'),
+    designReview:    m('MODEL_DESIGN_REVIEW', 'designReview'),
+    htmlRender:      m('MODEL_HTML_RENDER', 'htmlRender'),
+    qualityReview:   m('MODEL_QUALITY_REVIEW', 'qualityReview'),
+    editorialReview: m('MODEL_EDITORIAL_REVIEW', 'editorialReview'),
+    dynamic:         m('MODEL_DYNAMIC', 'dynamic'),
   };
   return { baseURL, apiKey, model, reasoningEffort, models };
 }
