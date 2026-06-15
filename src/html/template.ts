@@ -3,25 +3,44 @@ import { defaultBrandKit } from '@/server/brand';
 import { manifest } from '@/assets/manifest';
 import { buildFontFaceBlock } from './fonts';
 import { buildPaletteCss } from './palette';
+import { resolveLogoPath } from '@/server/upload';
 import fs from 'node:fs';
 import path from 'node:path';
 
 const PUBLIC_DIR = path.resolve(process.cwd(), 'public');
 const ASSET_TOKEN_RE = /\{\{asset:([^}]+)\}\}/g;
 
+function extToMime(ext: string): string {
+  if (ext === 'svg') return 'image/svg+xml';
+  if (ext === 'png') return 'image/png';
+  return 'image/jpeg';
+}
+
 function assetToDataUri(assetPath: string): string | null {
   const fullPath = path.join(PUBLIC_DIR, assetPath);
   if (!fs.existsSync(fullPath)) return null;
   const buf = fs.readFileSync(fullPath);
   const ext = path.extname(assetPath).slice(1).toLowerCase();
-  const mime = ext === 'svg' ? 'image/svg+xml' : ext === 'png' ? 'image/png' : 'image/jpeg';
-  return `data:${mime};base64,${buf.toString('base64')}`;
+  return `data:${extToMime(ext)};base64,${buf.toString('base64')}`;
+}
+
+function assetToDataUriFromAbsolute(absolutePath: string): string | null {
+  if (!fs.existsSync(absolutePath)) return null;
+  const buf = fs.readFileSync(absolutePath);
+  const ext = path.extname(absolutePath).slice(1).toLowerCase();
+  return `data:${extToMime(ext)};base64,${buf.toString('base64')}`;
 }
 
 function buildAssetDataUris(): Record<string, string> {
   const result: Record<string, string> = {};
   for (const [id, entry] of Object.entries(manifest)) {
-    const uri = assetToDataUri(entry.path);
+    let uri: string | null;
+    if (id === 'logo-f') {
+      // Usa il logo caricato dall'utente se disponibile, altrimenti il default.
+      uri = assetToDataUriFromAbsolute(resolveLogoPath());
+    } else {
+      uri = assetToDataUri(entry.path);
+    }
     if (uri) result[id] = uri;
   }
   return result;

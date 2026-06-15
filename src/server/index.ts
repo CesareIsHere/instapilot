@@ -8,6 +8,7 @@ import { mountLibraryRoutes, OUTPUT_DIR } from './library';
 import { mountJobRoutes } from './jobs';
 import { mountBrandRoutes } from './brand';
 import { mountConfigRoutes } from './config';
+import { mountUploadRoutes } from './upload';
 import { closeBrowser } from '@/html/browser';
 import { errorHandler } from './errors';
 
@@ -44,6 +45,7 @@ async function main() {
   mountJobRoutes(app);
   mountLibraryRoutes(app);
   mountBrandRoutes(app);
+  mountUploadRoutes(app);
   mountConfigRoutes(app);
 
   // Generated artifacts (PNG + HTML) — served read-only to the UI.
