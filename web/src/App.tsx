@@ -8,6 +8,7 @@ import { JobDetail } from '@/pages/JobDetail';
 import { ContentDetail } from '@/pages/ContentDetail';
 import { BrandKit } from '@/pages/BrandKit';
 import { Settings } from '@/pages/Settings';
+import { SetupBanner } from '@/components/layout/SetupBanner';
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
       <div className="flex min-h-screen bg-background">
         <Sidebar />
         <main className="flex-1 ml-56 min-h-screen">
+          <SetupBanner />
           <Routes>
             <Route path="/" element={<Library />} />
             <Route path="/new" element={<NewContent />} />
