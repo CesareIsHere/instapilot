@@ -399,7 +399,7 @@ export const ContentPlanSchema = z.object({
 In `buildPlannerSystemPrompt`, after the `${formatRules}` insertion and before the "Per ogni slide scrivi un brief..." paragraph, insert the framework catalog + narrative rules (only meaningful for carousels, but harmless for single):
 
 ```ts
-  return `Sei un social media manager senior specializzato in caroselli Instagram educativi di finanza per Finvestire (italiano).
+  return `Sei un social media manager senior specializzato in caroselli Instagram educativi di finanza per Acme (italiano).
 
 ${formatRules}
 

@@ -12,7 +12,7 @@ const validSpec = {
     { type: 'list-item', text: '3. Evita il market timing', emphasis: 'red' },
   ],
   colorPlan: 'Titolo navy con "investire" verde; lista con accent verde per step positivi',
-  useAssets: ['logo-f'],
+  useAssets: ['logo'],
   notes: null,
 };
 

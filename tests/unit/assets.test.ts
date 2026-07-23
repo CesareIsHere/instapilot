@@ -3,8 +3,8 @@ import { resolveAsset, listAssets, assetExists } from '@/assets';
 
 describe('assets', () => {
   it('resolves known assetId to absolute-ish path', () => {
-    const p = resolveAsset('logo-f');
-    expect(p).toContain('brand/logo.png');
+    const p = resolveAsset('logo');
+    expect(p).toContain('brand/logo.svg');
   });
 
   it('throws on unknown assetId', () => {
@@ -12,12 +12,12 @@ describe('assets', () => {
   });
 
   it('reports asset existence without throwing', () => {
-    expect(assetExists('logo-f')).toBe(true);
+    expect(assetExists('logo')).toBe(true);
     expect(assetExists('does-not-exist')).toBe(false);
   });
 
   it('lists all assets with metadata', () => {
     const all = listAssets();
-    expect(all['logo-f']).toMatchObject({ path: expect.stringContaining('brand/logo.png') });
+    expect(all['logo']).toMatchObject({ path: expect.stringContaining('brand/logo.svg') });
   });
 });

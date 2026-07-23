@@ -3,7 +3,7 @@ import { IllustrationSchema } from '@/primitives/Illustration';
 
 describe('Illustration schema', () => {
   it('accepts minimal props', () => {
-    const r = IllustrationSchema.safeParse({ type: 'Illustration', assetId: 'logo-f' });
+    const r = IllustrationSchema.safeParse({ type: 'Illustration', assetId: 'logo' });
     expect(r.success).toBe(true);
   });
 

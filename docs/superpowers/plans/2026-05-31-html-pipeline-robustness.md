@@ -470,7 +470,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const SPEC = {
   recipe: 'cover', rationale: 'r',
   headline: { text: 'T', coloredSpans: null },
-  eyebrow: null, bodyElements: [], colorPlan: 'navy', useAssets: ['logo-f'], notes: null,
+  eyebrow: null, bodyElements: [], colorPlan: 'navy', useAssets: ['logo'], notes: null,
 };
 
 const planSlideDesign = vi.fn();
@@ -1060,7 +1060,7 @@ function buildResearchPrompt(topic: string, instructions: string | undefined, fe
   const corrections = feedback
     ? `\n\n--- REVISIONE PRECEDENTE DA CORREGGERE ---\nIl dossier precedente è stato bocciato per questi motivi. Correggili in questa versione:\n${feedback}\n`
     : '';
-  return `Sei un ricercatore senior di finanza personale e investimenti per Finvestire (contenuti educativi in italiano), rivolto a un pubblico NON esperto.
+  return `Sei un ricercatore senior di finanza personale e investimenti per Acme (contenuti educativi in italiano), rivolto a un pubblico NON esperto.
 
 Approfondisci a fondo il seguente argomento con informazioni aggiornate, affidabili e verificabili:
 
@@ -1107,7 +1107,7 @@ ${research}${args.feedback ? `\n\n--- REVISIONE DEL PIANO PRECEDENTE DA CORREGGE
 Strengthen the planner system prompt — replace the paragraph that begins "Per ogni slide scrivi un \"brief\"..." and the "Regole:" block with:
 
 ```ts
-  return `Sei un content strategist senior per Finvestire (contenuti educativi di finanza in italiano).
+  return `Sei un content strategist senior per Acme (contenuti educativi di finanza in italiano).
 Ricevi un dossier di ricerca e pianifichi come strutturare il contenuto in slide per Instagram.
 
 ${formatRules}
@@ -1213,7 +1213,7 @@ export const ResearchReviewSchema = z.object({
 });
 export type ResearchReview = z.infer<typeof ResearchReviewSchema>;
 
-const RESEARCH_REVIEWER_PROMPT = `Sei un revisore di ricerca per Finvestire (finanza educativa in italiano).
+const RESEARCH_REVIEWER_PROMPT = `Sei un revisore di ricerca per Acme (finanza educativa in italiano).
 Valuti un dossier di ricerca PRIMA che venga usato per scrivere un post Instagram.
 
 Controlla:
@@ -1331,7 +1331,7 @@ export const PlanReviewSchema = z.object({
 });
 export type PlanReview = z.infer<typeof PlanReviewSchema>;
 
-const PLAN_REVIEWER_PROMPT = `Sei un caporedattore di Finvestire. Valuti il PIANO di un contenuto Instagram (la struttura in slide e i brief) PRIMA che le slide vengano generate.
+const PLAN_REVIEWER_PROMPT = `Sei un caporedattore di Acme. Valuti il PIANO di un contenuto Instagram (la struttura in slide e i brief) PRIMA che le slide vengano generate.
 
 Controlla:
 1. Struttura: rispetta il formato richiesto (numero di slide, ruoli cover/body/cta)?

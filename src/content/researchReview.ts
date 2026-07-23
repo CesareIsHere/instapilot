@@ -15,7 +15,7 @@ function buildReviewerPrompt(format: 'single' | 'carousel'): string {
     ? `Il dossier è per un SINGOLO POST (1 slide). Valuta se contiene i concetti chiave essenziali, almeno 1 dato utile e 1-2 angoli/hook. NON richiedere le 6 sezioni complete né approfondimenti accademici: la profondità richiesta è intenzionalmente ridotta.`
     : `Il dossier è per un CAROSELLO multi-slide. Valuta se è abbastanza completo da alimentare più slide in modo progressivo: concetti chiave, dati con anno/fonte, esempi, errori comuni, angoli/hook.`;
 
-  return `Sei un revisore di ricerca per Finvestire (finanza educativa in italiano).
+  return `Sei un revisore di ricerca per contenuti educativi in italiano (settore e taglio nel CONTESTO BRAND).
 Valuti un dossier di ricerca PRIMA che venga usato per scrivere un post Instagram.
 
 ${depthHint}

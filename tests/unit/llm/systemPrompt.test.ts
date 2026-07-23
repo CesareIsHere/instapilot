@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { buildSystemPrompt } from '@/llm/systemPrompt';
 
 describe('buildSystemPrompt', () => {
-  const brand = '# Finvestire\n\nVoice: rigoroso.';
+  const brand = '# Acme\n\nVoice: rigoroso.';
 
   it('includes the three required sections', () => {
     const prompt = buildSystemPrompt(brand);

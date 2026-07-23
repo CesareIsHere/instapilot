@@ -91,7 +91,7 @@ Modifica `.env.example` aggiungendo in fondo:
 LITELLM_BASE_URL=http://localhost:4000
 LITELLM_API_KEY=sk-changeme
 LITELLM_MODEL=claude-sonnet-4-6
-BRAND_CONTEXT_FILE=docs/contesto-progetto-finvestire.md
+BRAND_CONTEXT_FILE=docs/brand-context.example.md
 DYNAMIC_RENDER_ENABLED=true
 ```
 
@@ -283,7 +283,7 @@ import { describe, it, expect } from 'vitest';
 import { buildSystemPrompt } from '@/llm/systemPrompt';
 
 describe('buildSystemPrompt', () => {
-  const brand = '# Finvestire\n\nVoice: rigoroso.';
+  const brand = '# Acme\n\nVoice: rigoroso.';
 
   it('includes the three required sections', () => {
     const prompt = buildSystemPrompt(brand);
@@ -351,7 +351,7 @@ Your code runs inside a new Function() with these injected parameters (NO IMPORT
       typography: { fontFamily: 'Plus Jakarta Sans, sans-serif', sizes: { sm, md, lg, xl }, weights: { regular, semibold, bold }, lineHeight },
       spacing: { xs: 8, sm: 16, md: 24, lg: 40, xl: 64, '2xl': 96 }
     }
-- assets: map of assetId -> URL ready for <Img src={...}>. Available IDs: 'logo-f', 'money-time-flow'.
+- assets: map of assetId -> URL ready for <Img src={...}>. Available IDs: 'logo', 'money-time-flow'.
 - primitives: { Headline, RichText, Illustration, Footer } — pre-built brand-safe components, OPTIONAL. Use only if they fit your design; you may write your own JSX instead.
 
 # OUTPUT CONTRACT
@@ -684,7 +684,7 @@ import { buildSandboxGlobals } from '@/dynamic/sandbox';
 import { theme } from '@/theme';
 
 describe('buildSandboxGlobals', () => {
-  const assets = { 'logo-f': 'http://x/logo.svg' };
+  const assets = { 'logo': 'http://x/logo.svg' };
 
   it('exposes React with hooks', () => {
     const g = buildSandboxGlobals(theme, assets);
@@ -1093,7 +1093,7 @@ export function mountDynamicRoutes(app: Express): void {
       const cfg = readLlmConfig();
       const client = createLlmClient(cfg);
       const brand = body.brandContext
-        ?? loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'docs/contesto-progetto-finvestire.md');
+        ?? loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'docs/brand-context.example.md');
       const systemPrompt = buildSystemPrompt(brand);
 
       const llmStart = Date.now();
@@ -1305,7 +1305,7 @@ Crea `examples/dynamic-prompt.json`:
 
 ```json
 {
-  "prompt": "Crea una slide titolo per il post 'La leva del tempo' di Finvestire. Titolo grande in brand-navy in alto, sotto un sottotitolo in muted: 'Perché iniziare a 24 anni vale più di guadagnare il doppio a 40'. In basso una piccola scritta '@finvestire' centrata. Background paper."
+  "prompt": "Crea una slide titolo per il post 'La leva del tempo' di Acme. Titolo grande in brand-navy in alto, sotto un sottotitolo in muted: 'Perché iniziare a 24 anni vale più di guadagnare il doppio a 40'. In basso una piccola scritta '@yourbrand' centrata. Background paper."
 }
 ```
 
@@ -1324,7 +1324,7 @@ Apri il file restituito. Conferma visivamente:
 - Background paper (#F5F1E8)
 - Titolo grande brand-navy
 - Sottotitolo muted
-- "@finvestire" in basso
+- "@yourbrand" in basso
 - Tutto dentro il canvas 1080x1350, niente overflow
 
 Se non accettabile, leggere il `code` ritornato nella risposta per capire cosa l'LLM ha generato. Iterare sul system prompt se necessario.

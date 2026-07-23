@@ -3,7 +3,7 @@ import { buildSandboxGlobals } from '@/dynamic/sandbox';
 import { theme } from '@/theme';
 
 describe('buildSandboxGlobals', () => {
-  const assets = { 'logo-f': 'http://x/logo.svg' };
+  const assets = { 'logo': 'http://x/logo.svg' };
 
   it('exposes React with hooks', () => {
     const g = buildSandboxGlobals(theme, assets);

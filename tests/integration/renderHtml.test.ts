@@ -9,7 +9,7 @@ const MOCK_DESIGN_SPEC = {
   eyebrow: null,
   bodyElements: [],
   colorPlan: 'navy titles, green logo',
-  useAssets: ['logo-f'],
+  useAssets: ['logo'],
   notes: null,
 };
 

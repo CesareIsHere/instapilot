@@ -12,7 +12,7 @@ export const PlanReviewSchema = z.object({
 });
 export type PlanReview = z.infer<typeof PlanReviewSchema>;
 
-const PLAN_REVIEWER_PROMPT = `Sei un caporedattore di Finvestire. Valuti il PIANO di un contenuto Instagram (la struttura in slide e i brief) PRIMA che le slide vengano generate.
+const PLAN_REVIEWER_PROMPT = `Sei il caporedattore del brand descritto nel CONTESTO BRAND. Valuti il PIANO di un contenuto Instagram (la struttura in slide e i brief) PRIMA che le slide vengano generate.
 
 Controlla:
 1. Struttura: rispetta il formato richiesto (numero di slide, ruoli cover/body/cta)?

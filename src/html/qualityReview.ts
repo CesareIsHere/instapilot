@@ -24,7 +24,7 @@ export const QualityReviewSchema = z.object({
 export type QualityIssue = z.infer<typeof QualityIssueSchema>;
 export type QualityReview = z.infer<typeof QualityReviewSchema>;
 
-const QUALITY_REVIEWER_PROMPT = `You are the FINAL art director and quality gatekeeper for Finvestire Instagram slides.
+const QUALITY_REVIEWER_PROMPT = `You are the FINAL art director and quality gatekeeper for the brand's Instagram slides.
 This slide will be published to a global audience. Your standard is superlative: it must look like
 it was crafted by a top-tier design studio — pixel-perfect, intentional, and flawless. Nothing
 sloppy ships. You receive the rendered slide image and the HTML/CSS source. Study BOTH meticulously.
@@ -54,7 +54,7 @@ Inspect the actual pixels. These are the most common and most damaging defects �
 - BREATHING ROOM: spacing between blocks is even and deliberate; no two blocks kiss or crowd; no
   awkward gaps. Density must feel composed, never accidental.
 - The CANVAS background must be pure white (no gradients/textures). NOTE: in rich layouts (card-grid, flow-diagram, breakdown-chart, concept-breakdown) individual cards / diagram nodes / chart segments MAY have light colored surface fills and accent borders — that is correct, do NOT flag it as a "colored background"; only flag a colored fill behind the WHOLE slide.
-- Logo (navy circle with F+arrow) must be visible at top center
+- Logo must be visible at top center
 - No text or content appears clipped at canvas edges
 - Layout fills the canvas — no large empty areas (>100px of unintentional whitespace)
 - Clear visual hierarchy with one dominant focal point
@@ -76,7 +76,7 @@ Hardcoded hex, :root, @font-face, @import, box-shadow and gradients in the rende
 
 ## CONTENT CLARITY REVIEW (image)
 - BARE NUMBERS: every number/KPI must show what it is (a label) and ideally what it means — flag a big number with no caption explaining it (category "content")
-- EYEBROW LABELS: the small uppercase label above the title must be a real topical label. Flag generic, disconnected meta-labels like "CONTESTO", "OGGETTO DELLA SLIDE", "INVESTIMENTO", "INTRODUZIONE" (category "content")
+- EYEBROW LABELS: the small uppercase label above the title must be a real topical label. Flag generic, disconnected meta-labels like "CONTESTO", "OGGETTO DELLA SLIDE", "ARGOMENTO", "INTRODUZIONE" (category "content")
 
 ## TYPOGRAPHY REVIEW (source)
 - No font-size below 22px for any text; no font-size below 30px inside cards

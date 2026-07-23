@@ -1,7 +1,13 @@
-# ig-auto-builder — Render Service
+# instapilot — Render Service
 
-Microservizio HTTP locale che trasforma uno `SlideSpec` JSON in PNG via Remotion.
-Parte della pipeline di automazione contenuti Finvestire.
+Microservizio HTTP locale che genera slide/caroselli Instagram (1080×1350 PNG) a
+partire da uno `SlideSpec` JSON o da un semplice argomento in linguaggio naturale,
+usando Remotion/Playwright per il rendering deterministico e una pipeline multi-agente
+LLM per contenuto e design.
+
+Il motore è **brand-agnostic**: l'identità del brand (nome, voice, palette, pubblico,
+disclaimer) è iniettata a runtime tramite un *brand context*, non cablata nei prompt.
+Vedi [Configurazione del brand](#configurazione-del-brand).
 
 ## Quickstart
 
@@ -142,11 +148,25 @@ Risposta: `{ "title": "...", "angle": "...", "files": ["...", ...], "slides": [.
 - Zod (validation)
 - Vitest + pixelmatch (test + snapshot diff)
 
+## Configurazione del brand
+
+I prompt di generazione non contengono alcun brand: l'identità è fornita a runtime.
+Puoi configurarla in due modi (in ordine di precedenza):
+
+1. **Brand kit** dalla UI Studio (`/brand`) — salvato in `data/brand-kit.json`.
+2. **File di contesto** puntato da `BRAND_CONTEXT_FILE` (default `docs/brand-context.example.md`).
+
+Punti di partenza inclusi nel repo:
+- `docs/brand-context.example.md` — template generico da compilare per il tuo brand.
+- `examples/brand-contexts/finance.md` — preset pronto per finanza personale / value investing.
+
+Handle e disclaimer del `Footer` sono configurabili via `BRAND_HANDLE` e `BRAND_DISCLAIMER`.
+
 ## Asset richiesti
 
-Prima di poter renderizzare, posiziona i file in `public/`:
-- `public/brand/logo-f.svg` — logo monogramma Finvestire
-- `public/illustrations/money-time-flow.svg` — illustrazione slide campione
+Gli asset stanno in `public/`:
+- `public/brand/logo.svg` — logo del brand (placeholder neutro incluso: sostituiscilo col tuo).
+- `public/illustrations/money-time-flow.svg` — illustrazione slide campione.
 
 ## Documenti
 
@@ -154,4 +174,4 @@ Prima di poter renderizzare, posiziona i file in `public/`:
 - Piano implementazione: `docs/superpowers/plans/2026-05-24-render-service-v1.md`
 - Design dynamic render: `docs/superpowers/specs/2026-05-24-render-dynamic-v1-design.md`
 - Piano dynamic render: `docs/superpowers/plans/2026-05-24-render-dynamic-v1.md`
-- Contesto brand: `docs/contesto-progetto-finvestire.md`
+- Template contesto brand: `docs/brand-context.example.md`

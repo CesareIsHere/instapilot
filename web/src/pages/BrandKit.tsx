@@ -113,7 +113,7 @@ export function BrandKit() {
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Identità</h2>
           <div className="space-y-2">
             <Label htmlFor="name">Nome del brand</Label>
-            <Input id="name" value={kit.name} onChange={e => set('name', e.target.value)} placeholder="Es. Finvestire" />
+            <Input id="name" value={kit.name} onChange={e => set('name', e.target.value)} placeholder="Es. Acme" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="tagline">Tagline</Label>
