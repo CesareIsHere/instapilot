@@ -38,7 +38,7 @@ function buildResearchPrompt(
 5. ANGOLI E HOOK — 2-3 angoli narrativi forti e ganci d'apertura utilizzabili per un post Instagram.
 6. FONTI — le fonti principali consultate.`;
 
-  return `Sei un ricercatore senior di finanza personale e investimenti per ${brandName} (contenuti educativi in italiano), rivolto a un pubblico NON esperto.
+  return `Sei un ricercatore senior che prepara materiale per contenuti Instagram educativi in italiano per ${brandName}, rivolti a un pubblico NON esperto. Il settore, il taglio e il pubblico specifici sono descritti nel CONTESTO BRAND fornito: adatta ricerca ed esempi a quel contesto.
 
 ${formatHint}
 
@@ -120,7 +120,7 @@ async function researchWithoutWeb(args: {
       {
         role: 'system',
         content:
-          'Sei un ricercatore esperto di finanza personale. Non hai accesso a internet: usa la tua conoscenza, segnalando esplicitamente quando un dato potrebbe non essere aggiornato.',
+          "Sei un ricercatore esperto sull'argomento richiesto. Non hai accesso a internet: usa la tua conoscenza, segnalando esplicitamente quando un dato potrebbe non essere aggiornato.",
       },
       { role: 'user', content: args.prompt },
     ],

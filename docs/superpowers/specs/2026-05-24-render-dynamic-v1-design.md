@@ -109,7 +109,7 @@ Compone tre layer:
 
 2. **Sandbox API** — descrizione delle 5 variabili disponibili con i loro tipi TS (in formato annotato, non vero TS).
 
-3. **Brand context** — caricato da `docs/contesto-progetto-finvestire.md` (sintesi: nome, voice, palette tokens, target audience, do/don't, formato `post-portrait` 1080×1350). Il path è configurabile via env `BRAND_CONTEXT_FILE`.
+3. **Brand context** — caricato da `docs/brand-context.example.md` (sintesi: nome, voice, palette tokens, target audience, do/don't, formato `post-portrait` 1080×1350). Il path è configurabile via env `BRAND_CONTEXT_FILE`.
 
 Il prompt finale è ~1500-2500 token. Lo serializziamo in `src/llm/systemPrompt.ts` con funzione `buildSystemPrompt(brandContext)` per testabilità.
 
@@ -173,7 +173,7 @@ src/
     schema.ts             # Zod per GeneratedSlide
     systemPrompt.ts       # buildSystemPrompt(brand)
     generate.ts           # generateSlideCode(prompt, brandContext)
-    brandContext.ts       # loader per docs/contesto-progetto-finvestire.md
+    brandContext.ts       # loader per docs/brand-context.example.md
   dynamic/
     DynamicSlide.tsx      # composition interpreter
     compile.ts            # sucrase wrapper (works in browser via bundler)
@@ -311,7 +311,7 @@ Niente Zod schema sulla composition (gli inputProps li validiamo noi lato server
 LITELLM_BASE_URL=http://localhost:4000
 LITELLM_API_KEY=sk-...
 LITELLM_MODEL=claude-sonnet-4-6
-BRAND_CONTEXT_FILE=docs/contesto-progetto-finvestire.md
+BRAND_CONTEXT_FILE=docs/brand-context.example.md
 DYNAMIC_RENDER_ENABLED=true
 ```
 

@@ -47,6 +47,5 @@
     "vitest": "^2.0.0"
   },
   "optionalDependencies": {
-    "@rollup/rollup-win32-x64-msvc": "file:rollup-rollup-win32-x64-msvc-4.60.4.tgz"
   }
 }

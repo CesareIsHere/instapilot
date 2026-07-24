@@ -108,7 +108,7 @@ export function resolveBrandContext(override?: string): string {
   if (override) return override;
   const kit = readBrandKit();
   if (kit) return brandKitToContext(kit);
-  return loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'examples/finvestire/brand-context.md');
+  return loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'docs/brand-context.example.md');
 }
 
 export function mountBrandRoutes(app: Express): void {

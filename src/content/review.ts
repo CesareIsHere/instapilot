@@ -42,7 +42,7 @@ Questo contenuto verrà pubblicato a un pubblico mondiale: lo standard è altiss
 ## REVISIONE EDITORIALE (testo + insieme)
 1. Aderenza all'argomento e alle istruzioni richieste.
 2. Scorrevolezza narrativa: cover che aggancia → sviluppo progressivo → cta che chiude. Nessun salto logico.
-2-bis. CHIUSURA DEL LOOP (vale anche per il SINGOLO POST da 1 sola slide): se l'headline pone una domanda, un paradosso o una promessa (es. "un'azione da 20€ può essere più cara"), il contenuto DEVE risolverla esplicitamente, non limitarsi a fornire gli strumenti perché il lettore ci arrivi da solo. Su un post autosufficiente la tensione aperta dal titolo va chiusa DENTRO la stessa slide (es. con un micro-esempio o la risposta diretta). Un titolo la cui promessa resta inevasa = contenuto NON pronto: segnalalo con un fix concreto.
+2-bis. CHIUSURA DEL LOOP (vale anche per il SINGOLO POST da 1 sola slide): se l'headline pone una domanda, un paradosso o una promessa, il contenuto DEVE risolverla esplicitamente, non limitarsi a fornire gli strumenti perché il lettore ci arrivi da solo. Su un post autosufficiente la tensione aperta dal titolo va chiusa DENTRO la stessa slide (es. con un micro-esempio o la risposta diretta). Un titolo la cui promessa resta inevasa = contenuto NON pronto: segnalalo con un fix concreto.
 3. Qualità e livello: accurato, chiaro, non banale.
 4. Coerenza: niente ripetizioni inutili, contraddizioni, salti.
 5. Completezza: i punti chiave sono coperti.
@@ -56,7 +56,7 @@ Questo contenuto verrà pubblicato a un pubblico mondiale: lo standard è altiss
 11. NIENTE RIPETIZIONI: nessuna slide rispiega un concetto già dato con parole diverse. Ogni slide aggiunge informazione NUOVA.
 12. DATI CON SIGNIFICATO: ogni numero deve dire COS'È (etichetta) e COSA COMUNICA (takeaway). Segnala numeri nudi o di cui non si capisce il senso, e l'accumulo di troppe cifre.
 13. REGISTRO E GERGO: linguaggio conversazionale (tu); ogni termine tecnico spiegato o sostituito (pubblico a zero). Segnala gergo non spiegato.
-14. EYEBROW/ETICHETTE: gli occhielli sopra il titolo devono essere etichette tematiche reali. Segnala meta-etichette generiche e scollegate tipo "CONTESTO", "OGGETTO DELLA SLIDE", "INVESTIMENTO", "INTRODUZIONE" — vanno chiarite (rese tematiche) o rimosse.
+14. EYEBROW/ETICHETTE: gli occhielli sopra il titolo devono essere etichette tematiche reali. Segnala meta-etichette generiche e scollegate tipo "CONTESTO", "OGGETTO DELLA SLIDE", "ARGOMENTO", "INTRODUZIONE" — vanno chiarite (rese tematiche) o rimosse.
 
 ## REVISIONE VISIVA D'INSIEME (guardando le immagini di TUTTE le slide) — PRIORITARIA
 15. COERENZA VISIVA DI SERIE: scala tipografica, spaziature, margini, stile dei box e uso del colore COERENTI tra tutte le slide. Segnala chi se ne discosta.

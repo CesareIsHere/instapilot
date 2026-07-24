@@ -5,10 +5,10 @@ export interface AssetEntry {
 }
 
 export const manifest: Record<string, AssetEntry> = {
-  'logo-f': {
-    path: 'brand/logo.png',
+  logo: {
+    path: 'brand/logo.svg',
     tags: ['brand', 'logo'],
-    description: 'Logo Finvestire — cerchio navy con F + freccia bianca',
+    description: 'Brand logo (neutral placeholder — replace with your own)',
   },
   'money-time-flow': {
     path: 'illustrations/money-time-flow.svg',

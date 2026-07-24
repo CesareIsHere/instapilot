@@ -1,7 +1,7 @@
 # Render Service v1 — Design
 
 **Data:** 2026-05-24
-**Scope:** Prima versione del microservizio di rendering Remotion per la pipeline Finvestire.
+**Scope:** Prima versione del microservizio di rendering Remotion per la pipeline Acme.
 **Target:** MVP locale per iterare sulle compositions; integrazione n8n e deploy server rimandati a v2.
 
 ---
@@ -176,7 +176,7 @@ L'AI non genera mai immagini all'interno del render service. Tutte le immagini s
 ```
 public/
 ├── brand/              # curato a mano, committed
-│   └── logo-f.svg
+│   └── logo.svg
 ├── illustrations/      # curato a mano, committed (in v1 contiene money-time-flow.svg)
 │   └── money-time-flow.svg
 ├── generated/          # popolato dalla pipeline upstream, gitignored
@@ -187,7 +187,7 @@ Manifest TS in `src/assets/manifest.ts`:
 
 ```ts
 {
-  "logo-f":            { path: "brand/logo-f.svg",               tags: ["brand"],         description: "Logo monogramma Finvestire" },
+  "logo":            { path: "brand/logo.svg",               tags: ["brand"],         description: "Logo monogramma Acme" },
   "money-time-flow":   { path: "illustrations/money-time-flow.svg", tags: ["time","money"], description: "Sequenza monete → banconote → sacco $ con frecce manoscritte" }
 }
 ```
@@ -251,7 +251,7 @@ ig-auto-builder/
 │       ├── render.ts          # wrapper renderStill, naming output
 │       └── log.ts             # JSON structured logging
 ├── public/
-│   ├── brand/logo-f.svg
+│   ├── brand/logo.svg
 │   ├── illustrations/money-time-flow.svg
 │   └── fonts/
 ├── output/                    # gitignored
@@ -350,7 +350,7 @@ In v1 basta **uno** snapshot test (la slide campione). È l'acceptance test dell
 - Layout: `headline-body-illustration`
 - Chrome: `Logo`, `CarouselNav`, `Background` (variant `paper`)
 - Theme: palette base (brand-navy, paper, ink, gold), 1 font famiglia, spacing scale
-- Asset manifest con 2 asset (`logo-f`, `money-time-flow`)
+- Asset manifest con 2 asset (`logo`, `money-time-flow`)
 - Endpoint: `POST /render/still`, `POST /render/carousel`, `GET /compositions`, `/primitives`, `/layouts`, `/theme`, `/assets`, `/health`
 - Zod validation su SlideSpec
 - Error handling + structured JSON logging
@@ -384,7 +384,7 @@ In v1 basta **uno** snapshot test (la slide campione). È l'acceptance test dell
 
 Asset e risorse che devono esistere **prima** che la v1 possa passare l'acceptance test, e che non sono prodotti dal render service stesso:
 
-- **`public/brand/logo-f.svg`** — monogramma Finvestire (estratto dai template Canva attuali o ridisegnato)
+- **`public/brand/logo.svg`** — monogramma Acme (estratto dai template Canva attuali o ridisegnato)
 - **`public/illustrations/money-time-flow.svg`** — illustrazione "monete → banconote → sacco $ con frecce manoscritte" (estratta dalla slide campione "La leva del tempo" o ridisegnata)
 - **`public/fonts/*`** — file font famiglia brand (estratti dai template Canva attuali; necessari per match visivo)
 

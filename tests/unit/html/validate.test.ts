@@ -37,7 +37,7 @@ describe('validateGeneratedHtml', () => {
   });
 
   it('accepts valid {{asset:}} tokens', () => {
-    const err = validateGeneratedHtml('<img src="{{asset:logo-f}}">', '');
+    const err = validateGeneratedHtml('<img src="{{asset:logo}}">', '');
     expect(err).toBeNull();
   });
 

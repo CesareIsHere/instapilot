@@ -19,7 +19,7 @@ const DESIGN_SPEC = {
   eyebrow: null,
   bodyElements: [{ type: 'paragraph', text: 'corpo', emphasis: 'none' }],
   colorPlan: 'navy',
-  useAssets: ['logo-f'],
+  useAssets: ['logo'],
   notes: null,
 };
 

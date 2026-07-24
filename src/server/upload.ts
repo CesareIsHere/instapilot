@@ -7,7 +7,7 @@ import { log } from '@/lib/log';
 
 const DATA_BRAND_DIR = path.resolve(process.cwd(), 'data', 'brand');
 const CUSTOM_LOGO_PATH = path.join(DATA_BRAND_DIR, 'logo.png');
-const DEFAULT_LOGO_PATH = path.resolve(process.cwd(), 'public', 'brand', 'logo.png');
+const DEFAULT_LOGO_PATH = path.resolve(process.cwd(), 'public', 'brand', 'logo.svg');
 
 /** Risolve il path del logo: custom caricato → default pubblico. */
 export function resolveLogoPath(customPath = CUSTOM_LOGO_PATH): string {

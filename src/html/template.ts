@@ -35,7 +35,7 @@ function buildAssetDataUris(): Record<string, string> {
   const result: Record<string, string> = {};
   for (const [id, entry] of Object.entries(manifest)) {
     let uri: string | null;
-    if (id === 'logo-f') {
+    if (id === 'logo') {
       // Usa il logo caricato dall'utente se disponibile, altrimenti il default.
       uri = assetToDataUriFromAbsolute(resolveLogoPath());
     } else {

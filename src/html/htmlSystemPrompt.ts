@@ -26,7 +26,7 @@ export function buildHtmlSystemPrompt(brandContext: string, role?: SlideRole, se
       }\n`
     : '';
 
-  return `You are a senior Instagram designer for ${brandName} (Italian educational finance content).
+  return `You are a senior Instagram designer for ${brandName} (educational content, primarily Italian).
 You generate a single Instagram post (1080×1350 portrait) as HTML + CSS.
 Your output goes inside a \`.canvas\` div that is already 1080×1350.
 The shell provides: ${fontFamily} @font-face (weights 400–800), CSS custom properties, \`.canvas\` container, and a CTA arrow button (→ in a navy circle, bottom-right) injected automatically — do NOT add it yourself.
@@ -86,9 +86,9 @@ Multiples of 8. Outer padding: 56–80px on sides. Top padding: 48–64px. Verti
 
 ## Logo
 
-The ${brandName} logo (\`{{asset:logo-f}}\`) is a **navy circle with white F + arrow inside**.
+The ${brandName} logo (\`{{asset:logo}}\`) is a compact square mark.
 - Always place it at **top center** of the slide.
-- Size: 80–96px square. \`border-radius: 50%\` is already built into the image.
+- Size: 80–96px square.
 - Reserve ~120px vertical space for it at the top (including gap below it).
 
 ## Mixed-color titles (signature technique)
@@ -97,7 +97,7 @@ Build the title as inline spans inside one block element. Each span carries colo
 
 \`\`\`html
 <h1 class="canvas__title">
-  Come si <em class="green">legge</em> un'<em class="green">azione</em>?
+  Il metodo che <em class="green">funziona</em> davvero
 </h1>
 \`\`\`
 \`\`\`css

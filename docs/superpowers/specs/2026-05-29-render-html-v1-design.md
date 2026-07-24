@@ -115,7 +115,7 @@ z.object({
 
 L'LLM **non** scrive `<html>/<head>/<body>`, `@font-face` o `<!DOCTYPE>`: quelli li mette la shell. Scrive solo il markup dentro `.canvas` e il CSS associato. Niente `<script>`, niente URL `http(s)://`.
 
-**Reference asset:** l'LLM referenzia gli asset con un token `{{asset:<id>}}` (es. `<img src="{{asset:logo-f}}">` oppure `background-image: url('{{asset:logo-f}}')`); `template.ts` sostituisce i token con il data-URI corrispondente **dopo** la validazione. In alternativa per i background è disponibile la CSS-var `var(--asset-<id>)` (già contenente `url(data:...)`).
+**Reference asset:** l'LLM referenzia gli asset con un token `{{asset:<id>}}` (es. `<img src="{{asset:logo}}">` oppure `background-image: url('{{asset:logo}}')`); `template.ts` sostituisce i token con il data-URI corrispondente **dopo** la validazione. In alternativa per i background è disponibile la CSS-var `var(--asset-<id>)` (già contenente `url(data:...)`).
 
 **Scope CSS:** il `css` dell'LLM deve essere scopato sotto `.canvas` (es. `.canvas .hero { ... }`) per non collidere con reset e shell.
 
@@ -144,7 +144,7 @@ Riadattamento HTML del prompt attuale. Compone i layer:
 4. **Riempimento verticale** — il canvas deve occupare i 1350px: flexbox/grid con `flex:1`, `margin-top:auto`, niente vuoti > 100px.
 5. **CSS-vars del brand** — usare `var(--brand-navy)` ecc. invece di hardcodare i colori.
 6. **Libreria recipe** (`recipes.ts`) — catalogo di pattern collaudati che l'LLM compone (vedi §8).
-7. **Asset catalog** — id disponibili (`logo-f`, `money-time-flow`, …) e convenzione `{{asset:<id>}}` / `var(--asset-<id>)` per referenziarli.
+7. **Asset catalog** — id disponibili (`logo`, `money-time-flow`, …) e convenzione `{{asset:<id>}}` / `var(--asset-<id>)` per referenziarli.
 8. **Pesi font disponibili** — usare SOLO 400/500/600/700/800 (gli unici embedded); niente altri pesi che verrebbero sintetizzati.
 9. **Regole anti-overflow** — `box-sizing:border-box`, niente larghezze fisse che sommate sforano 1080, budget verticale ≤ 1350.
 10. **Output contract** — solo `bodyHtml` + `css` (scopato sotto `.canvas`), niente `<script>`/URL remoti, JSON `{intent, bodyHtml, css}` senza markdown fence.

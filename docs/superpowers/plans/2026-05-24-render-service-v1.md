@@ -41,7 +41,7 @@ Ogni file ha una responsabilità singola. Le primitive sono co-located (componen
 ## Prerequisiti non-codice
 
 Prima del Task 20 (snapshot test) l'utente deve fornire:
-- `public/brand/logo-f.svg` — logo Finvestire
+- `public/brand/logo.svg` — logo Acme
 - `public/illustrations/money-time-flow.svg` — illustrazione della slide campione
 
 Per il font, in v1 usiamo un Google Font ("Plus Jakarta Sans") via `@remotion/google-fonts` come placeholder vicino al brand. Sostituibile in futuro con font custom in `public/fonts/`.
@@ -457,8 +457,8 @@ import { resolveAsset, listAssets, assetExists } from '@/assets';
 
 describe('assets', () => {
   it('resolves known assetId to absolute-ish path', () => {
-    const p = resolveAsset('logo-f');
-    expect(p).toContain('brand/logo-f.svg');
+    const p = resolveAsset('logo');
+    expect(p).toContain('brand/logo.svg');
   });
 
   it('throws on unknown assetId', () => {
@@ -466,13 +466,13 @@ describe('assets', () => {
   });
 
   it('reports asset existence without throwing', () => {
-    expect(assetExists('logo-f')).toBe(true);
+    expect(assetExists('logo')).toBe(true);
     expect(assetExists('does-not-exist')).toBe(false);
   });
 
   it('lists all assets with metadata', () => {
     const all = listAssets();
-    expect(all['logo-f']).toMatchObject({ path: expect.stringContaining('brand/logo-f.svg') });
+    expect(all['logo']).toMatchObject({ path: expect.stringContaining('brand/logo.svg') });
   });
 });
 ```
@@ -493,10 +493,10 @@ export interface AssetEntry {
 }
 
 export const manifest: Record<string, AssetEntry> = {
-  'logo-f': {
-    path: 'brand/logo-f.svg',
+  'logo': {
+    path: 'brand/logo.svg',
     tags: ['brand', 'logo'],
-    description: 'Logo monogramma Finvestire',
+    description: 'Logo monogramma Acme',
   },
   'money-time-flow': {
     path: 'illustrations/money-time-flow.svg',
@@ -822,7 +822,7 @@ import { IllustrationSchema } from '@/primitives/Illustration';
 
 describe('Illustration schema', () => {
   it('accepts minimal props', () => {
-    const r = IllustrationSchema.safeParse({ type: 'Illustration', assetId: 'logo-f' });
+    const r = IllustrationSchema.safeParse({ type: 'Illustration', assetId: 'logo' });
     expect(r.success).toBe(true);
   });
 
@@ -1000,7 +1000,7 @@ import { theme } from '@/theme';
 import type { FooterProps } from './schema';
 
 const DISCLAIMER = "Contenuto a scopo informativo/educativo. Non è consulenza finanziaria.";
-const BRAND = "@finvestire";
+const BRAND = "@yourbrand";
 
 export const Footer: React.FC<FooterProps> = (props) => {
   const text = props.variant === 'brand' ? BRAND
@@ -1226,7 +1226,7 @@ import { Img, staticFile } from 'remotion';
 import { manifest } from '@/assets/manifest';
 
 export const Logo: React.FC = () => {
-  const entry = manifest['logo-f'];
+  const entry = manifest['logo'];
   if (!entry) return null;
   return (
     <div style={{
@@ -1523,7 +1523,7 @@ export async function buildBundle(): Promise<string> {
 Run: `npm run studio`
 Expected: Studio opens in browser on `localhost:3000`, shows `Slide` composition.
 
-Even without `logo-f.svg` / `money-time-flow.svg` files yet, the JSX renders (the `<Img>` shows broken). Close Studio with Ctrl+C.
+Even without `logo.svg` / `money-time-flow.svg` files yet, the JSX renders (the `<Img>` shows broken). Close Studio with Ctrl+C.
 
 - [ ] **Step 5: Commit**
 
@@ -1869,7 +1869,7 @@ describe('discovery endpoints', () => {
   it('GET /assets returns manifest entries', async () => {
     const res = await request(buildApp()).get('/assets');
     expect(res.status).toBe(200);
-    expect(res.body['logo-f']).toMatchObject({ path: expect.stringContaining('logo-f.svg') });
+    expect(res.body['logo']).toMatchObject({ path: expect.stringContaining('logo.svg') });
   });
 });
 ```
@@ -2199,7 +2199,7 @@ This is the first end-to-end check. **Requires** the SVG assets to be placed in 
 - [ ] **Step 1: Place asset files**
 
 Ensure the user has dropped:
-- `public/brand/logo-f.svg`
+- `public/brand/logo.svg`
 - `public/illustrations/money-time-flow.svg`
 
 If missing, halt here and inform the user.
@@ -2402,7 +2402,7 @@ Create `README.md`:
 # ig-auto-builder — Render Service
 
 Microservizio HTTP locale che trasforma uno `SlideSpec` JSON in PNG via Remotion.
-Parte della pipeline di automazione contenuti Finvestire.
+Parte della pipeline di automazione contenuti Acme.
 
 ## Quickstart
 
@@ -2454,7 +2454,7 @@ Risposta: `{ "file": "/abs/path/output/Slide-XXXX.png", "durationMs": 1820 }`
 
 - Design v1: `docs/superpowers/specs/2026-05-24-render-service-v1-design.md`
 - Piano implementazione: `docs/superpowers/plans/2026-05-24-render-service-v1.md`
-- Contesto brand: `docs/contesto-progetto-finvestire.md`
+- Contesto brand: `docs/brand-context.example.md`
 ```
 
 - [ ] **Step 2: Run full test suite**

@@ -67,7 +67,7 @@ Scegli la struttura più adatta al contenuto e dichiarala nel campo "framework":
 # FUNZIONE NARRATIVA
 Assegna a ogni slide un "narrativeFunction" coerente con la struttura scelta (es. "hook", "why", "inform", "payoff", "cta", "setup", "conflict", "solution", "loop-open", "loop-close").`;
 
-  return `Sei un social media manager senior specializzato in post e caroselli Instagram educativi di finanza per ${brandName} (italiano).
+  return `Sei un social media manager senior specializzato in post e caroselli Instagram educativi (in italiano) per ${brandName}. Adatta settore, esempi e taglio al CONTESTO BRAND fornito.
 
 ${formatRules}
 
@@ -77,7 +77,7 @@ Per ogni slide scrivi un "brief" AUTOSUFFICIENTE e dettagliato che un agente di 
 - HEADLINE / MINI-HEADLINE proposta (testo esatto in italiano), 4-9 parole, che dice cosa tratta la slide e perché conta. Indica quali 1-2 parole evidenziare in verde (SOLO positivo/crescita) o rosso (SOLO rischio/perdita). Massimo 1-2 parole evidenziate; mai evidenziare per decorazione.
 - SPIEGAZIONE: 1-2 frasi che sviluppano DAVVERO l'idea (il "perché" o il "come"), non un titolo lasciato a sé. La slide deve insegnare qualcosa di completo.
 - DATO (se presente): ogni numero deve avere ETICHETTA (cos'è) e SIGNIFICATO (cosa comunica). Mai un numero nudo. Massimo UN dato chiave per slide (numero + anno/fonte dal dossier). Non accumulare numeri.
-- HINT DI LAYOUT: la recipe più adatta — cover, numbered-list, compare-2col, kpi-hero, card-grid-2x2, card-grid (3-6 concetti), concept-breakdown (spiega "cos'è X": definizione + formula + glossario), flow-diagram (processo a step con frecce, utile per "come funziona X"), breakdown-chart (barre proporzionali / scomposizione tipo ricavi→margine→EBITDA), quote, cta. Per confronti/colonne/griglie: gli elementi devono essere SIMMETRICI (stesso numero di voci, frasi di lunghezza simile, struttura parallela).
+- HINT DI LAYOUT: la recipe più adatta — cover, numbered-list, compare-2col, kpi-hero, card-grid-2x2, card-grid (3-6 concetti), concept-breakdown (spiega "cos'è X": definizione + formula + glossario), flow-diagram (processo a step con frecce, utile per "come funziona X"), breakdown-chart (barre proporzionali / scomposizione di un totale nelle sue parti), quote, cta. Per confronti/colonne/griglie: gli elementi devono essere SIMMETRICI (stesso numero di voci, frasi di lunghezza simile, struttura parallela).
 - OBIETTIVO DELLA SLIDE: in una frase, cosa deve ottenere questa slide nell'arco (agganciare / spiegare il punto X / dare la prova / chiudere il loop Y / invitare).
 Il brief non deve riferirsi alle altre slide: deve bastare a sé stesso.
 
@@ -85,7 +85,7 @@ Il brief non deve riferirsi alle altre slide: deve bastare a sé stesso.
 - UNA sola idea per slide, ma SVILUPPATA: né un muro di testo né una slide vuota. Se non sai dire l'obiettivo della slide, eliminala o riscrivila.
 - QUANTITÀ: headline ≤ ~12 parole; spiegazione 1-2 frasi (≈ max 300 caratteri di corpo per slide). Se serve un paragrafo, va nella caption, non nella slide.
 - NIENTE RIPETIZIONI: ogni slide aggiunge informazione NUOVA. Non rispiegare con parole diverse un concetto già dato.
-- REGISTRO: conversazionale, rivolto al "tu", come a un amico. Ogni termine tecnico (ETF, TER, volatilità, cedola…) va spiegato o sostituito: il pubblico parte da zero. Rendi semplice il complesso senza banalizzare.
+- REGISTRO: conversazionale, rivolto al "tu", come a un amico. Ogni termine tecnico o gergale va spiegato o sostituito: il pubblico parte da zero. Rendi semplice il complesso senza banalizzare.
 - COVER: deve rispondere in ≤ ~10 parole a "è per me?" e "cosa ottengo se scorro?" (problema + promessa, o dato sorprendente, o domanda).
 - CTA: una sola, concreta (es. "Salva per dopo", "Commenta X", "Segui per…"), SOLO nell'ultima slide.
 - Usa i dati del dossier solo quando rafforzano; niente affermazioni non supportate dalla ricerca. Brief in italiano.

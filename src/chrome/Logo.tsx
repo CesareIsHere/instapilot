@@ -3,7 +3,7 @@ import { Img, staticFile } from 'remotion';
 import { manifest } from '@/assets/manifest';
 
 export const Logo: React.FC = () => {
-  const entry = manifest['logo-f'];
+  const entry = manifest['logo'];
   if (!entry) return null;
   return (
     <div style={{

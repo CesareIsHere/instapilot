@@ -42,8 +42,8 @@ describe('buildHtmlDocument', () => {
     expect(html).toContain('.canvas .hero { font-size: 120px; }');
   });
 
-  it('substitutes {{asset:logo-f}} token if asset file present (or leaves untouched)', () => {
-    const html = buildHtmlDocument('<img src="{{asset:logo-f}}">', '');
+  it('substitutes {{asset:logo}} token if asset file present (or leaves untouched)', () => {
+    const html = buildHtmlDocument('<img src="{{asset:logo}}">', '');
     // Either replaced with data-URI or with comment if file not present in test env
     expect(html).toMatch(/src="(data:|\/\* unknown)/);
   });
