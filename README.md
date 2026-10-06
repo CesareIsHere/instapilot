@@ -78,8 +78,6 @@ Instapilot covers the whole path, and does it **while respecting your brand**:
 
 ## Screenshots
 
-> The Studio UI is currently in Italian.
-
 <table>
   <tr>
     <td width="50%"><img src="docs/assets/screenshots/library.png" alt="Library"><br><sub><b>Library</b> — every generated piece, with a cover preview.</sub></td>
@@ -175,7 +173,7 @@ and served by the same server: no second process needed.
 
 ### 3. Connect the LLM provider
 
-Go to **Settings** (*Impostazioni*), paste the API key (and optionally base URL and model) and save.
+Go to **Settings**, paste the API key (and optionally base URL and model) and save.
 The configuration stays local in `data/config.json`.
 
 > Alternatively: `cp .env.example .env` and set `OPENAI_API_KEY=sk-...`.
@@ -186,7 +184,7 @@ In **Brand kit** set name, audience, tone, **content language**, the 6 colors, t
 
 ### 5. Generate
 
-**New content** (*Nuovo contenuto*) → write the topic → **Generate**. Follow the progress in
+**New content** → write the topic → **Generate**. Follow the progress in
 *Generations*; when the job finishes the piece shows up in the *Library*.
 
 <details>
