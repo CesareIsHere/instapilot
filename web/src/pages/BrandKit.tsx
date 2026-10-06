@@ -10,9 +10,9 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const EMPTY: IBrandKit = {
-  name: '', tagline: '', audience: '', tone: '',
-  brandColors: { primary: '#012A78', positive: '#00B373', negative: '#DC2626', paper: '#FFFFFF', ink: '#101010', muted: '#767676' },
-  font: { family: 'Montserrat', source: 'bundled' },
+  name: '', tagline: '', audience: '', tone: '', language: 'Italian',
+  brandColors: { primary: '#4F46E5', positive: '#059669', negative: '#DC2626', paper: '#FFFFFF', ink: '#111827', muted: '#6B7280' },
+  font: { family: 'Inter', source: 'bundled' },
   hashtags: [], ctas: [],
   dos: '', donts: '', notes: '',
 };
@@ -116,17 +116,22 @@ export function BrandKit() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="tagline">Tagline</Label>
-            <Input id="tagline" value={kit.tagline} onChange={e => set('tagline', e.target.value)} placeholder="Es. Educazione finanziaria per tutti" />
+            <Input id="tagline" value={kit.tagline} onChange={e => set('tagline', e.target.value)} placeholder="Es. Impara qualcosa di nuovo ogni giorno" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="audience">Pubblico target</Label>
             <Textarea id="audience" rows={2} value={kit.audience} onChange={e => set('audience', e.target.value)}
-              placeholder="Es. Giovani adulti 25–40 che iniziano a investire" className="resize-none" />
+              placeholder="Es. Professionisti 25–40 che vogliono crescere" className="resize-none" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="tone">Tono di voce</Label>
             <Textarea id="tone" rows={2} value={kit.tone} onChange={e => set('tone', e.target.value)}
               placeholder="Es. Chiaro, autorevole ma accessibile, mai gergale" className="resize-none" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="language">Lingua dei contenuti</Label>
+            <Input id="language" value={kit.language ?? ''} onChange={e => set('language', e.target.value)} placeholder="Es. Italian, English, Español" />
+            <p className="text-xs text-muted-foreground">Lingua in cui l'AI scrive slide e caption (in inglese o nella lingua stessa).</p>
           </div>
         </section>
 
@@ -178,8 +183,8 @@ export function BrandKit() {
               onChange={e => set('font', { ...kit.font, family: e.target.value, source: 'bundled' as const })}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             >
-              <option value="Montserrat">Montserrat (default)</option>
-              <option value="Inter">Inter</option>
+              <option value="Inter">Inter (default)</option>
+              <option value="Montserrat">Montserrat</option>
               <option value="Poppins">Poppins</option>
             </select>
             <p className="text-xs text-muted-foreground">
@@ -239,7 +244,7 @@ export function BrandKit() {
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Copy & social</h2>
           <div className="space-y-2">
             <Label>Hashtag ricorrenti</Label>
-            <TagInput values={kit.hashtags} onChange={v => set('hashtags', v)} placeholder="finanza, poi Invio" />
+            <TagInput values={kit.hashtags} onChange={v => set('hashtags', v)} placeholder="educazione, poi Invio" />
             <p className="text-xs text-muted-foreground">Senza il simbolo #, verrà aggiunto automaticamente.</p>
           </div>
           <div className="space-y-2">
@@ -258,12 +263,12 @@ export function BrandKit() {
           <div className="space-y-2">
             <Label htmlFor="dos">Da fare</Label>
             <Textarea id="dos" rows={3} value={kit.dos} onChange={e => set('dos', e.target.value)}
-              placeholder="Es. Usa esempi numerici concreti. Spiega i termini tecnici." className="resize-none" />
+              placeholder="Es. Usa esempi concreti. Spiega i termini tecnici." className="resize-none" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="donts">Da evitare</Label>
             <Textarea id="donts" rows={3} value={kit.donts} onChange={e => set('donts', e.target.value)}
-              placeholder="Es. Niente promesse di rendimento. Evita il gergo da trader." className="resize-none" />
+              placeholder="Es. Niente promesse irrealistiche. Evita il gergo tecnico." className="resize-none" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="notes">Note aggiuntive</Label>

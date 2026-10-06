@@ -25,6 +25,8 @@ export interface GenerateContentArgs {
   reasoningEffort?: ReasoningEffort;
   brandContext: string;
   brandName?: string;
+  /** Language of the reader-facing copy (defaults to the Brand Kit language). */
+  language?: string;
   topic: string;
   instructions?: string;
   format: ContentFormat;
@@ -83,7 +85,9 @@ interface SlideState {
 
 export async function generateContent(args: GenerateContentArgs): Promise<GenerateContentResult> {
   const { client, model, reasoningEffort, topic, instructions, format, slideCount } = args;
-  const brandName = args.brandName ?? getBrandVars().name;
+  const brandVars = getBrandVars();
+  const brandName = args.brandName ?? brandVars.name;
+  const language = args.language ?? brandVars.language;
   const pick = (agent: keyof AgentModels) => args.models?.[agent] ?? model;
   const report = (phase: string, detail?: string, current?: number, total?: number) =>
     args.onProgress?.({ phase, detail, current, total });
@@ -95,17 +99,17 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
   report('research', 'Ricerca e approfondimento dell\'argomento');
   let research: string;
   try {
-    research = await researchTopic({ client, model: pick('research'), reasoningEffort, topic, instructions, format, slideCount, useWebSearch: args.useWebSearch, meter, brandName });
+    research = await researchTopic({ client, model: pick('research'), reasoningEffort, topic, instructions, format, slideCount, useWebSearch: args.useWebSearch, meter, brandName, language });
     // Without web search the dossier comes from model knowledge on (typically evergreen)
     // topics, where the accuracy/freshness risk reviewResearch guards against is low —
     // skip the review loop entirely to save its (dossier-sized) tokens.
     const reviewResearchRounds = args.useWebSearch === false ? 0 : MAX_RESEARCH_ROUNDS;
     for (let round = 1; round <= reviewResearchRounds; round++) {
-      const review = await reviewResearch({ client, model: pick('researchReview'), reasoningEffort, topic, instructions, research, format, meter, brandName });
+      const review = await reviewResearch({ client, model: pick('researchReview'), reasoningEffort, topic, instructions, research, format, meter, brandName, language });
       log.info('content.research.reviewed', { approved: review.approved, issues: review.issues.length, round });
       if (review.approved || review.issues.length === 0) break;
       if (round === MAX_RESEARCH_ROUNDS) { contentWarnings.research = review.issues; break; }
-      research = await researchTopic({ client, model: pick('research'), reasoningEffort, topic, instructions, format, slideCount, useWebSearch: args.useWebSearch, feedback: review.issues.join('; '), meter, brandName });
+      research = await researchTopic({ client, model: pick('research'), reasoningEffort, topic, instructions, format, slideCount, useWebSearch: args.useWebSearch, feedback: review.issues.join('; '), meter, brandName, language });
     }
   } catch (err) {
     return { ok: false, code: 'LLM_FAILURE', detail: `research: ${(err as Error).message}` };
@@ -115,14 +119,14 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
   report('plan', 'Strutturazione del contenuto in slide');
   let plan: ContentPlan;
   try {
-    plan = await planContent({ client, model: pick('plan'), reasoningEffort, format, slideCount, topic, instructions, research, meter, brandName });
+    plan = await planContent({ client, model: pick('plan'), reasoningEffort, format, slideCount, topic, instructions, research, meter, brandName, language });
     for (let round = 1; round <= MAX_PLAN_ROUNDS; round++) {
-      const review = await reviewPlan({ client, model: pick('planReview'), reasoningEffort, topic, instructions, format, slideCount, research, plan, meter, brandName });
+      const review = await reviewPlan({ client, model: pick('planReview'), reasoningEffort, topic, instructions, format, slideCount, research, plan, meter, brandName, language });
       log.info('content.plan.reviewed', { approved: review.approved, issues: review.issues.length, round });
       if (review.approved || review.issues.length === 0) break;
       if (round === MAX_PLAN_ROUNDS) { contentWarnings.plan = review.issues; break; }
       const feedback = review.planFeedback ?? review.issues.join('; ');
-      plan = await planContent({ client, model: pick('plan'), reasoningEffort, format, slideCount, topic, instructions, research, feedback, meter, brandName });
+      plan = await planContent({ client, model: pick('plan'), reasoningEffort, format, slideCount, topic, instructions, research, feedback, meter, brandName, language });
     }
   } catch (err) {
     return { ok: false, code: 'LLM_FAILURE', detail: `plan: ${(err as Error).message}` };
@@ -184,7 +188,7 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
 
     let review;
     try {
-      review = await reviewContent({ client, model: pick('editorialReview'), reasoningEffort, topic, instructions, title: plan.title, angle: plan.angle, slides: reviewable, meter, brandName });
+      review = await reviewContent({ client, model: pick('editorialReview'), reasoningEffort, topic, instructions, title: plan.title, angle: plan.angle, slides: reviewable, meter, brandName, language });
     } catch (err) {
       log.warn('content.review.error', { reason: (err as Error).message, round });
       break;
@@ -303,7 +307,7 @@ function carouselStamp(d = new Date()): string {
 
 function composeBrief(state: SlideState): string {
   if (state.fixes.length === 0) return state.baseBrief;
-  return `${state.baseBrief}\n\nCORREZIONI EDITORIALI DA APPLICARE:\n${state.fixes.map((f) => `- ${f}`).join('\n')}`;
+  return `${state.baseBrief}\n\nEDITORIAL CORRECTIONS TO APPLY:\n${state.fixes.map((f) => `- ${f}`).join('\n')}`;
 }
 
 async function generateOneSlide(
@@ -317,7 +321,7 @@ async function generateOneSlide(
 ) {
   const brief = fixes.length === 0
     ? baseBrief
-    : `${baseBrief}\n\nCORREZIONI EDITORIALI DA APPLICARE:\n${fixes.map((f) => `- ${f}`).join('\n')}`;
+    : `${baseBrief}\n\nEDITORIAL CORRECTIONS TO APPLY:\n${fixes.map((f) => `- ${f}`).join('\n')}`;
 
   return runSlidePipeline({
     client: args.client,

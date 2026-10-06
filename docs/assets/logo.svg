@@ -1,0 +1,11 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Instapilot">
+  <defs>
+    <linearGradient id="ip-bg" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#D946EF"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="30" fill="url(#ip-bg)"/>
+  <path d="M96 32 L28 60 L56 70 L66 98 Z" fill="#FFFFFF"/>
+  <path d="M96 32 L56 70" stroke="#C4B5FD" stroke-width="5" stroke-linecap="round"/>
+</svg>

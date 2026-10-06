@@ -1,6 +1,6 @@
 import React from 'react';
 import { AbsoluteFill } from 'remotion';
-import { loadFont } from '@remotion/google-fonts/PlusJakartaSans';
+import { loadFont } from '@remotion/google-fonts/Inter';
 import { Background } from '@/chrome/Background';
 import { Logo } from '@/chrome/Logo';
 import { CarouselNav } from '@/chrome/CarouselNav';
@@ -43,22 +43,22 @@ export const defaultSlideProps: SlideSpec = {
   background: 'paper',
   chrome: { showLogo: true, showCarouselNav: true, pageIndex: 3 },
   blocks: [
-    { type: 'Headline', text: 'La leva del tempo', size: 'xl', color: 'brand-navy' },
+    { type: 'Headline', text: "Il potere dell'1%", size: 'xl', color: 'brand-primary' },
     {
       type: 'RichText',
       content: [
-        { kind: 'paragraph', text: 'Per Mirco, il vantaggio non sono i soldi, ma il tempo.' },
+        { kind: 'paragraph', text: 'Per Giulia, il vantaggio non è il talento, ma la costanza.' },
         {
           kind: 'bullets',
           items: [
-            'Ha davanti a sé circa 30-35 anni di lavoro.',
-            'Più tempo = più interesse composto.',
-            "Sul lunghissimo periodo, i mercati azionari hanno reso il 7-8% all'anno.",
-            'Il tempo gli permetterà di partire da piccole cifre a un capitale importante per la sua pensione.',
+            "Ha davanti a sé 365 occasioni all'anno per migliorare.",
+            'Più costanza = più effetto cumulativo.',
+            "Migliorare dell'1% al giorno vuol dire ~37 volte meglio in un anno.",
+            'La costanza le permetterà di partire da piccoli gesti e arrivare a grandi risultati.',
           ],
         },
       ],
     },
-    { type: 'Illustration', assetId: 'money-time-flow', caption: 'Tempo' },
+    { type: 'Illustration', assetId: 'growth-steps', caption: 'Costanza' },
   ],
 };

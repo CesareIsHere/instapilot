@@ -46,6 +46,7 @@ export interface BrandKit {
   tagline: string;
   audience: string;
   tone: string;
+  language: string;
   brandColors: BrandColors;
   font: BrandFont;
   logoPath?: string;

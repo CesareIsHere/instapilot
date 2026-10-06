@@ -6,6 +6,7 @@ import type { ReasoningEffort } from '@/llm/client';
 import type { UsageMeter } from '@/llm/usage';
 import type { SlideDesignSpec } from './designSpec';
 import type { SlideRole } from './htmlSystemPrompt';
+import { getBrandVars, type BrandVars } from './brandVars';
 
 const ISSUE_CATEGORIES = ['brand-color', 'font-size', 'layout', 'logo', 'style', 'content'] as const;
 
@@ -24,7 +25,9 @@ export const QualityReviewSchema = z.object({
 export type QualityIssue = z.infer<typeof QualityIssueSchema>;
 export type QualityReview = z.infer<typeof QualityReviewSchema>;
 
-const QUALITY_REVIEWER_PROMPT = `You are the FINAL art director and quality gatekeeper for the brand's Instagram slides.
+export function buildQualityReviewerPrompt(vars: BrandVars): string {
+  const c = vars.colors;
+  return `You are the FINAL art director and quality gatekeeper for the brand's Instagram slides.
 This slide will be published to a global audience. Your standard is superlative: it must look like
 it was crafted by a top-tier design studio — pixel-perfect, intentional, and flawless. Nothing
 sloppy ships. You receive the rendered slide image and the HTML/CSS source. Study BOTH meticulously.
@@ -53,7 +56,7 @@ Inspect the actual pixels. These are the most common and most damaging defects �
   not touching borders, not overflowing, not clipped, not crammed.
 - BREATHING ROOM: spacing between blocks is even and deliberate; no two blocks kiss or crowd; no
   awkward gaps. Density must feel composed, never accidental.
-- The CANVAS background must be pure white (no gradients/textures). NOTE: in rich layouts (card-grid, flow-diagram, breakdown-chart, concept-breakdown) individual cards / diagram nodes / chart segments MAY have light colored surface fills and accent borders — that is correct, do NOT flag it as a "colored background"; only flag a colored fill behind the WHOLE slide.
+- The CANVAS background must be the flat paper color var(--paper) (${c.paper}) — no gradients/textures. NOTE: in rich layouts (card-grid, flow-diagram, breakdown-chart, concept-breakdown) individual cards / diagram nodes / chart segments MAY have light colored surface fills and accent borders — that is correct, do NOT flag it as a "colored background"; only flag a colored fill behind the WHOLE slide.
 - Logo must be visible at top center
 - No text or content appears clipped at canvas edges
 - Layout fills the canvas — no large empty areas (>100px of unintentional whitespace)
@@ -63,27 +66,27 @@ or containment defect, and describe precisely WHICH elements and WHERE in your d
 
 ## WHAT IS YOURS vs THE SHELL (read this before checking the source)
 The HTML/CSS you receive is ONLY the renderer's own output (bodyHtml + css). A shell wraps it and adds — these are NOT in what you see and must NEVER be reported as violations:
-- the white canvas, its 1080×1350 sizing and overflow:hidden;
-- the Montserrat @font-face and the brand color custom properties (the :root block with --brand-navy #012A78, --brand-green #00B373, etc.);
+- the paper-colored canvas, its 1080×1350 sizing and overflow:hidden;
+- the ${vars.fontFamily} @font-face and the brand color custom properties (the :root block with --brand-primary ${c.primary}, --brand-positive ${c.positive}, etc.);
 - the bottom-right circular swipe arrow (→).
 Hardcoded hex, :root, @font-face, @import, box-shadow and gradients in the renderer's code are already blocked automatically elsewhere — do NOT re-check or report them. Judge the arrow only from the IMAGE (see the rule below), never from the source.
 
 ## BRAND COLOR & EMPHASIS REVIEW (image)
-- Titles should be navy — not black, not gray
+- Titles should use the brand primary color (${c.primary}) — not plain black, not gray
 - Exactly ONE focal point per slide; at most 1–2 highlighted words in the headline
-- Green ONLY for positive/growth words; red ONLY for negative/risk words — never the wrong color, never decorative HIGHLIGHTING of words (flag green on a negative idea, red on a neutral one, or highlighted words with no meaning)
+- Positive accent (${c.positive}) ONLY for positive/growth words; negative accent (${c.negative}) ONLY for negative/risk words — never the wrong color, never decorative HIGHLIGHTING of words (flag the positive accent on a negative idea, the negative accent on a neutral one, or highlighted words with no meaning)
 - In rich layouts, distinct accent borders / pastel surfaces on cards/nodes/segments are fine if used semantically (e.g. one color per node type). A small, meaningful emoji per diagram node / list item is allowed. Flag only color/emoji used randomly or as clutter.
 
 ## CONTENT CLARITY REVIEW (image)
 - BARE NUMBERS: every number/KPI must show what it is (a label) and ideally what it means — flag a big number with no caption explaining it (category "content")
-- EYEBROW LABELS: the small uppercase label above the title must be a real topical label. Flag generic, disconnected meta-labels like "CONTESTO", "OGGETTO DELLA SLIDE", "ARGOMENTO", "INTRODUZIONE" (category "content")
+- EYEBROW LABELS: the small uppercase label above the title must be a real topical label. Flag generic, disconnected meta-labels like "CONTEXT", "SLIDE TOPIC", "SUBJECT", "INTRODUCTION" (or their equivalents in ${vars.language}) (category "content")
 
 ## TYPOGRAPHY REVIEW (source)
 - No font-size below 22px for any text; no font-size below 30px inside cards
-- Flag only a font OTHER than Montserrat (Montserrat is the shell default — its absence from the renderer's CSS is fine)
+- Flag only a font OTHER than ${vars.fontFamily} (${vars.fontFamily} is the shell default — its absence from the renderer's CSS is fine)
 
 ## STRUCTURE REVIEW (source)
-- Cards: white background, border: 2px solid var(--brand-navy), border-radius ≥ 12px
+- Cards: var(--paper) background, border: 2px solid var(--brand-primary), border-radius ≥ 12px
 - The renderer must NOT hand-draw a swipe/CTA arrow glyph (→) in bodyHtml — if you find one authored in the source, flag it (category "layout")
 
 ## NARRATIVE / SLIDE-TYPE REVIEW (act as an expert content reviewer)
@@ -103,6 +106,7 @@ Report every defect you find — visual integrity issues first. Each issue needs
 fixes since those ruin the slide. Approve ONLY when the slide is truly publication-grade; if even one
 real defect remains, set approved=false. Do not invent issues to be safe, but never wave through a
 slide you would not proudly publish.`;
+}
 
 export async function reviewRenderedSlide(args: {
   client: OpenAI;
@@ -126,7 +130,7 @@ export async function reviewRenderedSlide(args: {
   const request: Record<string, unknown> = {
     model: args.model,
     messages: [
-      { role: 'system', content: QUALITY_REVIEWER_PROMPT },
+      { role: 'system', content: buildQualityReviewerPrompt(getBrandVars()) },
       { role: 'user', content: await buildReviewContent(args.pngPath, args.bodyHtml, args.css, args.designSpec, args.slideContext) },
     ],
     response_format: {
@@ -205,7 +209,7 @@ async function buildReviewContent(
     imagePart,
     {
       type: 'text',
-      text: `${contextPrefix}Design specification that was implemented:\n${JSON.stringify(designSpec, null, 2)}\n\n---\nThe renderer's OWN HTML/CSS (the shell wraps this with the white canvas, Montserrat fonts, the brand color :root variables and the swipe arrow — none of which appear below and none of which are the slide's responsibility):\n\n<bodyHtml>\n${bodyHtml}\n</bodyHtml>\n\n<css>\n${css}\n</css>`,
+      text: `${contextPrefix}Design specification that was implemented:\n${JSON.stringify(designSpec, null, 2)}\n\n---\nThe renderer's OWN HTML/CSS (the shell wraps this with the paper-colored canvas, the brand font, the brand color :root variables and the swipe arrow — none of which appear below and none of which are the slide's responsibility):\n\n<bodyHtml>\n${bodyHtml}\n</bodyHtml>\n\n<css>\n${css}\n</css>`,
     },
   ];
 }

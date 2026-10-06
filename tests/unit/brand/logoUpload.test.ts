@@ -16,6 +16,6 @@ describe('resolveLogoPath', () => {
   it('ritorna il logo default se custom non esiste', () => {
     const result = resolveLogoPath('/does/not/exist.png');
     // Normalize to forward slashes for cross-platform comparison.
-    expect(result.replaceAll('\\', '/')).toContain('public/brand/logo.png');
+    expect(result.replaceAll('\\', '/')).toContain('public/brand/logo.svg');
   });
 });

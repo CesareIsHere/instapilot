@@ -8,7 +8,7 @@ describe('Headline schema', () => {
   });
 
   it('accepts optional color', () => {
-    const r = HeadlineSchema.safeParse({ type: 'Headline', text: 'Ciao', size: 'xl', color: 'brand-navy' });
+    const r = HeadlineSchema.safeParse({ type: 'Headline', text: 'Ciao', size: 'xl', color: 'brand-primary' });
     expect(r.success).toBe(true);
   });
 

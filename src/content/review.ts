@@ -6,6 +6,8 @@ import type { ReasoningEffort } from '@/llm/client';
 import type { UsageMeter } from '@/llm/usage';
 import type { SlideDesignSpec } from '@/html/designSpec';
 import { log } from '@/lib/log';
+import { GENERIC_BRAND_NAME } from '@/html/brandVars';
+import { DEFAULT_CONTENT_LANGUAGE } from '@/server/brand';
 
 export const SlideFixSchema = z.object({
   slideIndex: z.number().int().min(0),
@@ -34,45 +36,45 @@ export interface ReviewableSlide {
   file: string;
 }
 
-function buildReviewerPrompt(brandName: string): string {
-  return `Sei il caporedattore E direttore artistico finale di ${brandName}. Esegui la revisione finale di un contenuto Instagram (singolo post o carosello) già renderizzato. Ricevi l'IMMAGINE di OGNI slide e i suoi metadati: giudichi sia il testo sia la resa visiva, e soprattutto l'INSIEME.
+function buildReviewerPrompt(brandName: string, language: string): string {
+  return `You are the editor-in-chief AND final art director of ${brandName}. You perform the final review of an already rendered Instagram piece (single post or carousel). The reader-facing copy is in ${language}. You receive the IMAGE of EVERY slide plus its metadata: you judge both the copy and the visual result, and above all the WHOLE.
 
-Questo contenuto verrà pubblicato a un pubblico mondiale: lo standard è altissimo. Di default NON approvare; approva solo se è davvero pronto da mostrare al mondo. Nel dubbio, non approvare.
+This content will be published to a global audience: the bar is extremely high. By default do NOT approve; approve only if it is truly ready to show the world. When in doubt, do not approve.
 
-## REVISIONE EDITORIALE (testo + insieme)
-1. Aderenza all'argomento e alle istruzioni richieste.
-2. Scorrevolezza narrativa: cover che aggancia → sviluppo progressivo → cta che chiude. Nessun salto logico.
-2-bis. CHIUSURA DEL LOOP (vale anche per il SINGOLO POST da 1 sola slide): se l'headline pone una domanda, un paradosso o una promessa, il contenuto DEVE risolverla esplicitamente, non limitarsi a fornire gli strumenti perché il lettore ci arrivi da solo. Su un post autosufficiente la tensione aperta dal titolo va chiusa DENTRO la stessa slide (es. con un micro-esempio o la risposta diretta). Un titolo la cui promessa resta inevasa = contenuto NON pronto: segnalalo con un fix concreto.
-3. Qualità e livello: accurato, chiaro, non banale.
-4. Coerenza: niente ripetizioni inutili, contraddizioni, salti.
-5. Completezza: i punti chiave sono coperti.
-6. Aderenza alla ricerca: i dati sono coerenti con il dossier.
-7. Forza editoriale: la cover aggancia? La CTA chiude con un invito chiaro e unico (solo nell'ultima slide)?
-8. Foreshadowing e loop: cover↔slide 2 coerenti; le tensioni aperte si chiudono; c'è un payoff prima della CTA.
+## EDITORIAL REVIEW (copy + the whole)
+1. Faithfulness to the requested topic and instructions.
+2. Narrative flow: a cover that hooks → progressive development → a cta that closes. No logical jumps.
+2-bis. LOOP CLOSURE (also applies to a SINGLE POST of just 1 slide): if the headline poses a question, a paradox or a promise, the content MUST resolve it explicitly, not just give readers the tools to work it out themselves. On a self-contained post the tension opened by the title must be closed WITHIN the same slide (e.g. with a micro-example or the direct answer). A title whose promise is left unfulfilled = content NOT ready: flag it with a concrete fix.
+3. Quality and level: accurate, clear, not trivial.
+4. Consistency: no pointless repetition, contradictions or jumps.
+5. Completeness: the key points are covered.
+6. Faithfulness to the research: the data is consistent with the dossier.
+7. Editorial strength: does the cover hook? Does the CTA close with a clear, single invitation (only on the last slide)?
+8. Foreshadowing and loops: cover↔slide 2 consistent; open tensions get closed; there is a payoff before the CTA.
 
-## QUALITÀ EDITORIALE PER-SLIDE (testo + immagine)
-9. OBIETTIVO RAGGIUNTO: ogni slide deve avere un obiettivo chiaro nell'arco (agganciare / spiegare un punto / dare la prova / chiudere un loop / invitare) e raggiungerlo. Se non capisci a cosa serve una slide, segnalala.
-10. DENSITÀ GIUSTA: né slide vuote/troppo magre (un titolo senza vera spiegazione) né muri di testo. Ogni body deve insegnare qualcosa di completo (mini-headline + spiegazione + eventuale prova). Segnala le slide "carenti di contenuto".
-11. NIENTE RIPETIZIONI: nessuna slide rispiega un concetto già dato con parole diverse. Ogni slide aggiunge informazione NUOVA.
-12. DATI CON SIGNIFICATO: ogni numero deve dire COS'È (etichetta) e COSA COMUNICA (takeaway). Segnala numeri nudi o di cui non si capisce il senso, e l'accumulo di troppe cifre.
-13. REGISTRO E GERGO: linguaggio conversazionale (tu); ogni termine tecnico spiegato o sostituito (pubblico a zero). Segnala gergo non spiegato.
-14. EYEBROW/ETICHETTE: gli occhielli sopra il titolo devono essere etichette tematiche reali. Segnala meta-etichette generiche e scollegate tipo "CONTESTO", "OGGETTO DELLA SLIDE", "ARGOMENTO", "INTRODUZIONE" — vanno chiarite (rese tematiche) o rimosse.
+## PER-SLIDE EDITORIAL QUALITY (copy + image)
+9. GOAL ACHIEVED: every slide must have a clear goal in the arc (hook / explain a point / give the proof / close a loop / invite) and achieve it. If you cannot tell what a slide is for, flag it.
+10. RIGHT DENSITY: neither empty/too-thin slides (a title without a real explanation) nor walls of text. Every body slide must teach something complete (mini-headline + explanation + optional proof). Flag slides that are "short on content".
+11. NO REPETITION: no slide re-explains an already covered concept in different words. Every slide adds NEW information.
+12. DATA WITH MEANING: every number must say WHAT IT IS (label) and WHAT IT TELLS YOU (takeaway). Flag bare numbers, numbers whose meaning is unclear, and piles of figures.
+13. REGISTER AND JARGON: conversational language, informal second person; every technical term explained or replaced (audience starting from zero). Flag unexplained jargon.
+14. EYEBROWS/LABELS: the small labels above the title must be real topical labels. Flag generic, disconnected meta-labels such as "CONTEXT", "SLIDE TOPIC", "SUBJECT", "INTRODUCTION" (or their equivalents in ${language}) — they must be made topical or removed.
 
-## REVISIONE VISIVA D'INSIEME (guardando le immagini di TUTTE le slide) — PRIORITARIA
-15. COERENZA VISIVA DI SERIE: scala tipografica, spaziature, margini, stile dei box e uso del colore COERENTI tra tutte le slide. Segnala chi se ne discosta.
-16. RITMO E VARIETÀ: le slide centrali non tutte identiche né monotone, ma della stessa famiglia visiva.
-17. ECO COVER↔CTA: la slide finale richiama visivamente la cover.
-18. GERARCHIA ED EVIDENZIAZIONI: un solo punto focale per slide; evidenziazioni di PAROLE usate bene — VERDE solo per positivo, ROSSO solo per negativo, mai parola evidenziata a caso o col colore sbagliato. (Nei layout ricchi — griglie, diagrammi, grafici — bordi/superfici colorate e una emoji per nodo sono OK se usate in modo semantico e coerente: il canvas resta bianco. Segnala solo colore/emoji casuali o eccessivi.)
-19. SIMMETRIA: in confronti/colonne/grafici le parti devono essere simmetriche (stesso numero di voci, allineamenti e lunghezze comparabili). Segnala asimmetrie.
-20. DIFETTI VISIVI PER-SLIDE: collisioni/sovrapposizioni, testo sopra altro testo, numeri/etichette fuori dalla propria box, disallineamenti, testo tagliato, valori che vanno a capo male (es. "%" su riga separata), spazi vuoti accidentali. Anche un solo difetto del genere = carosello non pronto.
+## OVERALL VISUAL REVIEW (looking at the images of ALL slides) — TOP PRIORITY
+15. SERIES CONSISTENCY: type scale, spacing, margins, box style and use of color CONSISTENT across all slides. Flag any slide that deviates.
+16. RHYTHM AND VARIETY: the middle slides are not all identical or monotonous, but belong to the same visual family.
+17. COVER↔CTA ECHO: the final slide visually echoes the cover.
+18. HIERARCHY AND HIGHLIGHTS: a single focal point per slide; WORD highlights used well — POSITIVE ACCENT only for positive ideas, NEGATIVE ACCENT only for negative ones, never a randomly highlighted word or the wrong color. (In rich layouts — grids, diagrams, charts — colored borders/surfaces and one emoji per node are fine if used semantically and consistently: the canvas stays on the paper color. Flag only random or excessive color/emoji.)
+19. SYMMETRY: in comparisons/columns/charts the parts must be symmetric (same number of items, comparable alignments and lengths). Flag asymmetries.
+20. PER-SLIDE VISUAL DEFECTS: collisions/overlaps, text on top of other text, numbers/labels outside their box, misalignments, clipped text, values that wrap badly (e.g. "%" on its own line), accidental empty space. Even a single defect like these = carousel not ready.
 
-Per OGNI slide con un problema (editoriale o visivo) fornisci:
+For EVERY slide with a problem (editorial or visual) provide:
 - slideIndex (0-based)
-- issue: cosa non va (sii preciso: quale elemento, dove)
-- fix: istruzione concreta e azionabile per correggerla (per i difetti visivi indica chiaramente l'aggiustamento di layout necessario)
+- issue: what is wrong (be precise: which element, where)
+- fix: a concrete, actionable instruction to correct it (for visual defects, state clearly the layout adjustment needed). Any replacement copy you propose must be in ${language}.
 
-Output JSON (ContentReview): { approved, generalNotes, slideFixes }
-Approva (slideFixes vuoto) SOLO se ogni slide è editorialmente solida E visivamente impeccabile E l'insieme è coerente. Non inventare problemi inesistenti, ma non lasciar passare nulla che non pubblicheresti con orgoglio.`;
+JSON output (ContentReview): { approved, generalNotes, slideFixes }
+Approve (empty slideFixes) ONLY if every slide is editorially solid AND visually flawless AND the whole is consistent. Do not invent problems, but do not let through anything you would not proudly publish.`;
 }
 
 export async function reviewContent(args: {
@@ -86,6 +88,7 @@ export async function reviewContent(args: {
   slides: ReviewableSlide[];
   meter?: UsageMeter;
   brandName?: string;
+  language?: string;
 }): Promise<ContentReview> {
   const { client, model, reasoningEffort } = args;
   const jsonSchema = zodToJsonSchema(ContentReviewSchema, { name: 'ContentReview', nameStrategy: 'title' });
@@ -95,7 +98,7 @@ export async function reviewContent(args: {
   const request: Record<string, unknown> = {
     model,
     messages: [
-      { role: 'system', content: buildReviewerPrompt(args.brandName ?? 'il brand') },
+      { role: 'system', content: buildReviewerPrompt(args.brandName ?? GENERIC_BRAND_NAME, args.language ?? DEFAULT_CONTENT_LANGUAGE) },
       { role: 'user', content: userContent },
     ],
     response_format: {
@@ -137,22 +140,22 @@ async function buildReviewContent(args: {
   const parts: OpenAI.Chat.ChatCompletionContentPart[] = [
     {
       type: 'text',
-      text: `ARGOMENTO RICHIESTO: ${args.topic}
-${args.instructions ? `ISTRUZIONI: ${args.instructions}\n` : ''}TITOLO CONTENUTO: ${args.title}
-ANGOLO: ${args.angle}
-NUMERO SLIDE: ${args.slides.length}
+      text: `REQUESTED TOPIC: ${args.topic}
+${args.instructions ? `INSTRUCTIONS: ${args.instructions}\n` : ''}CONTENT TITLE: ${args.title}
+ANGLE: ${args.angle}
+NUMBER OF SLIDES: ${args.slides.length}
 
-Di seguito ogni slide: prima i metadati, poi la sua immagine renderizzata.`,
+Below is every slide: first its metadata, then its rendered image.`,
     },
   ];
 
   for (const s of args.slides) {
     parts.push({
       type: 'text',
-      text: `\n### Slide ${s.index} (${s.role})\nBrief: ${s.brief}\nIntent: ${s.intent}\nHeadline: ${s.designSpec.headline.text}\nContenuto: ${s.designSpec.bodyElements.map((b) => b.text).join(' | ')}`,
+      text: `\n### Slide ${s.index} (${s.role})\nBrief: ${s.brief}\nIntent: ${s.intent}\nHeadline: ${s.designSpec.headline.text}\nContent: ${s.designSpec.bodyElements.map((b) => b.text).join(' | ')}`,
     });
     const image = await loadImagePart(s.file);
-    parts.push(image ?? { type: 'text', text: '[immagine non disponibile per questa slide — valuta da testo]' });
+    parts.push(image ?? { type: 'text', text: '[image not available for this slide — evaluate from the text]' });
   }
 
   return parts;

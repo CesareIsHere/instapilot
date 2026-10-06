@@ -10,11 +10,11 @@ import { renderSlideStill, renderDynamicStill, shortId } from '@/lib/render';
 import { generateSlideCode } from '@/llm/generate';
 import { createLlmClient, readLlmConfig } from '@/llm/client';
 import { buildSystemPrompt } from '@/llm/systemPrompt';
-import { loadBrandContext } from '@/llm/brandContext';
 import { validateTsx } from '@/dynamic/compile';
 import { runSlidePipeline } from '@/html/pipeline';
 import { generateContent } from '@/content/orchestrate';
 import { log } from '@/lib/log';
+import { resolveBrandContext } from './brand';
 
 export function mountDiscoveryRoutes(app: Express): void {
   app.get('/compositions', (_req, res) => {
@@ -99,8 +99,7 @@ export function mountDynamicRoutes(app: Express): void {
       const body = DynamicBodySchema.parse(req.body);
       const cfg = readLlmConfig();
       const client = createLlmClient(cfg);
-      const brand = body.brandContext
-        ?? loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'docs/brand-context.example.md');
+      const brand = resolveBrandContext(body.brandContext);
       const systemPrompt = buildSystemPrompt(brand);
 
       const llmStart = Date.now();
@@ -150,8 +149,7 @@ export function mountHtmlRoutes(app: Express): void {
       const body = HtmlBodySchema.parse(req.body);
       const cfg = readLlmConfig();
       const client = createLlmClient(cfg);
-      const brand = body.brandContext
-        ?? loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'docs/brand-context.example.md');
+      const brand = resolveBrandContext(body.brandContext);
 
       const result = await runSlidePipeline({
         client,
@@ -212,8 +210,7 @@ export function mountContentRoutes(app: Express): void {
       const body = ContentBodySchema.parse(req.body);
       const cfg = readLlmConfig();
       const client = createLlmClient(cfg);
-      const brand = body.brandContext
-        ?? loadBrandContext(process.env.BRAND_CONTEXT_FILE ?? 'docs/brand-context.example.md');
+      const brand = resolveBrandContext(body.brandContext);
 
       const result = await generateContent({
         client,

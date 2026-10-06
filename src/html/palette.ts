@@ -2,7 +2,7 @@
  * Extended palette for richer infographics (flexible grids, flow diagrams,
  * breakdown charts). These are exposed by the shell as CSS custom properties so
  * the renderer references them via var(--…) and never hardcodes hex (the brand
- * core stays navy/green/red/white — these are STRUCTURAL accents/surfaces meant
+ * core stays primary/positive/negative/paper — these are STRUCTURAL accents/surfaces meant
  * to distinguish nodes, cards and chart segments, NOT the canvas background).
  */
 
@@ -38,7 +38,7 @@ export function buildPaletteDocs(): string {
   const accents = Object.keys(ACCENTS).map((v) => `var(${v})`).join(', ');
   const surfaces = Object.keys(SURFACES).map((v) => `var(${v})`).join(', ');
   return [
-    `Accent colors (borders, connectors, node/section labels): ${accents}, plus the core var(--brand-navy), var(--brand-green), var(--danger).`,
+    `Accent colors (borders, connectors, node/section labels): ${accents}, plus the core var(--brand-primary), var(--brand-positive), var(--danger).`,
     `Light surface fills (card / diagram-node / chart-block backgrounds — NEVER the canvas): ${surfaces}, plus var(--paper) for white.`,
   ].join('\n');
 }

@@ -3,6 +3,8 @@ import type OpenAI from 'openai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { ReasoningEffort } from '@/llm/client';
 import type { UsageMeter } from '@/llm/usage';
+import { GENERIC_BRAND_NAME } from '@/html/brandVars';
+import { DEFAULT_CONTENT_LANGUAGE } from '@/server/brand';
 
 export const ContentFormatSchema = z.enum(['single', 'carousel']);
 export type ContentFormat = z.infer<typeof ContentFormatSchema>;
@@ -23,78 +25,80 @@ export const ContentPlanSchema = z.object({
 export type PlannedSlide = z.infer<typeof PlannedSlideSchema>;
 export type ContentPlan = z.infer<typeof ContentPlanSchema>;
 
-function buildPlannerSystemPrompt(format: ContentFormat, slideCount: number | undefined, brandName: string): string {
+function buildPlannerSystemPrompt(format: ContentFormat, slideCount: number | undefined, brandName: string, language: string): string {
   const formatRules =
     format === 'single'
-      ? `Il formato è un SINGOLO POST: produci esattamente 1 slide (role "cover"). Tutto il messaggio deve stare in una sola immagine. Imposta framework="single".`
-      : `Il formato è un CAROSELLO da ${slideCount} slide. Struttura narrativa:
-- Slide 1: COVER (role "cover") — hook forte che cattura l'attenzione e introduce il tema.
-- Slide centrali: BODY (role "body") — una idea per slide, sviluppata in modo chiaro e progressivo. Sequenza logica e scorrevole.
-- Ultima slide: CTA (role "cta") — sintesi del messaggio chiave + invito a seguire/salvare.
-Produci esattamente ${slideCount} slide in totale.`;
+      ? `The format is a SINGLE POST: produce exactly 1 slide (role "cover"). The whole message must fit in a single image. Set framework="single".`
+      : `The format is a CAROUSEL of ${slideCount} slides. Narrative structure:
+- Slide 1: COVER (role "cover") — a strong hook that grabs attention and introduces the topic.
+- Middle slides: BODY (role "body") — one idea per slide, developed clearly and progressively. A logical, flowing sequence.
+- Last slide: CTA (role "cta") — summary of the key message + invitation to follow/save.
+Produce exactly ${slideCount} slides in total.`;
 
   const narrativeBlock =
     format === 'single'
-      ? `# POST SINGOLO — AUTOSUFFICIENTE
-Non c'è una slide successiva: questa unica slide deve bastare a sé stessa. In una sola immagine, in modo gerarchico e skimmabile, deve contenere:
-- HOOK: apertura forte (problema + promessa, dato sorprendente o domanda) — la prima cosa che si legge.
-- INSIGHT: il messaggio chiave davvero utile (il "perché" o il "come"), non solo il titolo.
-- PROVA (se rafforza): al massimo UN dato concreto con etichetta e significato (numero + anno/fonte dal dossier).
-- MICRO-CTA soft: una chiusura leggera ("Salva per non dimenticarlo", "Segui per altri spunti"), non invadente.
-Densità MAGGIORE di una cover di carosello (che resta scarna perché il resto la sviluppa): qui non c'è il resto. Ma resta UNA idea centrale, un solo punto focale, testo conciso entro 1080×1350.
-Imposta narrativeFunction="all-in-one". Le regole di foreshadowing / payoff / mini-loop dei caroselli NON si applicano.`
-      : `# METODO E STRUTTURE NARRATIVE (per i caroselli)
-Scegli la struttura più adatta al contenuto e dichiarala nel campo "framework":
-- SWIPE (Hook → Why → Inform×3 → Payoff → CTA): meccanismi, principi, come-funziona, concetti complessi. È il default.
-- 3-ACT (Setup → Conflitto → Soluzione → Applicazione): storie reali/plausibili, errori, mindset, prima→dopo.
-- SRL (Shock → Reveal → Lesson): sfatare miti, verità controintuitive, bias.
-- 3ACT-2.0 (Problema → Analisi → Soluzione → Applicazione): problemi concreti dell'utente, abitudini, budgeting.
-- 3ACT-3.0 (Domanda → Percorso → Risposta): una domanda reale del pubblico, scelte A-vs-B, chiarimenti.
-- A-vs-B: confronto tra due concetti su cui si fa confusione.
-- case-study: parti da un caso reale per spiegare un concetto generale.
-- list: "X cose per…", un elemento per slide.
-- step-by-step / roadmap: uno step per slide, da A a B.
-- framework→breakdown→application: mostra un framework tramite un esempio reale.
+      ? `# SINGLE POST — SELF-CONTAINED
+There is no next slide: this one slide must stand on its own. In a single image, hierarchical and skimmable, it must contain:
+- HOOK: a strong opening (problem + promise, a surprising figure or a question) — the first thing people read.
+- INSIGHT: the genuinely useful key message (the "why" or the "how"), not just the title.
+- PROOF (if it strengthens the message): at most ONE concrete data point with a label and a meaning (number + year/source from the dossier).
+- Soft MICRO-CTA: a light, non-intrusive close ("Save it so you don't forget", "Follow for more ideas").
+HIGHER density than a carousel cover (which stays sparse because the rest develops it): here there is no rest. But it is still ONE central idea, a single focal point, concise copy within 1080×1350.
+Set narrativeFunction="all-in-one". The carousel rules on foreshadowing / payoff / mini-loops do NOT apply.`
+      : `# METHOD AND NARRATIVE STRUCTURES (for carousels)
+Pick the structure that best fits the content and declare it in the "framework" field:
+- SWIPE (Hook → Why → Inform×3 → Payoff → CTA): mechanisms, principles, how-it-works, complex concepts. This is the default.
+- 3-ACT (Setup → Conflict → Solution → Application): real/plausible stories, mistakes, mindset, before→after.
+- SRL (Shock → Reveal → Lesson): debunking myths, counter-intuitive truths, biases.
+- 3ACT-2.0 (Problem → Analysis → Solution → Application): concrete user problems, habits, everyday decisions.
+- 3ACT-3.0 (Question → Journey → Answer): a real question from the audience, A-vs-B choices, clarifications.
+- A-vs-B: comparison between two concepts people often confuse.
+- case-study: start from a real case to explain a general concept.
+- list: "X things to…", one item per slide.
+- step-by-step / roadmap: one step per slide, from A to B.
+- framework→breakdown→application: show a framework through a real example.
 
-# REGOLE NARRATIVE (valide per qualunque struttura)
-- COVER = hook fortissimo + promessa chiara, testo minimo.
-- FORESHADOWING: cover e slide 2 devono essere coerenti (la slide 2 spiega perché conta / apre il loop principale).
-- MINI-LOOP: apri una domanda e chiudila entro 1-2 slide.
-- PAYOFF: recap in 3-4 bullet nella PENULTIMA slide, prima della CTA; chiude tutti i loop e richiama la cover.
-- CTA: una sola, chiara, SOLO nell'ultima slide.
-- Una idea per slide; testo conciso (deve stare in 1080×1350 senza overflow).
+# NARRATIVE RULES (apply to any structure)
+- COVER = very strong hook + clear promise, minimal text.
+- FORESHADOWING: the cover and slide 2 must be consistent (slide 2 explains why it matters / opens the main loop).
+- MINI-LOOPS: open a question and close it within 1-2 slides.
+- PAYOFF: a 3-4 bullet recap on the SECOND-TO-LAST slide, before the CTA; it closes every loop and echoes the cover.
+- CTA: only one, clear, ONLY on the last slide.
+- One idea per slide; concise copy (it must fit in 1080×1350 without overflow).
 
-# FUNZIONE NARRATIVA
-Assegna a ogni slide un "narrativeFunction" coerente con la struttura scelta (es. "hook", "why", "inform", "payoff", "cta", "setup", "conflict", "solution", "loop-open", "loop-close").`;
+# NARRATIVE FUNCTION
+Give each slide a "narrativeFunction" consistent with the chosen structure (e.g. "hook", "why", "inform", "payoff", "cta", "setup", "conflict", "solution", "loop-open", "loop-close").`;
 
-  return `Sei un social media manager senior specializzato in post e caroselli Instagram educativi (in italiano) per ${brandName}. Adatta settore, esempi e taglio al CONTESTO BRAND fornito.
+  return `You are a senior social media manager specialised in educational Instagram posts and carousels for ${brandName}. Adapt sector, examples and angle to the BRAND CONTEXT provided.
+
+LANGUAGE: every piece of reader-facing copy you write (title, headlines, briefs' proposed text, CTAs) must be in ${language}.
 
 ${formatRules}
 
 ${narrativeBlock}
 
-Per ogni slide scrivi un "brief" AUTOSUFFICIENTE e dettagliato che un agente di design userà per generare la slide. Ogni brief DEVE contenere:
-- HEADLINE / MINI-HEADLINE proposta (testo esatto in italiano), 4-9 parole, che dice cosa tratta la slide e perché conta. Indica quali 1-2 parole evidenziare in verde (SOLO positivo/crescita) o rosso (SOLO rischio/perdita). Massimo 1-2 parole evidenziate; mai evidenziare per decorazione.
-- SPIEGAZIONE: 1-2 frasi che sviluppano DAVVERO l'idea (il "perché" o il "come"), non un titolo lasciato a sé. La slide deve insegnare qualcosa di completo.
-- DATO (se presente): ogni numero deve avere ETICHETTA (cos'è) e SIGNIFICATO (cosa comunica). Mai un numero nudo. Massimo UN dato chiave per slide (numero + anno/fonte dal dossier). Non accumulare numeri.
-- HINT DI LAYOUT: la recipe più adatta — cover, numbered-list, compare-2col, kpi-hero, card-grid-2x2, card-grid (3-6 concetti), concept-breakdown (spiega "cos'è X": definizione + formula + glossario), flow-diagram (processo a step con frecce, utile per "come funziona X"), breakdown-chart (barre proporzionali / scomposizione di un totale nelle sue parti), quote, cta. Per confronti/colonne/griglie: gli elementi devono essere SIMMETRICI (stesso numero di voci, frasi di lunghezza simile, struttura parallela).
-- OBIETTIVO DELLA SLIDE: in una frase, cosa deve ottenere questa slide nell'arco (agganciare / spiegare il punto X / dare la prova / chiudere il loop Y / invitare).
-Il brief non deve riferirsi alle altre slide: deve bastare a sé stesso.
+For each slide write a SELF-CONTAINED, detailed "brief" that a design agent will use to generate the slide. Each brief MUST contain:
+- Proposed HEADLINE / MINI-HEADLINE (exact text, in ${language}), 4-9 words, saying what the slide is about and why it matters. State which 1-2 words to highlight with the positive accent (ONLY positive/growth) or the negative accent (ONLY risk/loss). At most 1-2 highlighted words; never highlight for decoration.
+- EXPLANATION: 1-2 sentences that REALLY develop the idea (the "why" or the "how"), not a title left on its own. The slide must teach something complete.
+- DATA (if any): every number must have a LABEL (what it is) and a MEANING (what it tells you). Never a bare number. At most ONE key data point per slide (number + year/source from the dossier). Do not pile up figures.
+- LAYOUT HINT: the best-fitting recipe — cover, numbered-list, compare-2col, kpi-hero, card-grid-2x2, card-grid (3-6 concepts), concept-breakdown (explains "what is X": definition + formula + glossary), flow-diagram (step-by-step process with arrows, useful for "how X works"), breakdown-chart (proportional bars / breaking a total down into its parts), quote, cta. For comparisons/columns/grids the items must be SYMMETRIC (same number of items, sentences of similar length, parallel structure).
+- SLIDE GOAL: in one sentence, what this slide must achieve in the arc (hook / explain point X / give the proof / close loop Y / invite).
+The brief must not refer to the other slides: it has to stand on its own.
 
-# QUALITÀ EDITORIALE (regole vincolanti)
-- UNA sola idea per slide, ma SVILUPPATA: né un muro di testo né una slide vuota. Se non sai dire l'obiettivo della slide, eliminala o riscrivila.
-- QUANTITÀ: headline ≤ ~12 parole; spiegazione 1-2 frasi (≈ max 300 caratteri di corpo per slide). Se serve un paragrafo, va nella caption, non nella slide.
-- NIENTE RIPETIZIONI: ogni slide aggiunge informazione NUOVA. Non rispiegare con parole diverse un concetto già dato.
-- REGISTRO: conversazionale, rivolto al "tu", come a un amico. Ogni termine tecnico o gergale va spiegato o sostituito: il pubblico parte da zero. Rendi semplice il complesso senza banalizzare.
-- COVER: deve rispondere in ≤ ~10 parole a "è per me?" e "cosa ottengo se scorro?" (problema + promessa, o dato sorprendente, o domanda).
-- CTA: una sola, concreta (es. "Salva per dopo", "Commenta X", "Segui per…"), SOLO nell'ultima slide.
-- Usa i dati del dossier solo quando rafforzano; niente affermazioni non supportate dalla ricerca. Brief in italiano.
+# EDITORIAL QUALITY (binding rules)
+- ONE idea per slide, but DEVELOPED: neither a wall of text nor an empty slide. If you cannot state the slide's goal, remove or rewrite it.
+- AMOUNT: headline ≤ ~12 words; explanation 1-2 sentences (≈ max 300 characters of body per slide). If a paragraph is needed, it belongs in the caption, not on the slide.
+- NO REPETITION: each slide adds NEW information. Do not re-explain an already covered concept in different words.
+- REGISTER: conversational, addressing the reader directly and informally in the second person (e.g. "tu" in Italian, "you" in English), like a friend. Every technical or jargon term must be explained or replaced: the audience starts from zero. Make the complex simple without dumbing it down.
+- COVER: must answer in ≤ ~10 words "is this for me?" and "what do I get if I swipe?" (problem + promise, a surprising figure, or a question).
+- CTA: only one, concrete (e.g. "Save for later", "Comment X", "Follow for…"), ONLY on the last slide.
+- Use the dossier's data only when it strengthens the message; no claims unsupported by the research.
 
-Output JSON (ContentPlan):
-- title: titolo editoriale del contenuto complessivo
-- framework: la struttura narrativa scelta (es. "SWIPE")
-- angle: l'angolo/taglio scelto in 1-2 frasi
-- slides: array di { role, narrativeFunction, brief } nell'ordine di pubblicazione`;
+JSON output (ContentPlan):
+- title: editorial title of the whole piece (in ${language})
+- framework: the chosen narrative structure (e.g. "SWIPE")
+- angle: the chosen angle in 1-2 sentences
+- slides: array of { role, narrativeFunction, brief } in publishing order`;
 }
 
 export async function planContent(args: {
@@ -109,19 +113,23 @@ export async function planContent(args: {
   meter?: UsageMeter;
   feedback?: string;
   brandName?: string;
+  language?: string;
 }): Promise<ContentPlan> {
   const { client, model, reasoningEffort, format, slideCount, topic, instructions, research } = args;
   const jsonSchema = zodToJsonSchema(ContentPlanSchema, { name: 'ContentPlan', nameStrategy: 'title' });
 
-  const userContent = `ARGOMENTO: ${topic}
-${instructions ? `ISTRUZIONI: ${instructions}\n` : ''}
-DOSSIER DI RICERCA:
-${research}${args.feedback ? `\n\n--- REVISIONE DEL PIANO PRECEDENTE DA CORREGGERE ---\n${args.feedback}` : ''}`;
+  const userContent = `TOPIC: ${topic}
+${instructions ? `INSTRUCTIONS: ${instructions}\n` : ''}
+RESEARCH DOSSIER:
+${research}${args.feedback ? `\n\n--- REVIEW OF THE PREVIOUS PLAN TO ADDRESS ---\n${args.feedback}` : ''}`;
 
   const request: Record<string, unknown> = {
     model,
     messages: [
-      { role: 'system', content: buildPlannerSystemPrompt(format, slideCount, args.brandName ?? 'il brand') },
+      {
+        role: 'system',
+        content: buildPlannerSystemPrompt(format, slideCount, args.brandName ?? GENERIC_BRAND_NAME, args.language ?? DEFAULT_CONTENT_LANGUAGE),
+      },
       { role: 'user', content: userContent },
     ],
     response_format: {

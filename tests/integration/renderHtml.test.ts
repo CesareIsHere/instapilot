@@ -5,10 +5,10 @@ import request from 'supertest';
 const MOCK_DESIGN_SPEC = {
   recipe: 'cover',
   rationale: 'Bold single-concept cover slide.',
-  headline: { text: 'La Leva del Tempo', coloredSpans: null },
+  headline: { text: "Il potere dell'1%", coloredSpans: null },
   eyebrow: null,
   bodyElements: [],
-  colorPlan: 'navy titles, green logo',
+  colorPlan: 'primary titles, positive accent on the key word',
   useAssets: ['logo'],
   notes: null,
 };
@@ -55,7 +55,7 @@ describe('POST /render/html', () => {
   it('returns 200 with file, intent, html, designSpec, attempts', async () => {
     const res = await request(buildApp())
       .post('/render/html')
-      .send({ prompt: 'Slide cover La leva del tempo' });
+      .send({ prompt: "Slide cover Il potere dell'1%" });
     expect(res.status).toBe(200);
     expect(res.body.file).toBe('/abs/output/HtmlSlide-mock.png');
     expect(res.body.intent).toBe('mock cover intent');

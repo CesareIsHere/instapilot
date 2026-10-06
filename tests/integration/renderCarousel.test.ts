@@ -33,7 +33,7 @@ const slide = {
   blocks: [
     { type: 'Headline', text: 'x', size: 'md' },
     { type: 'RichText', content: [{ kind: 'paragraph', text: 'p' }] },
-    { type: 'Illustration', assetId: 'money-time-flow' },
+    { type: 'Illustration', assetId: 'growth-steps' },
   ],
 };
 

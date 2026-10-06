@@ -2,7 +2,7 @@ import React from 'react';
 import { theme } from '@/theme';
 import type { HeadlineProps } from './schema';
 
-export const Headline: React.FC<HeadlineProps> = ({ text, size, color = 'brand-navy' }) => {
+export const Headline: React.FC<HeadlineProps> = ({ text, size, color = 'brand-primary' }) => {
   return (
     <div
       style={{

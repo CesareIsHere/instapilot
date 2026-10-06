@@ -28,7 +28,7 @@ const validSlide = {
   blocks: [
     { type: 'Headline', text: 'x', size: 'xl' },
     { type: 'RichText', content: [{ kind: 'paragraph', text: 'p' }] },
-    { type: 'Illustration', assetId: 'money-time-flow' },
+    { type: 'Illustration', assetId: 'growth-steps' },
   ],
 };
 

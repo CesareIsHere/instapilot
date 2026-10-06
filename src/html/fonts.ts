@@ -9,7 +9,7 @@ function toDataUri(filePath: string): string {
   return `data:font/woff2;base64,${buf.toString('base64')}`;
 }
 
-export function buildFontFaceBlock(fontFamily = 'Montserrat'): string {
+export function buildFontFaceBlock(fontFamily = 'Inter'): string {
   // Per font custom in data/fonts/custom/, usa quella directory.
   const customDir = path.resolve(process.cwd(), 'data', 'fonts', 'custom');
   const fontsDir = fs.existsSync(path.join(customDir, `${fontFamily}-Regular.woff2`))

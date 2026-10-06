@@ -9,7 +9,7 @@ const SPEC = {
   recipe: 'cover' as const, rationale: 'r',
   headline: { text: 'Titolo', coloredSpans: null },
   eyebrow: null, bodyElements: [{ type: 'paragraph' as const, text: 'corpo', emphasis: 'none' as const }],
-  colorPlan: 'navy', useAssets: ['logo'], notes: null,
+  colorPlan: 'primary', useAssets: ['logo'], notes: null,
 };
 
 function slide(index: number, file: string): ReviewableSlide {
@@ -55,7 +55,7 @@ describe('reviewContent — multimodal whole-carousel review', () => {
 
     const content = create.mock.calls[0][0].messages[1].content as Array<{ type: string; text?: string }>;
     expect(content.some((p) => p.type === 'image_url')).toBe(false);
-    expect(content.some((p) => p.type === 'text' && p.text?.includes('immagine non disponibile'))).toBe(true);
+    expect(content.some((p) => p.type === 'text' && p.text?.includes('image not available'))).toBe(true);
   });
 
   it('returns the parsed review with slide fixes', async () => {

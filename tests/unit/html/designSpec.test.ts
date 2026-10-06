@@ -4,14 +4,14 @@ import { SlideDesignSpecSchema, DesignReviewSchema } from '@/html/designSpec';
 const validSpec = {
   recipe: 'numbered-list',
   rationale: 'Content is a list of tips — numbered-list recipe fits perfectly.',
-  headline: { text: 'Come investire in 5 passi', coloredSpans: [{ word: 'investire', color: 'green' }] },
+  headline: { text: 'Come investire in 5 passi', coloredSpans: [{ word: 'investire', color: 'positive' }] },
   eyebrow: 'GUIDA',
   bodyElements: [
     { type: 'list-item', text: '1. Definisci i tuoi obiettivi', emphasis: 'none' },
-    { type: 'list-item', text: '2. Diversifica il portafoglio', emphasis: 'green' },
-    { type: 'list-item', text: '3. Evita il market timing', emphasis: 'red' },
+    { type: 'list-item', text: '2. Diversifica il portafoglio', emphasis: 'positive' },
+    { type: 'list-item', text: '3. Evita il market timing', emphasis: 'negative' },
   ],
-  colorPlan: 'Titolo navy con "investire" verde; lista con accent verde per step positivi',
+  colorPlan: 'Titolo primario con "investire" in accento positivo; lista con accento positivo per step positivi',
   useAssets: ['logo'],
   notes: null,
 };

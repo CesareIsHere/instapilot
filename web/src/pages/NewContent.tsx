@@ -124,7 +124,7 @@ export function NewContent() {
             ref={topicRef}
             value={topic}
             onChange={e => setTopic(e.target.value)}
-            placeholder="Es. La leva del tempo negli investimenti a lungo termine"
+            placeholder="Es. Perché le abitudini piccole battono i grandi propositi"
             rows={3}
             className="resize-none"
           />
@@ -137,7 +137,7 @@ export function NewContent() {
             id="instructions"
             value={instructions}
             onChange={e => setInstructions(e.target.value)}
-            placeholder="Es. Tono educativo, pubblico principiante. Usa un esempio numerico sull'interesse composto."
+            placeholder="Es. Tono educativo, pubblico principiante. Includi un esempio pratico e un dato concreto."
             rows={3}
             className="resize-none"
           />

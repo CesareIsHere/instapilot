@@ -83,8 +83,8 @@ export function buildHtmlDocument(
   width: 88px;
   height: 88px;
   border-radius: 50%;
-  border: 3px solid var(--brand-navy);
-  color: var(--brand-navy);
+  border: 3px solid var(--brand-primary);
+  color: var(--brand-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -111,8 +111,8 @@ ${fontFaces}
 }
 
 :root {
-  --brand-navy:  ${colors.primary};
-  --brand-green: ${colors.positive};
+  --brand-primary:  ${colors.primary};
+  --brand-positive: ${colors.positive};
   --paper:       ${colors.paper};
   --ink:         ${colors.ink};
   --muted:       ${colors.muted};

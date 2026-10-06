@@ -8,8 +8,8 @@ describe('theme', () => {
     expect(theme.spacing).toBeDefined();
   });
 
-  it('includes brand-navy and paper colors', () => {
-    expect(theme.colors['brand-navy']).toMatch(/^#[0-9a-fA-F]{6}$/);
+  it('includes brand-primary and paper colors', () => {
+    expect(theme.colors['brand-primary']).toMatch(/^#[0-9a-fA-F]{6}$/);
     expect(theme.colors['paper']).toMatch(/^#[0-9a-fA-F]{6}$/);
   });
 

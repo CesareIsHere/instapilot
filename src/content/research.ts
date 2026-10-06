@@ -2,6 +2,8 @@ import type OpenAI from 'openai';
 import type { ReasoningEffort } from '@/llm/client';
 import type { UsageMeter } from '@/llm/usage';
 import { log } from '@/lib/log';
+import { GENERIC_BRAND_NAME } from '@/html/brandVars';
+import { DEFAULT_CONTENT_LANGUAGE } from '@/server/brand';
 
 // OpenAI Responses API web-search tool. Configurable for forward-compat
 // (web_search_preview is the broadly-supported variant for gpt-4o).
@@ -13,43 +15,44 @@ function buildResearchPrompt(
   format: 'single' | 'carousel',
   slideCount: number | undefined,
   brandName: string,
+  language: string,
   feedback?: string,
 ): string {
   const corrections = feedback
-    ? `\n\n--- REVISIONE PRECEDENTE DA CORREGGERE ---\nIl dossier precedente è stato bocciato per questi motivi. Correggili in questa versione:\n${feedback}\n`
+    ? `\n\n--- PREVIOUS REVIEW TO ADDRESS ---\nThe previous dossier was rejected for these reasons. Fix them in this version:\n${feedback}\n`
     : '';
 
   const isSingle = format === 'single';
   const formatHint = isSingle
-    ? `Il materiale servirà per un SINGOLO POST Instagram (1 sola immagine 1080×1350). Produci un dossier SNELLO: solo i concetti e i dati strettamente necessari a spiegare l'argomento in una slide. Niente sezioni accademiche o approfondimenti laterali.`
-    : `Il materiale servirà per un CAROSELLO da ${slideCount ?? 'alcune'} slide. Produci un dossier COMPLETO con tutti i concetti, dati ed esempi necessari a riempire più slide in modo progressivo.`;
+    ? `The material is for a SINGLE Instagram POST (one 1080×1350 image). Produce a LEAN dossier: only the concepts and data strictly needed to explain the topic in one slide. No academic sections or side tangents.`
+    : `The material is for a CAROUSEL of ${slideCount ?? 'several'} slides. Produce a COMPLETE dossier with all the concepts, data and examples needed to fill several slides progressively.`;
 
   const sections = isSingle
-    ? `Produci un dossier di ricerca in italiano con QUESTE SEZIONI (brevi e focalizzate):
-1. CONCETTI CHIAVE — i 2-3 concetti essenziali, spiegati in modo accessibile a chi parte da zero. Niente sotto-sezioni.
-2. DATO CHIAVE — al massimo 1-2 statistiche concrete e recenti con anno e fonte. Solo quelle che rafforzano davvero il messaggio.
-3. ESEMPI — 1-2 analogie pratiche che rendano tangibile il concetto principale.
-4. ANGOLI E HOOK — 2 ganci d'apertura forti utilizzabili per un post Instagram.`
-    : `Produci un dossier di ricerca in italiano con QUESTE SEZIONI esplicite:
-1. CONCETTI CHIAVE — i concetti necessari, spiegati in modo accessibile a chi parte da zero.
-2. DATI E NUMERI — statistiche concrete e recenti. Ogni dato DEVE avere anno e fonte. Se non sei certo dell'aggiornamento, segnalalo esplicitamente con "[da verificare]".
-3. ESEMPI E ANALOGIE — almeno 2 esempi pratici o analogie concrete che rendano tangibili i concetti.
-4. ERRORI COMUNI — fraintendimenti diffusi da sfatare.
-5. ANGOLI E HOOK — 2-3 angoli narrativi forti e ganci d'apertura utilizzabili per un post Instagram.
-6. FONTI — le fonti principali consultate.`;
+    ? `Write the research dossier in ${language} with THESE SECTIONS (short and focused):
+1. KEY CONCEPTS — the 2-3 essential concepts, explained accessibly for someone starting from zero. No sub-sections.
+2. KEY DATA POINT — at most 1-2 concrete, recent statistics with year and source. Only those that genuinely strengthen the message.
+3. EXAMPLES — 1-2 practical analogies that make the main concept tangible.
+4. ANGLES & HOOKS — 2 strong opening hooks usable for an Instagram post.`
+    : `Write the research dossier in ${language} with THESE explicit SECTIONS:
+1. KEY CONCEPTS — the concepts needed, explained accessibly for someone starting from zero.
+2. DATA & NUMBERS — concrete, recent statistics. Every figure MUST have a year and a source. If you are not sure it is up to date, flag it explicitly with "[to verify]".
+3. EXAMPLES & ANALOGIES — at least 2 practical examples or concrete analogies that make the concepts tangible.
+4. COMMON MISTAKES — widespread misconceptions to debunk.
+5. ANGLES & HOOKS — 2-3 strong narrative angles and opening hooks usable for an Instagram post.
+6. SOURCES — the main sources consulted.`;
 
-  return `Sei un ricercatore senior che prepara materiale per contenuti Instagram educativi in italiano per ${brandName}, rivolti a un pubblico NON esperto. Il settore, il taglio e il pubblico specifici sono descritti nel CONTESTO BRAND fornito: adatta ricerca ed esempi a quel contesto.
+  return `You are a senior researcher preparing material for educational Instagram content in ${language} for ${brandName}, aimed at a NON-expert audience. The specific sector, angle and audience are described in the BRAND CONTEXT: adapt your research and examples to that context.
 
 ${formatHint}
 
-ARGOMENTO: ${topic}
-${instructions ? `\nISTRUZIONI SUL CONTENUTO: ${instructions}\n` : ''}${corrections}
+TOPIC: ${topic}
+${instructions ? `\nCONTENT INSTRUCTIONS: ${instructions}\n` : ''}${corrections}
 ${sections}
 
-Regole di qualità:
-- Accuratezza prima di tutto: niente affermazioni inventate. Distingui i fatti dalle opinioni.
-- Niente contenuto generico o "filler": ogni riga deve essere utile a chi scriverà il post.
-- Non scrivere il post: produci solo materiale di ricerca.`;
+Quality rules:
+- Accuracy first: no invented claims. Separate facts from opinions.
+- No generic content or filler: every line must be useful to whoever writes the post.
+- Do not write the post: produce research material only.`;
 }
 
 export interface ResearchArgs {
@@ -65,6 +68,8 @@ export interface ResearchArgs {
   meter?: UsageMeter;
   feedback?: string;
   brandName?: string;
+  /** Language of the reader-facing copy (defaults to the Brand Kit default). */
+  language?: string;
 }
 
 /**
@@ -75,7 +80,10 @@ export interface ResearchArgs {
  */
 export async function researchTopic(args: ResearchArgs): Promise<string> {
   const { client, model, reasoningEffort, topic, instructions, format, slideCount } = args;
-  const prompt = buildResearchPrompt(topic, instructions, format, slideCount, args.brandName ?? 'il brand', args.feedback);
+  const prompt = buildResearchPrompt(
+    topic, instructions, format, slideCount,
+    args.brandName ?? GENERIC_BRAND_NAME, args.language ?? DEFAULT_CONTENT_LANGUAGE, args.feedback,
+  );
 
   // Evergreen topics don't need fresh web data — skip the search tool to save tokens/latency.
   if (args.useWebSearch === false) {
@@ -120,7 +128,7 @@ async function researchWithoutWeb(args: {
       {
         role: 'system',
         content:
-          "Sei un ricercatore esperto sull'argomento richiesto. Non hai accesso a internet: usa la tua conoscenza, segnalando esplicitamente quando un dato potrebbe non essere aggiornato.",
+          'You are an expert researcher on the requested topic. You have no internet access: rely on your own knowledge and explicitly flag any figure that might be out of date.',
       },
       { role: 'user', content: args.prompt },
     ],

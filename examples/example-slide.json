@@ -1,0 +1,49 @@
+{
+  "slide": {
+    "compositionId": "Slide",
+    "format": "post-portrait",
+    "layout": "headline-body-illustration",
+    "background": "paper",
+    "chrome": { "showLogo": true, "showCarouselNav": true, "pageIndex": 3, "totalPages": 7 },
+    "blocks": [
+      {
+        "type": "Headline",
+        "text": "Il potere dell'1%",
+        "size": "xl",
+        "color": "brand-primary"
+      },
+      {
+        "type": "RichText",
+        "content": [
+          {
+            "kind": "paragraph",
+            "text": "Per Giulia, 24 anni, il vantaggio non è il talento — è la costanza."
+          },
+          {
+            "kind": "bullets",
+            "items": [
+              "Migliorare dell'1% al giorno significa essere ~37 volte meglio in un anno.",
+              "Peggiorare dell'1% al giorno ti lascia a meno di un decimo del punto di partenza.",
+              "I risultati non sono lineari: i primi mesi sembrano inutili, poi tutto accelera.",
+              "Le abitudini piccole sono quelle che sopravvivono alle giornate storte."
+            ]
+          },
+          {
+            "kind": "paragraph",
+            "text": "Il rischio per Giulia non è sbagliare — è non iniziare."
+          }
+        ]
+      },
+      {
+        "type": "Illustration",
+        "assetId": "growth-steps",
+        "caption": "Piccoli passi, risultati che si sommano",
+        "align": "center"
+      },
+      {
+        "type": "Footer",
+        "variant": "disclaimer"
+      }
+    ]
+  }
+}

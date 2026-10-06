@@ -107,7 +107,7 @@ export async function runSlidePipeline(args: PipelineArgs): Promise<PipelineResu
   if (args.revision) {
     designSpec = args.revision.designSpec;
   } else {
-    const design = await runDesignPhase({ client, pick, reasoningEffort, brandContext, userPrompt, role, meter, designContext: args.designContext, selfContained: args.selfContained });
+    const design = await runDesignPhase({ client, pick, reasoningEffort, brandContext, userPrompt, role, meter, designContext: args.designContext, selfContained: args.selfContained, language: getBrandVars().language });
     if (!design.ok) return { ok: false, code: 'LLM_FAILURE', detail: design.detail };
     designSpec = design.designSpec;
     designAttempts = design.attempts;
@@ -235,6 +235,7 @@ async function runDesignPhase(a: {
   meter: UsageMeter;
   designContext?: string;
   selfContained?: boolean;
+  language: string;
 }): Promise<DesignPhaseResult> {
   let llmMs = 0;
   let designFeedback: string | undefined;
@@ -244,7 +245,7 @@ async function runDesignPhase(a: {
   for (let da = 1; da <= MAX_DESIGN_RETRIES; da++) {
     const t1 = Date.now();
     try {
-      lastSpec = await planSlideDesign({ client: a.client, model: a.pick('designPlan'), reasoningEffort: a.reasoningEffort, brandContext: a.brandContext, userPrompt: a.userPrompt, role: a.role, feedback: designFeedback, meter: a.meter, designContext: a.designContext, selfContained: a.selfContained });
+      lastSpec = await planSlideDesign({ client: a.client, model: a.pick('designPlan'), reasoningEffort: a.reasoningEffort, brandContext: a.brandContext, userPrompt: a.userPrompt, role: a.role, feedback: designFeedback, meter: a.meter, designContext: a.designContext, selfContained: a.selfContained, language: a.language });
     } catch (err) {
       return { ok: false, detail: (err as Error).message };
     }
@@ -254,7 +255,7 @@ async function runDesignPhase(a: {
     const t2 = Date.now();
     let review;
     try {
-      review = await reviewSlideDesign({ client: a.client, model: a.pick('designReview'), reasoningEffort: a.reasoningEffort, originalPrompt: a.userPrompt, designSpec: lastSpec, meter: a.meter });
+      review = await reviewSlideDesign({ client: a.client, model: a.pick('designReview'), reasoningEffort: a.reasoningEffort, originalPrompt: a.userPrompt, designSpec: lastSpec, meter: a.meter, language: a.language });
     } catch (err) {
       return { ok: false, detail: (err as Error).message };
     }
@@ -327,7 +328,7 @@ ${JSON.stringify(designSpec, null, 2)}
 
 Implement this design faithfully:
 - Use the specified recipe layout
-- Use the exact headline text with the specified coloredSpans (green/red on those words)
+- Use the exact headline text with the specified coloredSpans (positive/negative accent on those words)
 - Include all bodyElements in the specified order with the specified emphasis
 - Follow the color plan exactly
 - Include all assets listed in useAssets using {{asset:<id>}} tokens`;

@@ -5,6 +5,9 @@ import path from 'node:path';
 import { loadBrandContext } from '@/llm/brandContext';
 import { log } from '@/lib/log';
 
+/** Language of the generated, reader-facing copy when the Brand Kit does not set one. */
+export const DEFAULT_CONTENT_LANGUAGE = 'Italian';
+
 const BRAND_KIT_FILE = process.env.BRAND_KIT_FILE ?? path.resolve(process.cwd(), 'data', 'brand-kit.json');
 
 export interface BrandColors {
@@ -26,6 +29,8 @@ export interface BrandKit {
   tagline: string;
   audience: string;
   tone: string;
+  /** Language of the generated copy (e.g. "Italian", "English"). Prompts are in English; output follows this. */
+  language: string;
   brandColors: BrandColors;
   font: BrandFont;
   logoPath?: string;
@@ -37,16 +42,16 @@ export interface BrandKit {
 }
 
 const BrandColorsSchema = z.object({
-  primary: z.string().max(30).default('#012A78'),
-  positive: z.string().max(30).default('#00B373'),
+  primary: z.string().max(30).default('#4F46E5'),
+  positive: z.string().max(30).default('#059669'),
   negative: z.string().max(30).default('#DC2626'),
   paper: z.string().max(30).default('#FFFFFF'),
-  ink: z.string().max(30).default('#101010'),
-  muted: z.string().max(30).default('#767676'),
+  ink: z.string().max(30).default('#111827'),
+  muted: z.string().max(30).default('#6B7280'),
 });
 
 const BrandFontSchema = z.object({
-  family: z.string().max(80).default('Montserrat'),
+  family: z.string().max(80).default('Inter'),
   source: z.enum(['bundled', 'custom']).default('bundled'),
 });
 
@@ -55,6 +60,7 @@ const BrandKitSchema = z.object({
   tagline: z.string().max(280).default(''),
   audience: z.string().max(500).default(''),
   tone: z.string().max(500).default(''),
+  language: z.string().max(60).default(DEFAULT_CONTENT_LANGUAGE),
   brandColors: BrandColorsSchema.default({}),
   font: BrandFontSchema.default({}),
   logoPath: z.string().max(500).optional(),
@@ -71,7 +77,10 @@ export function defaultBrandKit(): BrandKit {
 
 export function readBrandKit(): BrandKit | null {
   try {
-    return JSON.parse(fs.readFileSync(BRAND_KIT_FILE, 'utf8')) as BrandKit;
+    const raw: unknown = JSON.parse(fs.readFileSync(BRAND_KIT_FILE, 'utf8'));
+    // Fill defaults for fields added after the kit was saved (e.g. `language`).
+    const parsed = BrandKitSchema.safeParse(raw);
+    return parsed.success ? parsed.data : (raw as BrandKit);
   } catch {
     return null;
   }
@@ -84,19 +93,20 @@ function writeBrandKit(kit: BrandKit): void {
 
 /** Render a saved brand kit into the plain-text context string injected into prompts. */
 export function brandKitToContext(kit: BrandKit): string {
-  const lines: string[] = ['# CONTESTO BRAND'];
-  if (kit.name) lines.push(`Nome: ${kit.name}`);
+  const lines: string[] = ['# BRAND CONTEXT'];
+  if (kit.name) lines.push(`Name: ${kit.name}`);
   if (kit.tagline) lines.push(`Tagline: ${kit.tagline}`);
-  if (kit.audience) lines.push(`Pubblico target: ${kit.audience}`);
-  if (kit.tone) lines.push(`Tono di voce: ${kit.tone}`);
+  if (kit.audience) lines.push(`Target audience: ${kit.audience}`);
+  if (kit.tone) lines.push(`Tone of voice: ${kit.tone}`);
+  lines.push(`Content language: ${kit.language || DEFAULT_CONTENT_LANGUAGE}`);
   const c = kit.brandColors;
-  lines.push(`Colori (ruoli semantici): primario ${c.primary}, positivo ${c.positive}, negativo ${c.negative}, sfondo ${c.paper}, testo ${c.ink}, secondario ${c.muted}`);
+  lines.push(`Colors (semantic roles): primary ${c.primary}, positive ${c.positive}, negative ${c.negative}, background ${c.paper}, text ${c.ink}, secondary ${c.muted}`);
   lines.push(`Font: ${kit.font.family}`);
-  if (kit.hashtags.length) lines.push(`Hashtag ricorrenti: ${kit.hashtags.map((h) => `#${h.replace(/^#/, '')}`).join(' ')}`);
-  if (kit.ctas.length) lines.push(`Call-to-action preferite:\n${kit.ctas.map((c) => `- ${c}`).join('\n')}`);
-  if (kit.dos) lines.push(`Da fare:\n${kit.dos}`);
-  if (kit.donts) lines.push(`Da evitare:\n${kit.donts}`);
-  if (kit.notes) lines.push(`Note aggiuntive:\n${kit.notes}`);
+  if (kit.hashtags.length) lines.push(`Recurring hashtags: ${kit.hashtags.map((h) => `#${h.replace(/^#/, '')}`).join(' ')}`);
+  if (kit.ctas.length) lines.push(`Preferred calls to action:\n${kit.ctas.map((c) => `- ${c}`).join('\n')}`);
+  if (kit.dos) lines.push(`Do:\n${kit.dos}`);
+  if (kit.donts) lines.push(`Don't:\n${kit.donts}`);
+  if (kit.notes) lines.push(`Additional notes:\n${kit.notes}`);
   return lines.join('\n');
 }
 
