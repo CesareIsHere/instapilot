@@ -43,14 +43,14 @@ const slides: DemoSlide[] = [
   {
     role: 'cover',
     narrativeFunction: 'hook',
-    intent: 'Cover: hook sul potere dei piccoli miglioramenti',
+    intent: 'Cover: hook on the power of small improvements',
     bodyHtml: `
 <div class="s">
   <img class="s__logo" src="{{asset:logo}}" alt="logo">
   <div class="s__body">
-    <div class="s__eyebrow">Abitudini</div>
-    <h1 class="s__title cover__title">Il potere<br>dell'<span class="pos">1%</span></h1>
-    <p class="cover__sub">Perché i piccoli passi quotidiani battono i grandi propositi.</p>
+    <div class="s__eyebrow">Habits</div>
+    <h1 class="s__title cover__title">The power<br>of <span class="pos">1%</span></h1>
+    <p class="cover__sub">Why small daily steps beat big resolutions.</p>
   </div>
 </div>`,
     css: `
@@ -60,16 +60,16 @@ const slides: DemoSlide[] = [
   {
     role: 'body',
     narrativeFunction: 'inform',
-    intent: 'KPI hero: 37x in un anno',
+    intent: 'KPI hero: 37x in one year',
     bodyHtml: `
 <div class="s">
   <img class="s__logo" src="{{asset:logo}}" alt="logo">
-  <div class="s__eyebrow">La matematica</div>
-  <h2 class="s__title">Un anno di <span class="pos">+1%</span> al giorno</h2>
+  <div class="s__eyebrow">The math</div>
+  <h2 class="s__title">One year of <span class="pos">+1%</span> a day</h2>
   <div class="s__body kpi">
     <div class="kpi__number">37×</div>
-    <div class="kpi__label">volte meglio rispetto al punto di partenza</div>
-    <p class="kpi__context">1,01 elevato a 365 fa circa 37,8. Al contrario, peggiorare dell'1% al giorno ti lascia a <span class="neg">0,03</span>: quasi zero.</p>
+    <div class="kpi__label">times better than where you started</div>
+    <p class="kpi__context">1.01 to the power of 365 is about 37.8. Getting 1% worse every day instead leaves you at <span class="neg">0.03</span>: almost zero.</p>
   </div>
 </div>`,
     css: `
@@ -81,21 +81,21 @@ const slides: DemoSlide[] = [
   {
     role: 'body',
     narrativeFunction: 'inform',
-    intent: 'Progression chart: la crescita non è lineare',
+    intent: 'Progression chart: growth is not linear',
     bodyHtml: `
 <div class="s">
   <img class="s__logo" src="{{asset:logo}}" alt="logo">
-  <div class="s__eyebrow">Effetto cumulativo</div>
-  <h2 class="s__title">All'inizio non vedi <span class="pos">nulla</span></h2>
+  <div class="s__eyebrow">Compounding</div>
+  <h2 class="s__title">At first you see <span class="pos">nothing</span></h2>
   <div class="s__body">
     <div class="plot">
-      <div class="col"><span class="col__v">1,3×</span><span class="col__bar" style="height:4%"></span><span class="col__x">1 mese</span></div>
-      <div class="col"><span class="col__v">2,5×</span><span class="col__bar" style="height:7%"></span><span class="col__x">3 mesi</span></div>
-      <div class="col"><span class="col__v">6×</span><span class="col__bar" style="height:16%"></span><span class="col__x">6 mesi</span></div>
-      <div class="col"><span class="col__v">15×</span><span class="col__bar" style="height:40%"></span><span class="col__x">9 mesi</span></div>
-      <div class="col"><span class="col__v">37×</span><span class="col__bar col__bar--pos" style="height:100%"></span><span class="col__x">12 mesi</span></div>
+      <div class="col"><span class="col__v">1.3×</span><span class="col__bar" style="height:4%"></span><span class="col__x">1 month</span></div>
+      <div class="col"><span class="col__v">2.5×</span><span class="col__bar" style="height:7%"></span><span class="col__x">3 months</span></div>
+      <div class="col"><span class="col__v">6×</span><span class="col__bar" style="height:16%"></span><span class="col__x">6 months</span></div>
+      <div class="col"><span class="col__v">15×</span><span class="col__bar" style="height:40%"></span><span class="col__x">9 months</span></div>
+      <div class="col"><span class="col__v">37×</span><span class="col__bar col__bar--pos" style="height:100%"></span><span class="col__x">12 months</span></div>
     </div>
-    <p class="s__note">I primi mesi sembrano inutili. Poi la curva accelera.</p>
+    <p class="s__note">The first months feel pointless. Then the curve takes off.</p>
   </div>
 </div>`,
     css: `
@@ -109,17 +109,17 @@ const slides: DemoSlide[] = [
   {
     role: 'body',
     narrativeFunction: 'payoff',
-    intent: 'Numbered list: 3 regole pratiche',
+    intent: 'Numbered list: 3 practical rules',
     bodyHtml: `
 <div class="s">
   <img class="s__logo" src="{{asset:logo}}" alt="logo">
-  <div class="s__eyebrow">In pratica</div>
-  <h2 class="s__title">3 regole per iniziare <span class="pos">oggi</span></h2>
+  <div class="s__eyebrow">In practice</div>
+  <h2 class="s__title">3 rules to start <span class="pos">today</span></h2>
   <div class="s__body">
     <ol class="list">
-      <li class="item"><span class="item__n">01</span><span class="item__t"><b>Rendila minuscola.</b> Due minuti al giorno bastano per partire.</span></li>
-      <li class="item"><span class="item__n">02</span><span class="item__t"><b>Agganciala a un'abitudine esistente.</b> Dopo il caffè, prima della doccia.</span></li>
-      <li class="item"><span class="item__n">03</span><span class="item__t"><b>Non saltare due volte.</b> Un giorno perso capita, due diventano un'abitudine nuova.</span></li>
+      <li class="item"><span class="item__n">01</span><span class="item__t"><b>Make it tiny.</b> Two minutes a day is enough to get going.</span></li>
+      <li class="item"><span class="item__n">02</span><span class="item__t"><b>Stack it on an existing habit.</b> After your coffee, before your shower.</span></li>
+      <li class="item"><span class="item__n">03</span><span class="item__t"><b>Never miss twice.</b> Missing one day happens; missing two starts a new habit.</span></li>
     </ol>
   </div>
 </div>`,
@@ -133,14 +133,14 @@ const slides: DemoSlide[] = [
   {
     role: 'cta',
     narrativeFunction: 'cta',
-    intent: 'CTA: salva e segui',
+    intent: 'CTA: save and follow',
     bodyHtml: `
 <div class="s">
   <img class="s__logo" src="{{asset:logo}}" alt="logo">
   <div class="s__body cta">
-    <h2 class="s__title">Non serve fare di più.<br>Serve farlo <span class="pos">ogni giorno</span>.</h2>
-    <p class="cta__body">Salva questo post e rileggilo tra 30 giorni.</p>
-    <div class="cta__action">Salva · Condividi · Segui</div>
+    <h2 class="s__title">You don't need to do more.<br>You need to do it <span class="pos">every day</span>.</h2>
+    <p class="cta__body">Save this post and read it again in 30 days.</p>
+    <div class="cta__action">Save · Share · Follow</div>
   </div>
 </div>`,
     css: `
@@ -174,11 +174,11 @@ async function main(): Promise<void> {
 
   const manifest = {
     carouselId: DEMO_ID,
-    topic: "Il potere dell'1%: perché i piccoli miglioramenti quotidiani battono i grandi propositi",
+    topic: 'The power of 1%: why small daily improvements beat big resolutions',
     format: 'carousel',
-    framework: 'hook → insight → prova → regole → cta',
-    title: "Il potere dell'1%",
-    angle: 'Demo generata localmente con `npm run seed:demo` (nessuna chiamata LLM).',
+    framework: 'hook → insight → proof → rules → cta',
+    title: 'The power of 1%',
+    angle: 'Demo generated locally with `npm run seed:demo` (no LLM calls).',
     createdAt: new Date().toISOString(),
     slides: manifestSlides,
   };
