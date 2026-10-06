@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 
 const PHASES = ['research', 'plan', 'slides', 'review', 'done'];
 const PHASE_LABEL: Record<string, string> = {
-  research: 'Ricerca', plan: 'Pianificazione', slides: 'Generazione slide', review: 'Revisione editoriale', done: 'Completato',
+  research: 'Research', plan: 'Planning', slides: 'Generating slides', review: 'Editorial review', done: 'Done',
 };
 const PHASE_ICON: Record<string, string> = {
   research: '🔍', plan: '📋', slides: '🎨', review: '✅', done: '🎉',
@@ -57,10 +57,10 @@ export function JobDetail() {
 
   const handleRetry = async () => {
     if (!id) return;
-    const toastId = toast.loading('Riavvio generazione…');
+    const toastId = toast.loading('Restarting generation…');
     try {
       const fresh = await api.generate.retry(id);
-      toast.success('Generazione riavviata', { id: toastId });
+      toast.success('Generation restarted', { id: toastId });
       navigate(`/job/${fresh.id}`, { replace: true });
     } catch (err) {
       toast.error((err as Error).message, { id: toastId });
@@ -75,7 +75,7 @@ export function JobDetail() {
 
   if (!job) return (
     <div className="p-8 flex items-center gap-2 text-muted-foreground">
-      <Loader2 size={16} className="animate-spin" /> Caricamento…
+      <Loader2 size={16} className="animate-spin" /> Loading…
     </div>
   );
 
@@ -85,13 +85,13 @@ export function JobDetail() {
   return (
     <div className="p-8 max-w-xl animate-fade-in">
       <Button variant="ghost" size="sm" asChild className="mb-6 -ml-1">
-        <Link to="/jobs"><ArrowLeft size={14} />Generazioni</Link>
+        <Link to="/jobs"><ArrowLeft size={14} />Generations</Link>
       </Button>
 
       <div className="space-y-2 mb-8">
         <h1 className="text-2xl font-bold tracking-tight">{job.input.topic}</h1>
         <p className="text-sm text-muted-foreground">
-          {job.input.format === 'carousel' ? `Carosello · ${job.input.slideCount} slide` : 'Post singolo'}
+          {job.input.format === 'carousel' ? `Carousel · ${job.input.slideCount} slides` : 'Single post'}
         </p>
       </div>
 
@@ -103,7 +103,7 @@ export function JobDetail() {
           {job.status === 'error' && <XCircle size={20} className="text-destructive shrink-0" />}
           <div>
             <p className="font-semibold text-sm">
-              {job.status === 'error' ? 'Generazione fallita' : (PHASE_LABEL[job.progress.phase] ?? job.progress.phase)}
+              {job.status === 'error' ? 'Generation failed' : (PHASE_LABEL[job.progress.phase] ?? job.progress.phase)}
             </p>
             {job.progress.detail && (
               <p className="text-xs text-muted-foreground mt-0.5">{job.progress.detail}</p>
@@ -146,10 +146,10 @@ export function JobDetail() {
         <div className="mt-4 flex gap-2">
           <Button onClick={handleRetry} className="flex-1">
             <RefreshCw size={14} />
-            Riprova generazione
+            Retry generation
           </Button>
           <Button variant="outline" asChild className="flex-1">
-            <Link to="/new">Nuovo contenuto</Link>
+            <Link to="/new">New content</Link>
           </Button>
         </div>
       )}

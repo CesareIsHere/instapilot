@@ -96,7 +96,7 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
   const contentWarnings = { research: [] as string[], plan: [] as string[] };
 
   // ── Phase A: Research + review loop (best effort) ─────────────────────────
-  report('research', 'Ricerca e approfondimento dell\'argomento');
+  report('research', 'Researching the topic');
   let research: string;
   try {
     research = await researchTopic({ client, model: pick('research'), reasoningEffort, topic, instructions, format, slideCount, useWebSearch: args.useWebSearch, meter, brandName, language });
@@ -116,7 +116,7 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
   }
 
   // ── Phase B: Plan + review loop (best effort) ─────────────────────────────
-  report('plan', 'Strutturazione del contenuto in slide');
+  report('plan', 'Structuring the content into slides');
   let plan: ContentPlan;
   try {
     plan = await planContent({ client, model: pick('plan'), reasoningEffort, format, slideCount, topic, instructions, research, meter, brandName, language });
@@ -157,7 +157,7 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
   // ── Phase C: Per-slide generation (4-agent pipeline) ──────────────────────
   const states: SlideState[] = [];
   for (let i = 0; i < plan.slides.length; i++) {
-    report('slides', `Generazione slide ${i + 1} di ${total}`, i + 1, total);
+    report('slides', `Generating slide ${i + 1} of ${total}`, i + 1, total);
     const planned = plan.slides[i];
     const designContext = isCarousel ? buildSiblingContext(states, plan, total) : undefined;
     const result = await generateOneSlide(args, planned.role, planned.brief, [], slideOutput(i), slideCtx(i, planned.narrativeFunction), designContext);
@@ -181,7 +181,7 @@ export async function generateContent(args: GenerateContentArgs): Promise<Genera
   let reviewRounds = 0;
   for (let round = 1; round <= editorialRounds; round++) {
     reviewRounds = round;
-    report('review', `Revisione editoriale (giro ${round})`);
+    report('review', `Editorial review (round ${round})`);
     const reviewable: ReviewableSlide[] = states.map((s, idx) => ({
       index: idx, role: s.role, brief: composeBrief(s), intent: s.result.intent, designSpec: s.result.designSpec, file: s.result.file,
     }));

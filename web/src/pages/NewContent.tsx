@@ -33,7 +33,7 @@ export function NewContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!topic.trim()) { toast.error('Inserisci un argomento'); return; }
+    if (!topic.trim()) { toast.error('Enter a topic'); return; }
     setLoading(true);
     try {
       const job = await api.generate.start({
@@ -44,7 +44,7 @@ export function NewContent() {
         useWebSearch,
         model: model.trim() || undefined,
       });
-      toast.success('Generazione avviata');
+      toast.success('Generation started');
       navigate(`/job/${job.id}`);
     } catch (err) {
       toast.error((err as Error).message);
@@ -55,20 +55,20 @@ export function NewContent() {
   return (
     <div className="p-8 max-w-2xl animate-fade-in">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Nuovo contenuto</h1>
+        <h1 className="text-2xl font-bold tracking-tight">New content</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Descrivi l'argomento: gli agenti AI fanno ricerca, struttura e design automaticamente.
+          Describe the topic: the AI agents take care of research, structure and design.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-7">
         {/* Format */}
         <div className="space-y-3">
-          <Label>Formato</Label>
+          <Label>Format</Label>
           <div className="grid grid-cols-2 gap-3">
             {([
-              { id: 'carousel' as Format, label: 'Carosello', desc: '6–9 slide, ideale per educare', Icon: Layers },
-              { id: 'single' as Format, label: 'Post singolo', desc: '1 slide, un concetto chiaro', Icon: FileImage },
+              { id: 'carousel' as Format, label: 'Carousel', desc: '6–9 slides, great for teaching', Icon: Layers },
+              { id: 'single' as Format, label: 'Single post', desc: '1 slide, one clear idea', Icon: FileImage },
             ] as const).map(({ id, label, desc, Icon }) => (
               <button
                 key={id}
@@ -96,7 +96,7 @@ export function NewContent() {
         {format === 'carousel' && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label>Numero di slide</Label>
+              <Label>Number of slides</Label>
               <span className="text-sm font-bold tabular-nums text-primary">{slideCount}</span>
             </div>
             <Slider
@@ -107,7 +107,7 @@ export function NewContent() {
               onValueChange={([v]) => setSlideCount(v)}
             />
             <p className="text-xs text-muted-foreground">
-              Include sempre cover + CTA. Tra queste, {slideCount - 2} slide di contenuto.
+              Always includes a cover + CTA, with {slideCount - 2} content slides in between.
             </p>
           </div>
         )}
@@ -117,14 +117,14 @@ export function NewContent() {
         {/* Topic */}
         <div className="space-y-2">
           <Label htmlFor="topic">
-            Argomento <span className="text-destructive">*</span>
+            Topic <span className="text-destructive">*</span>
           </Label>
           <Textarea
             id="topic"
             ref={topicRef}
             value={topic}
             onChange={e => setTopic(e.target.value)}
-            placeholder="Es. Perché le abitudini piccole battono i grandi propositi"
+            placeholder="e.g. Why small habits beat big resolutions"
             rows={3}
             className="resize-none"
           />
@@ -132,17 +132,17 @@ export function NewContent() {
 
         {/* Instructions */}
         <div className="space-y-2">
-          <Label htmlFor="instructions">Istruzioni aggiuntive</Label>
+          <Label htmlFor="instructions">Additional instructions</Label>
           <Textarea
             id="instructions"
             value={instructions}
             onChange={e => setInstructions(e.target.value)}
-            placeholder="Es. Tono educativo, pubblico principiante. Includi un esempio pratico e un dato concreto."
+            placeholder="e.g. Educational tone, beginner audience. Include a practical example and one concrete figure."
             rows={3}
             className="resize-none"
           />
           <p className="text-xs text-muted-foreground">
-            Tono, pubblico target, stile, esempi specifici da includere…
+            Tone, target audience, style, specific examples to include…
           </p>
         </div>
 
@@ -163,11 +163,11 @@ export function NewContent() {
             className={cn(useWebSearch ? 'text-primary' : 'text-muted-foreground')}
           />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold">Ricerca web</p>
+            <p className="text-sm font-semibold">Web search</p>
             <p className="text-xs text-muted-foreground mt-0.5">
               {useWebSearch
-                ? 'Attiva: il ricercatore cerca dati aggiornati online (più token).'
-                : 'Disattiva per concetti evergreen: usa solo la conoscenza del modello (meno token).'}
+                ? 'On: the researcher looks up fresh data online (more tokens).'
+                : 'Turn off for evergreen topics: uses only the model\'s knowledge (fewer tokens).'}
             </p>
           </div>
           <span
@@ -196,21 +196,21 @@ export function NewContent() {
               size={15}
               className={cn('transition-transform', advanced && 'rotate-180')}
             />
-            Opzioni avanzate
+            Advanced options
           </button>
 
           {advanced && (
             <div className="mt-4 space-y-4 pl-4 border-l-2 border-border">
               <div className="space-y-2">
-                <Label htmlFor="model">Modello LLM</Label>
+                <Label htmlFor="model">LLM model</Label>
                 <Input
                   id="model"
                   value={model}
                   onChange={e => setModel(e.target.value)}
-                  placeholder={meta.defaultModel ?? 'default dal server (es. gpt-4o)'}
+                  placeholder={meta.defaultModel ?? 'server default (e.g. gpt-4o)'}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Override del modello. Lascia vuoto per usare la configurazione del server.
+                  Model override. Leave empty to use the server configuration.
                 </p>
               </div>
             </div>
@@ -221,10 +221,10 @@ export function NewContent() {
           {loading ? (
             <>
               <Loader2 size={16} className="animate-spin" />
-              Avvio generazione…
+              Starting generation…
             </>
           ) : (
-            '🚀  Genera contenuto'
+            '🚀  Generate content'
           )}
         </Button>
       </form>

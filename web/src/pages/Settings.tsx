@@ -33,7 +33,7 @@ export function Settings() {
       });
       setCfg(updated);
       setApiKey('');
-      toast.success('Configurazione salvata');
+      toast.success('Settings saved');
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -44,9 +44,9 @@ export function Settings() {
   return (
     <div className="p-8 max-w-2xl animate-fade-in">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Impostazioni</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Connessione al provider LLM. Salvata in locale, mai inviata altrove.
+          Connection to the LLM provider. Stored locally, never sent anywhere else.
         </p>
       </div>
 
@@ -64,27 +64,27 @@ export function Settings() {
           />
           <p className="text-xs text-muted-foreground">
             {cfg?.hasApiKey
-              ? 'Una key è già salvata. Inserisci un nuovo valore solo per sostituirla.'
-              : 'Nessuna key salvata: incollala per poter generare.'}
+              ? 'A key is already saved. Enter a new value only to replace it.'
+              : 'No key saved yet: paste one to start generating.'}
           </p>
         </div>
 
         <Separator />
 
         <div className="space-y-2">
-          <Label htmlFor="baseURL">Base URL (opzionale)</Label>
+          <Label htmlFor="baseURL">Base URL (optional)</Label>
           <Input id="baseURL" value={baseURL} onChange={e => setBaseURL(e.target.value)}
-            placeholder="https://api.openai.com/v1 o il tuo proxy" />
+            placeholder="https://api.openai.com/v1 or your proxy" />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="model">Modello di default</Label>
+          <Label htmlFor="model">Default model</Label>
           <Input id="model" value={model} onChange={e => setModel(e.target.value)}
-            placeholder="es. gpt-5.4" />
+            placeholder="e.g. gpt-5.4" />
         </div>
 
         <Button onClick={save} disabled={saving} size="lg" className="font-semibold">
-          {saving ? <><Loader2 size={16} className="animate-spin" /> Salvataggio…</> : <><Save size={16} /> Salva</>}
+          {saving ? <><Loader2 size={16} className="animate-spin" /> Saving…</> : <><Save size={16} /> Save</>}
         </Button>
       </div>
     </div>

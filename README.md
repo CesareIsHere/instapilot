@@ -22,6 +22,19 @@ renders it to PNG and reviews it, all with your visual identity and your tone of
 
 </div>
 
+> [!WARNING]
+> **Content generation uses a lot of tokens. Choose your model carefully to avoid unexpected costs.**
+>
+> A single 7-slide carousel takes at least ~30 LLM calls (research, planning, then design, rendering
+> and review for every slide), and more when a reviewer asks for fixes. Several of these calls are
+> multimodal and send the rendered slide images to the model. With a large frontier model this adds up quickly.
+>
+> Before generating at scale:
+> - pick the default model consciously, and use smaller, cheaper models for the review agents (`MODEL_*_REVIEW`, see [Configuration](#configuration));
+> - turn off web search for evergreen topics and lower the retry/review limits (`CONTENT_MAX_*`, `HTML_MAX_*`) if needed;
+> - set `LLM_PRICE_*` to your model's real prices: the estimated cost shown in the Library uses GPT-4o list prices by default;
+> - set a spending limit in your provider's dashboard, and try a single post before running carousels.
+
 ---
 
 ## Table of contents
@@ -77,8 +90,6 @@ Instapilot covers the whole path, and does it **while respecting your brand**:
 | 🧪 **Tested** | 230+ tests (unit + integration) with Vitest. |
 
 ## Screenshots
-
-> The Studio UI is currently in Italian.
 
 <table>
   <tr>
@@ -175,7 +186,7 @@ and served by the same server: no second process needed.
 
 ### 3. Connect the LLM provider
 
-Go to **Settings** (*Impostazioni*), paste the API key (and optionally base URL and model) and save.
+Go to **Settings**, paste the API key (and optionally base URL and model) and save.
 The configuration stays local in `data/config.json`.
 
 > Alternatively: `cp .env.example .env` and set `OPENAI_API_KEY=sk-...`.
@@ -186,7 +197,7 @@ In **Brand kit** set name, audience, tone, **content language**, the 6 colors, t
 
 ### 5. Generate
 
-**New content** (*Nuovo contenuto*) → write the topic → **Generate**. Follow the progress in
+**New content** → write the topic → **Generate**. Follow the progress in
 *Generations*; when the job finishes the piece shows up in the *Library*.
 
 <details>

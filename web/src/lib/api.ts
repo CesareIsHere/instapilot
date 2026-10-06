@@ -7,7 +7,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   try { data = JSON.parse(text); } catch { data = { raw: text }; }
   if (!res.ok) {
     const d = data as Record<string, unknown>;
-    const msg = (d?.message || d?.error || text?.slice(0, 200) || `Errore ${res.status}`) as string;
+    const msg = (d?.message || d?.error || text?.slice(0, 200) || `Error ${res.status}`) as string;
     throw new Error(msg);
   }
   return data as T;
@@ -131,7 +131,7 @@ export const api = {
     delete: (id: string) => apiFetch<{ ok: boolean }>(`/api/library/${id}`, { method: 'DELETE' }),
     getSlideHtml: async (id: string, n: number): Promise<string> => {
       const res = await fetch(`/api/library/${id}/slides/${n}/html`);
-      if (!res.ok) throw new Error(`Errore ${res.status}`);
+      if (!res.ok) throw new Error(`Error ${res.status}`);
       return res.text();
     },
     saveSlideHtml: (id: string, n: number, html: string) =>

@@ -8,7 +8,7 @@ const EditedSlideSchema = z.object({
   html: z
     .string()
     .describe('The COMPLETE, edited HTML document (from <!DOCTYPE html> to </html>), with the requested change applied.'),
-  summary: z.string().describe('One short sentence, in the content language, describing what was changed.'),
+  summary: z.string().describe('One short sentence, in English, describing what was changed (shown in the Studio UI).'),
 });
 export type EditedSlide = z.infer<typeof EditedSlideSchema>;
 
