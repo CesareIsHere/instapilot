@@ -28,19 +28,19 @@ function ContentCard({ item }: { item: LibraryItem }) {
           <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 to-transparent" />
           <div className="absolute top-2.5 left-2.5">
             <Badge variant={item.format === 'carousel' ? 'blue' : 'green'} className="text-[10px] uppercase tracking-wide font-bold">
-              {item.format === 'carousel' ? 'Carosello' : 'Post'}
+              {item.format === 'carousel' ? 'Carousel' : 'Post'}
             </Badge>
           </div>
         </div>
         {/* Body */}
         <div className="p-3">
           <p className="text-sm font-semibold line-clamp-2 leading-tight mb-1.5">
-            {item.title || item.topic || 'Senza titolo'}
+            {item.title || item.topic || 'Untitled'}
           </p>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               {item.format === 'carousel' ? <Layers size={11} /> : <FileImage size={11} />}
-              {item.slideCount} slide
+              {item.slideCount} {item.slideCount === 1 ? 'slide' : 'slides'}
             </span>
             <span>{fmtRelative(item.updatedAt || item.createdAt)}</span>
           </div>
@@ -84,16 +84,16 @@ export function Library() {
     <div className="p-8 animate-fade-in">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Libreria</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Library</h1>
           {items !== null && (
             <p className="text-sm text-muted-foreground mt-1">
-              {items.length} {items.length === 1 ? 'contenuto' : 'contenuti'} generati
-              {totalCost > 0 && <> · costo stimato <span className="font-medium text-foreground">{fmtCost(totalCost, currency)}</span></>}
+              {items.length} generated {items.length === 1 ? 'piece' : 'pieces'}
+              {totalCost > 0 && <> · estimated cost <span className="font-medium text-foreground">{fmtCost(totalCost, currency)}</span></>}
             </p>
           )}
         </div>
         <Button asChild>
-          <Link to="/new"><Plus size={16} />Nuovo contenuto</Link>
+          <Link to="/new"><Plus size={16} />New content</Link>
         </Button>
       </div>
 
@@ -110,12 +110,12 @@ export function Library() {
           <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
             <ImageOff className="text-muted-foreground/50" size={28} />
           </div>
-          <h2 className="text-lg font-semibold mb-1">Ancora nessun contenuto</h2>
+          <h2 className="text-lg font-semibold mb-1">No content yet</h2>
           <p className="text-sm text-muted-foreground mb-6">
-            Crea il tuo primo post o carosello Instagram con l'AI.
+            Create your first Instagram post or carousel with AI.
           </p>
           <Button asChild>
-            <Link to="/new"><Plus size={16} />Crea il primo contenuto</Link>
+            <Link to="/new"><Plus size={16} />Create your first piece</Link>
           </Button>
         </div>
       )}

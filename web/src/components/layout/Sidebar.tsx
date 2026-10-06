@@ -48,11 +48,11 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 p-3 space-y-0.5">
-        <NavItem to="/" icon={<LayoutGrid size={16} />} label="Libreria" />
-        <NavItem to="/new" icon={<Plus size={16} />} label="Nuovo contenuto" />
-        <NavItem to="/jobs" icon={<Activity size={16} />} label="Generazioni" />
+        <NavItem to="/" icon={<LayoutGrid size={16} />} label="Library" />
+        <NavItem to="/new" icon={<Plus size={16} />} label="New content" />
+        <NavItem to="/jobs" icon={<Activity size={16} />} label="Generations" />
         <NavItem to="/brand" icon={<Palette size={16} />} label="Brand kit" />
-        <NavItem to="/settings" icon={<Settings size={16} />} label="Impostazioni" />
+        <NavItem to="/settings" icon={<Settings size={16} />} label="Settings" />
       </nav>
 
       {/* Health */}
@@ -65,7 +65,7 @@ export function Sidebar() {
             )}
           />
           <span className="text-[11px] text-slate-400">
-            {health === null ? 'Verifica…' : health.bundleReady ? 'Servizio online' : 'Bundle in preparazione…'}
+            {health === null ? 'Checking…' : health.bundleReady ? 'Service online' : 'Preparing bundle…'}
           </span>
         </div>
       </div>

@@ -81,7 +81,7 @@ function HtmlEditorDialog({ open, onClose, contentId, slideIndex, slideLabel, on
     setSaving(true);
     try {
       const r = await api.library.saveSlideHtml(contentId, slideIndex, html);
-      toast.success('Slide salvata e renderizzata' + (r.warnings > 0 ? ` (${r.warnings} warning layout)` : ''));
+      toast.success('Slide saved and rendered' + (r.warnings > 0 ? ` (${r.warnings} layout warning${r.warnings === 1 ? '' : 's'})` : ''));
       onSaved(r.imageUrl, r.editedAt);
     } catch (err) {
       toast.error((err as Error).message);
@@ -114,7 +114,7 @@ function HtmlEditorDialog({ open, onClose, contentId, slideIndex, slideLabel, on
       >
         <DialogHeader className="px-5 py-3.5 border-b flex-shrink-0">
           <DialogTitle className="text-sm">
-            Editor HTML — {slideLabel}
+            HTML editor — {slideLabel}
           </DialogTitle>
         </DialogHeader>
 
@@ -164,19 +164,19 @@ function HtmlEditorDialog({ open, onClose, contentId, slideIndex, slideLabel, on
           <Input
             value={aiInstruction}
             onChange={e => setAiInstruction(e.target.value)}
-            placeholder='Modifica AI: es. "accorcia il titolo di metà"'
+            placeholder='AI edit: e.g. "cut the title in half"'
             onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleAiApply()}
             disabled={applyingAi || loading}
             className="h-8 text-xs flex-1"
           />
           <Button size="sm" variant="outline" onClick={handleAiApply}
             disabled={!aiInstruction.trim() || applyingAi || loading} className="shrink-0">
-            {applyingAi ? <Loader2 size={12} className="animate-spin" /> : 'Applica'}
+            {applyingAi ? <Loader2 size={12} className="animate-spin" /> : 'Apply'}
           </Button>
           <Separator orientation="vertical" className="h-5" />
           <Button size="sm" onClick={handleSave} disabled={saving || loading} className="shrink-0">
             {saving ? <Loader2 size={12} className="animate-spin mr-1" /> : null}
-            {saving ? 'Rendering…' : '💾 Salva e renderizza'}
+            {saving ? 'Rendering…' : '💾 Save and render'}
           </Button>
         </div>
       </DialogContent>
@@ -208,10 +208,10 @@ function HistoryDialog({ open, onClose, contentId, slideIndex, slideLabel, onRev
 
   const handleRevert = async (versionId: string) => {
     setReverting(versionId);
-    const toastId = toast.loading('Ripristino versione…');
+    const toastId = toast.loading('Restoring version…');
     try {
       const r = await api.library.revertSlide(contentId, slideIndex, versionId);
-      toast.success('Versione ripristinata', { id: toastId });
+      toast.success('Version restored', { id: toastId });
       onReverted(r.imageUrl, r.editedAt);
       onClose();
     } catch (err) {
@@ -226,7 +226,7 @@ function HistoryDialog({ open, onClose, contentId, slideIndex, slideLabel, onRev
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-sm flex items-center gap-2">
-            <History size={15} /> Cronologia — {slideLabel}
+            <History size={15} /> History — {slideLabel}
           </DialogTitle>
         </DialogHeader>
 
@@ -236,7 +236,7 @@ function HistoryDialog({ open, onClose, contentId, slideIndex, slideLabel, onRev
           </div>
         ) : versions.length === 0 ? (
           <p className="text-sm text-muted-foreground py-8 text-center">
-            Nessuna versione precedente. Le versioni vengono salvate automaticamente a ogni modifica.
+            No previous versions. A version is saved automatically on every edit.
           </p>
         ) : (
           <div className="space-y-2.5 max-h-[60vh] overflow-y-auto pr-1">
@@ -250,7 +250,7 @@ function HistoryDialog({ open, onClose, contentId, slideIndex, slideLabel, onRev
                 </div>
                 <Button size="sm" variant="outline" onClick={() => handleRevert(v.id)} disabled={reverting !== null} className="shrink-0">
                   {reverting === v.id ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
-                  Ripristina
+                  Restore
                 </Button>
               </div>
             ))}
@@ -266,9 +266,9 @@ async function quickAiEdit(
   contentId: string, slideIndex: number,
   onSaved: (imageUrl: string, editedAt: string, summary: string) => void,
 ) {
-  const instruction = window.prompt('Cosa vuoi modificare in questa slide?\nEs. "rendi il titolo più corto" oppure "aggiungi un esempio numerico"');
+  const instruction = window.prompt('What do you want to change on this slide?\ne.g. "make the title shorter" or "add a numeric example"');
   if (!instruction?.trim()) return;
-  const toastId = toast.loading('Modifica AI in corso…');
+  const toastId = toast.loading('Applying AI edit…');
   try {
     const r = await api.library.aiEditSlide(contentId, slideIndex, instruction.trim());
     toast.success(r.summary, { id: toastId });
@@ -319,10 +319,10 @@ export function ContentDetail() {
   };
 
   const handleDelete = async () => {
-    if (!id || !confirm('Eliminare definitivamente questo contenuto?')) return;
+    if (!id || !confirm('Permanently delete this content?')) return;
     try {
       await api.library.delete(id);
-      toast.success('Contenuto eliminato');
+      toast.success('Content deleted');
       navigate('/', { replace: true });
     } catch (err) {
       toast.error((err as Error).message);
@@ -332,11 +332,11 @@ export function ContentDetail() {
   const handleGenerateCaption = async () => {
     if (!id) return;
     setCaptionLoading(true);
-    const toastId = toast.loading(caption ? 'Rigenero la caption…' : 'Genero la caption…');
+    const toastId = toast.loading(caption ? 'Regenerating caption…' : 'Generating caption…');
     try {
       const r = await api.library.generateCaption(id);
       setCaption(r.caption);
-      toast.success('Caption pronta', { id: toastId });
+      toast.success('Caption ready', { id: toastId });
     } catch (err) {
       toast.error((err as Error).message, { id: toastId });
     } finally {
@@ -351,9 +351,9 @@ export function ContentDetail() {
   const copyCaption = async () => {
     try {
       await navigator.clipboard.writeText(captionFullText);
-      toast.success('Caption copiata negli appunti');
+      toast.success('Caption copied to clipboard');
     } catch {
-      toast.error('Impossibile copiare');
+      toast.error('Could not copy');
     }
   };
 
@@ -378,8 +378,8 @@ export function ContentDetail() {
 
   if (!data.slides.length) return (
     <div className="p-8 text-center">
-      <p className="text-muted-foreground">Nessuna slide disponibile per questo contenuto.</p>
-      <Button variant="ghost" asChild className="mt-4"><Link to="/">← Libreria</Link></Button>
+      <p className="text-muted-foreground">No slides available for this content.</p>
+      <Button variant="ghost" asChild className="mt-4"><Link to="/">← Library</Link></Button>
     </div>
   );
 
@@ -391,14 +391,14 @@ export function ContentDetail() {
       <div className="flex items-start justify-between mb-6 gap-4">
         <div className="min-w-0">
           <Button variant="ghost" size="sm" asChild className="-ml-1 mb-2">
-            <Link to="/"><ArrowLeft size={14} />Libreria</Link>
+            <Link to="/"><ArrowLeft size={14} />Library</Link>
           </Button>
           <h1 className="text-xl font-bold tracking-tight truncate">{data.title || data.topic}</h1>
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
             <Badge variant={data.format === 'carousel' ? 'blue' : 'green'} className="text-[10px] uppercase tracking-wide font-bold">
-              {data.format === 'carousel' ? 'Carosello' : 'Post singolo'}
+              {data.format === 'carousel' ? 'Carousel' : 'Single post'}
             </Badge>
-            <span className="text-xs text-muted-foreground">{totalSlides} slide</span>
+            <span className="text-xs text-muted-foreground">{totalSlides} {totalSlides === 1 ? 'slide' : 'slides'}</span>
             {data.framework && <span className="text-xs text-muted-foreground">· {data.framework}</span>}
             {data.angle && <span className="text-xs text-muted-foreground">· {data.angle}</span>}
           </div>
@@ -407,12 +407,12 @@ export function ContentDetail() {
           <a href={id ? api.library.exportUrl(id) : '#'} className="inline-flex">
             <Button variant="outline" size="sm">
               <FileArchive size={14} />
-              Esporta ZIP
+              Export ZIP
             </Button>
           </a>
           <Button variant="outline" size="sm" onClick={handleDelete} className="text-destructive border-destructive/30 hover:bg-destructive/5">
             <Trash2 size={14} />
-            Elimina
+            Delete
           </Button>
         </div>
       </div>
@@ -436,7 +436,7 @@ export function ContentDetail() {
                 {i + 1}
               </span>
               {s.editedAt && (
-                <span className="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-primary border border-white" title="Modificata" />
+                <span className="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-primary border border-white" title="Edited" />
               )}
             </button>
           );
@@ -454,7 +454,7 @@ export function ContentDetail() {
               <ChevronLeft size={14} />
             </Button>
             <span className="text-sm text-muted-foreground flex-1 text-center">
-              Slide {active + 1} di {totalSlides}
+              Slide {active + 1} of {totalSlides}
             </span>
             <Button size="icon" variant="outline" className="h-8 w-8"
               disabled={active === totalSlides - 1} onClick={() => setActive(a => a + 1)}>
@@ -471,7 +471,7 @@ export function ContentDetail() {
               <img key={imageUrl} src={imageUrl} alt={`Slide ${active + 1}`} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
-                Nessuna immagine
+                No image
               </div>
             )}
           </div>
@@ -480,15 +480,15 @@ export function ContentDetail() {
           <div className="flex gap-2 justify-center flex-wrap">
             <Button variant="outline" size="sm" onClick={() => setEditorOpen(true)}>
               <Code2 size={14} />
-              Modifica HTML
+              Edit HTML
             </Button>
             <Button variant="outline" size="sm" onClick={() => id && currentSlide && quickAiEdit(id, active, handleSaved(active))}>
               <Sparkles size={14} />
-              Modifica con AI
+              Edit with AI
             </Button>
             <Button variant="outline" size="sm" onClick={() => setHistoryOpen(true)}>
               <History size={14} />
-              Cronologia
+              History
             </Button>
             {imageUrl && (
               <a href={imageUrl} download={`slide-${active + 1}.png`} className="inline-flex">
@@ -505,19 +505,19 @@ export function ContentDetail() {
         <div className="space-y-4">
           {/* Content info */}
           <div className="rounded-xl border bg-card p-4 shadow-sm">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Contenuto</p>
-            <MetaRow label="Argomento" value={data.topic} />
-            <MetaRow label="Creato" value={fmtDate(data.createdAt)} />
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Content</p>
+            <MetaRow label="Topic" value={data.topic} />
+            <MetaRow label="Created" value={fmtDate(data.createdAt)} />
             {data.usage?.totalTokens && (
-              <MetaRow label="Token usati" value={data.usage.totalTokens.toLocaleString('it-IT')} />
+              <MetaRow label="Tokens used" value={data.usage.totalTokens.toLocaleString('en-US')} />
             )}
             {typeof data.cost === 'number' && data.cost > 0 && (
-              <MetaRow label="Costo stimato" value={fmtCost(data.cost, data.currency)} />
+              <MetaRow label="Estimated cost" value={fmtCost(data.cost, data.currency)} />
             )}
             {data.warnings?.research && data.warnings.research.length > 0 && (
               <div className="mt-2 flex items-start gap-1.5 text-xs text-amber-600 bg-amber-50 rounded-lg p-2">
                 <AlertTriangle size={12} className="shrink-0 mt-0.5" />
-                {data.warnings.research.length} avviso/i sulla ricerca
+                {data.warnings.research.length} research warning{data.warnings.research.length === 1 ? '' : 's'}
               </div>
             )}
           </div>
@@ -528,26 +528,26 @@ export function ContentDetail() {
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                 Slide {active + 1}
               </p>
-              <MetaRow label="Ruolo" value={currentSlide.role} />
-              <MetaRow label="Funzione" value={currentSlide.narrativeFunction} />
+              <MetaRow label="Role" value={currentSlide.role} />
+              <MetaRow label="Function" value={currentSlide.narrativeFunction} />
               {currentSlide.designSpec?.recipe && (
                 <MetaRow label="Recipe" value={currentSlide.designSpec.recipe} />
               )}
               <MetaRow label="Intent" value={currentSlide.intent} />
               {currentSlide.lastEditSummary && (
-                <MetaRow label="Ultima AI edit" value={currentSlide.lastEditSummary} />
+                <MetaRow label="Last AI edit" value={currentSlide.lastEditSummary} />
               )}
               {currentSlide.editedAt && (
-                <MetaRow label="Modificata" value={fmtDate(currentSlide.editedAt)} />
+                <MetaRow label="Edited" value={fmtDate(currentSlide.editedAt)} />
               )}
               {Array.isArray(currentSlide.warnings) && currentSlide.warnings.length > 0 && (
                 <div className="mt-2 flex items-start gap-1.5 text-xs text-amber-600 bg-amber-50 rounded-lg p-2">
                   <AlertTriangle size={12} className="shrink-0 mt-0.5" />
-                  {currentSlide.warnings.length} avviso/i di layout o qualità
+                  {currentSlide.warnings.length} layout/quality warning{currentSlide.warnings.length === 1 ? '' : 's'}
                 </div>
               )}
               {currentSlide.usage && (
-                <MetaRow label="Token slide" value={currentSlide.usage.totalTokens.toLocaleString('it-IT')} />
+                <MetaRow label="Slide tokens" value={currentSlide.usage.totalTokens.toLocaleString('en-US')} />
               )}
             </div>
           )}
@@ -559,20 +559,20 @@ export function ContentDetail() {
         <div className="flex items-center justify-between mb-3 gap-3">
           <div className="flex items-center gap-2">
             <MessageSquareText size={16} className="text-primary" />
-            <p className="text-sm font-semibold">Didascalia Instagram</p>
+            <p className="text-sm font-semibold">Instagram caption</p>
           </div>
           <div className="flex items-center gap-2">
             {caption && (
               <Button variant="ghost" size="sm" onClick={copyCaption}>
                 <Copy size={13} />
-                Copia
+                Copy
               </Button>
             )}
             <Button variant={caption ? 'outline' : 'default'} size="sm" onClick={handleGenerateCaption} disabled={captionLoading}>
               {captionLoading
                 ? <Loader2 size={13} className="animate-spin" />
                 : caption ? <RefreshCw size={13} /> : <Sparkles size={13} />}
-              {caption ? 'Rigenera' : 'Genera caption'}
+              {caption ? 'Regenerate' : 'Generate caption'}
             </Button>
           </div>
         </div>
@@ -585,11 +585,11 @@ export function ContentDetail() {
                 {caption.hashtags.map(h => `#${h}`).join(' ')}
               </p>
             )}
-            <p className="text-xs text-muted-foreground pt-1">Generata il {fmtDate(caption.generatedAt)}</p>
+            <p className="text-xs text-muted-foreground pt-1">Generated on {fmtDate(caption.generatedAt)}</p>
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Genera una didascalia pronta da incollare, con hook, corpo e hashtag, a partire dal contenuto delle slide.
+            Generate a ready-to-paste caption, with hook, body and hashtags, from the slides' content.
           </p>
         )}
       </div>

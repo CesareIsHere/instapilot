@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 
 const PHASES = ['research', 'plan', 'slides', 'review', 'done'];
 const PHASE_LABEL: Record<string, string> = {
-  research: 'Ricerca', plan: 'Piano', slides: 'Slide', review: 'Revisione', done: 'Completato', queued: 'In coda',
+  research: 'Research', plan: 'Plan', slides: 'Slides', review: 'Review', done: 'Done', queued: 'Queued',
 };
 
 function phaseProgress(job: Job): number {
@@ -34,10 +34,10 @@ function StatusIcon({ status }: { status: Job['status'] }) {
 
 function JobRow({ job, onRetry }: { job: Job; onRetry: (job: Job) => void }) {
   const phaseTxt = job.status === 'error'
-    ? (job.error?.message ?? 'Errore')
+    ? (job.error?.message ?? 'Error')
     : `${PHASE_LABEL[job.progress.phase] ?? job.progress.phase}${job.progress.detail ? ` — ${job.progress.detail}` : ''}`;
 
-  const formatLabel = job.input.format === 'carousel' ? 'Carosello' : 'Post';
+  const formatLabel = job.input.format === 'carousel' ? 'Carousel' : 'Post';
 
   return (
     <div className={cn(
@@ -66,19 +66,19 @@ function JobRow({ job, onRetry }: { job: Job; onRetry: (job: Job) => void }) {
         {job.status === 'done' && job.contentId && (
           <Button size="sm" asChild>
             <Link to={`/content/${job.contentId}`}>
-              Apri <ArrowRight size={13} />
+              Open <ArrowRight size={13} />
             </Link>
           </Button>
         )}
         {job.status === 'running' && (
           <Button size="sm" variant="outline" asChild>
-            <Link to={`/job/${job.id}`}>Dettagli</Link>
+            <Link to={`/job/${job.id}`}>Details</Link>
           </Button>
         )}
         {job.status === 'error' && (
           <Button size="sm" variant="outline" onClick={() => onRetry(job)}>
             <RefreshCw size={13} />
-            Riprova
+            Retry
           </Button>
         )}
       </div>
@@ -101,10 +101,10 @@ export function Jobs() {
   };
 
   const handleRetry = async (job: Job) => {
-    const toastId = toast.loading('Riavvio generazione…');
+    const toastId = toast.loading('Restarting generation…');
     try {
       await api.generate.retry(job.id);
-      toast.success('Generazione riavviata', { id: toastId });
+      toast.success('Generation restarted', { id: toastId });
       load();
     } catch (err) {
       toast.error((err as Error).message, { id: toastId });
@@ -128,11 +128,11 @@ export function Jobs() {
     <div className="p-8 animate-fade-in">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Generazioni</h1>
-          <p className="text-sm text-muted-foreground mt-1">Storico dei contenuti avviati</p>
+          <h1 className="text-2xl font-bold tracking-tight">Generations</h1>
+          <p className="text-sm text-muted-foreground mt-1">History of the generations you started</p>
         </div>
         <Button asChild>
-          <Link to="/new"><Plus size={16} />Nuovo contenuto</Link>
+          <Link to="/new"><Plus size={16} />New content</Link>
         </Button>
       </div>
 
@@ -152,9 +152,9 @@ export function Jobs() {
 
       {jobs !== null && jobs.length === 0 && (
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <p className="text-muted-foreground text-sm">Nessuna generazione avviata.</p>
+          <p className="text-muted-foreground text-sm">No generations yet.</p>
           <Button asChild className="mt-4">
-            <Link to="/new"><Plus size={16} />Avvia la prima generazione</Link>
+            <Link to="/new"><Plus size={16} />Start your first generation</Link>
           </Button>
         </div>
       )}
