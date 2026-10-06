@@ -8,9 +8,9 @@
     "blocks": [
       {
         "type": "Headline",
-        "text": "Il tempo batte il capitale",
+        "text": "La costanza batte l'intensità",
         "size": "xl",
-        "color": "brand-navy"
+        "color": "brand-primary"
       },
       {
         "type": "RichText",
@@ -18,17 +18,17 @@
           {
             "kind": "bullets",
             "items": [
-              "€200/mese a 24 anni → ~€240.000 a 54 anni (7% reale).",
-              "Lo stesso piano iniziato a 34 anni produce meno della metà.",
-              "I primi 10 anni contano più degli ultimi 20."
+              "10 minuti al giorno → oltre 60 ore di pratica in un anno.",
+              "Un'ora a settimana, saltata una volta su due, ne vale meno della metà.",
+              "I primi 30 giorni contano più dei successivi 300."
             ]
           }
         ]
       },
       {
         "type": "Illustration",
-        "assetId": "money-time-flow",
-        "caption": "Stesso importo mensile, risultati radicalmente diversi",
+        "assetId": "growth-steps",
+        "caption": "Stesso tempo totale, risultati radicalmente diversi",
         "align": "center"
       },
       {

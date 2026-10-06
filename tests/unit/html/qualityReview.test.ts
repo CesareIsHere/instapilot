@@ -27,7 +27,7 @@ describe('QualityReviewSchema', () => {
     const review = {
       approved: false,
       issues: [{ category: 'brand-color', description: 'Hardcoded hex', suggestion: 'Use CSS vars' }],
-      rendererFeedback: 'Replace #012A78 with var(--brand-navy)',
+      rendererFeedback: 'Replace #4F46E5 with var(--brand-primary)',
     };
     expect(QualityReviewSchema.safeParse(review).success).toBe(true);
   });

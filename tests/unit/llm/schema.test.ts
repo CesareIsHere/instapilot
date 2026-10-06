@@ -4,7 +4,7 @@ import { GeneratedSlideSchema } from '@/llm/schema';
 describe('GeneratedSlideSchema', () => {
   it('accepts valid response', () => {
     const r = GeneratedSlideSchema.safeParse({
-      intent: 'Titolo + sottotitolo brand-navy',
+      intent: 'Titolo + sottotitolo brand-primary',
       code: 'const Slide = () => null;',
     });
     expect(r.success).toBe(true);

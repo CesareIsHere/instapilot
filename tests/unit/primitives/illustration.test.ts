@@ -10,7 +10,7 @@ describe('Illustration schema', () => {
   it('accepts optional caption and align', () => {
     const r = IllustrationSchema.safeParse({
       type: 'Illustration',
-      assetId: 'money-time-flow',
+      assetId: 'growth-steps',
       caption: 'Tempo',
       align: 'center',
     });

@@ -8,17 +8,17 @@ const validSlide = {
   background: 'paper',
   chrome: { showLogo: true, showCarouselNav: true, pageIndex: 3 },
   blocks: [
-    { type: 'Headline', text: 'La leva del tempo', size: 'xl', color: 'brand-navy' },
+    { type: 'Headline', text: "Il potere dell'1%", size: 'xl', color: 'brand-primary' },
     { type: 'RichText', content: [
-      { kind: 'paragraph', text: 'Per Mirco...' },
+      { kind: 'paragraph', text: 'Per Giulia...' },
       { kind: 'bullets', items: ['x', 'y'] },
     ]},
-    { type: 'Illustration', assetId: 'money-time-flow', caption: 'Tempo' },
+    { type: 'Illustration', assetId: 'growth-steps', caption: 'Tempo' },
   ],
 };
 
 describe('SlideSpec schema', () => {
-  it('accepts the leva-del-tempo slide', () => {
+  it('accepts the example slide', () => {
     const r = SlideSpecSchema.safeParse(validSlide);
     if (!r.success) console.error(r.error.format());
     expect(r.success).toBe(true);

@@ -25,7 +25,7 @@ export interface GenerateCaptionArgs {
   brandContext?: string;
 }
 
-const SYSTEM_PROMPT = `Sei un social media manager esperto di Instagram per un brand finanziario/educativo italiano.
+const SYSTEM_PROMPT = `Sei un social media manager esperto di Instagram per un brand di contenuti educativi.
 Scrivi la didascalia (caption) per un post/carosello a partire dal suo contenuto.
 
 Regole:

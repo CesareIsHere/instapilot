@@ -74,7 +74,7 @@ ${formatRules}
 ${narrativeBlock}
 
 Per ogni slide scrivi un "brief" AUTOSUFFICIENTE e dettagliato che un agente di design userà per generare la slide. Ogni brief DEVE contenere:
-- HEADLINE / MINI-HEADLINE proposta (testo esatto in italiano), 4-9 parole, che dice cosa tratta la slide e perché conta. Indica quali 1-2 parole evidenziare in verde (SOLO positivo/crescita) o rosso (SOLO rischio/perdita). Massimo 1-2 parole evidenziate; mai evidenziare per decorazione.
+- HEADLINE / MINI-HEADLINE proposta (testo esatto in italiano), 4-9 parole, che dice cosa tratta la slide e perché conta. Indica quali 1-2 parole evidenziare con l'accento positivo (SOLO positivo/crescita) o con l'accento negativo (SOLO rischio/perdita). Massimo 1-2 parole evidenziate; mai evidenziare per decorazione.
 - SPIEGAZIONE: 1-2 frasi che sviluppano DAVVERO l'idea (il "perché" o il "come"), non un titolo lasciato a sé. La slide deve insegnare qualcosa di completo.
 - DATO (se presente): ogni numero deve avere ETICHETTA (cos'è) e SIGNIFICATO (cosa comunica). Mai un numero nudo. Massimo UN dato chiave per slide (numero + anno/fonte dal dossier). Non accumulare numeri.
 - HINT DI LAYOUT: la recipe più adatta — cover, numbered-list, compare-2col, kpi-hero, card-grid-2x2, card-grid (3-6 concetti), concept-breakdown (spiega "cos'è X": definizione + formula + glossario), flow-diagram (processo a step con frecce, utile per "come funziona X"), breakdown-chart (barre proporzionali / scomposizione di un totale nelle sue parti), quote, cta. Per confronti/colonne/griglie: gli elementi devono essere SIMMETRICI (stesso numero di voci, frasi di lunghezza simile, struttura parallela).

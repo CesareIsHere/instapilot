@@ -37,16 +37,16 @@ export interface BrandKit {
 }
 
 const BrandColorsSchema = z.object({
-  primary: z.string().max(30).default('#012A78'),
-  positive: z.string().max(30).default('#00B373'),
+  primary: z.string().max(30).default('#4F46E5'),
+  positive: z.string().max(30).default('#059669'),
   negative: z.string().max(30).default('#DC2626'),
   paper: z.string().max(30).default('#FFFFFF'),
-  ink: z.string().max(30).default('#101010'),
-  muted: z.string().max(30).default('#767676'),
+  ink: z.string().max(30).default('#111827'),
+  muted: z.string().max(30).default('#6B7280'),
 });
 
 const BrandFontSchema = z.object({
-  family: z.string().max(80).default('Montserrat'),
+  family: z.string().max(80).default('Inter'),
   source: z.enum(['bundled', 'custom']).default('bundled'),
 });
 

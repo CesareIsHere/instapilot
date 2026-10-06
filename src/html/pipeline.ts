@@ -327,7 +327,7 @@ ${JSON.stringify(designSpec, null, 2)}
 
 Implement this design faithfully:
 - Use the specified recipe layout
-- Use the exact headline text with the specified coloredSpans (green/red on those words)
+- Use the exact headline text with the specified coloredSpans (positive/negative accent on those words)
 - Include all bodyElements in the specified order with the specified emphasis
 - Follow the color plan exactly
 - Include all assets listed in useAssets using {{asset:<id>}} tokens`;

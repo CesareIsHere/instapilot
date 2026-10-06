@@ -7,8 +7,8 @@ import { buildBundle } from '@/remotion/bundler';
 import { renderSlideStill } from '@/lib/render';
 import type { SlideSpec } from '@/schema/slideSpec';
 
-const FIXTURE = path.resolve('tests/snapshot/fixtures/leva-del-tempo.json');
-const BASELINE = path.resolve('tests/snapshot/baselines/leva-del-tempo.png');
+const FIXTURE = path.resolve('tests/snapshot/fixtures/example-slide.json');
+const BASELINE = path.resolve('tests/snapshot/baselines/example-slide.png');
 const TOLERANCE_RATIO = 0.01;
 
 let serveUrl: string;
@@ -17,7 +17,7 @@ beforeAll(async () => {
   serveUrl = await buildBundle();
 }, 60_000);
 
-describe('snapshot: leva-del-tempo', () => {
+describe('snapshot: example-slide', () => {
   it('matches baseline (or creates one on first run)', async () => {
     const raw = JSON.parse(fs.readFileSync(FIXTURE, 'utf8'));
     const slide: SlideSpec = raw.slide;
@@ -45,7 +45,7 @@ describe('snapshot: leva-del-tempo', () => {
     const ratio = numDiffPixels / totalPixels;
 
     if (ratio > TOLERANCE_RATIO) {
-      const diffPath = path.resolve('output/leva-del-tempo.diff.png');
+      const diffPath = path.resolve('output/example-slide.diff.png');
       fs.writeFileSync(diffPath, PNG.sync.write(diff));
       console.error(`[snapshot] diff ratio ${ratio.toFixed(4)} exceeds tolerance. Diff saved to ${diffPath}`);
     }

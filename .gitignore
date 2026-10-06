@@ -9,7 +9,7 @@ public/generated/*
 dist/
 !web/dist/
 .DS_Store
-.claude 
+.claude
 
 # PromptOps context snapshot
 .promptops/

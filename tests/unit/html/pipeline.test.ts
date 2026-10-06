@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const SPEC = {
   recipe: 'cover', rationale: 'r',
   headline: { text: 'T', coloredSpans: null },
-  eyebrow: null, bodyElements: [], colorPlan: 'navy', useAssets: ['logo'], notes: null,
+  eyebrow: null, bodyElements: [], colorPlan: 'primary', useAssets: ['logo'], notes: null,
 };
 
 const {

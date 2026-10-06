@@ -9,7 +9,7 @@ const SPEC = {
   recipe: 'cover' as const, rationale: 'r',
   headline: { text: 'Titolo', coloredSpans: null },
   eyebrow: null, bodyElements: [{ type: 'paragraph' as const, text: 'corpo', emphasis: 'none' as const }],
-  colorPlan: 'navy', useAssets: ['logo'], notes: null,
+  colorPlan: 'primary', useAssets: ['logo'], notes: null,
 };
 
 function slide(index: number, file: string): ReviewableSlide {

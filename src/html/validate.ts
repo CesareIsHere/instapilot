@@ -41,13 +41,13 @@ export function validateGeneratedHtml(bodyHtml: string, css: string): Validation
   }
 
   // ── Brand CSS rules ──────────────────────────────────────────────────────
-  if (HEX_COLOR.test(combined)) violations.push('hardcoded hex color found — use brand CSS custom properties only (var(--brand-navy), var(--brand-green), var(--danger), var(--ink), var(--muted), var(--paper))');
+  if (HEX_COLOR.test(combined)) violations.push('hardcoded hex color found — use brand CSS custom properties only (var(--brand-primary), var(--brand-positive), var(--danger), var(--ink), var(--muted), var(--paper))');
   if (ROOT_SELECTOR.test(combined)) violations.push(':root selector not allowed — custom properties are provided by the shell');
   if (AT_IMPORT.test(combined)) violations.push('@import not allowed');
-  if (AT_FONT_FACE.test(combined)) violations.push('@font-face not allowed — Montserrat is provided by the shell');
+  if (AT_FONT_FACE.test(combined)) violations.push('@font-face not allowed — the brand font is provided by the shell');
   const shadow = BOX_SHADOW.exec(combined);
-  if (shadow && shadow[1].trim().toLowerCase() !== 'none') violations.push('box-shadow not allowed — the brand is clean and flat (use a 2px navy border instead)');
-  if (GRADIENT.test(combined)) violations.push('gradients not allowed — background must be pure white');
+  if (shadow && shadow[1].trim().toLowerCase() !== 'none') violations.push('box-shadow not allowed — the brand is clean and flat (use a 2px var(--brand-primary) border instead)');
+  if (GRADIENT.test(combined)) violations.push('gradients not allowed — background must be the flat var(--paper) color');
   if (VIEWPORT_UNIT.test(combined)) violations.push('viewport units (vw/vh/vmin/vmax) not allowed — the canvas is exactly 1080×1350px, use fixed pixel values');
 
   if (violations.length === 0) return null;

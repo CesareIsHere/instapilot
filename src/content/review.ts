@@ -62,7 +62,7 @@ Questo contenuto verrà pubblicato a un pubblico mondiale: lo standard è altiss
 15. COERENZA VISIVA DI SERIE: scala tipografica, spaziature, margini, stile dei box e uso del colore COERENTI tra tutte le slide. Segnala chi se ne discosta.
 16. RITMO E VARIETÀ: le slide centrali non tutte identiche né monotone, ma della stessa famiglia visiva.
 17. ECO COVER↔CTA: la slide finale richiama visivamente la cover.
-18. GERARCHIA ED EVIDENZIAZIONI: un solo punto focale per slide; evidenziazioni di PAROLE usate bene — VERDE solo per positivo, ROSSO solo per negativo, mai parola evidenziata a caso o col colore sbagliato. (Nei layout ricchi — griglie, diagrammi, grafici — bordi/superfici colorate e una emoji per nodo sono OK se usate in modo semantico e coerente: il canvas resta bianco. Segnala solo colore/emoji casuali o eccessivi.)
+18. GERARCHIA ED EVIDENZIAZIONI: un solo punto focale per slide; evidenziazioni di PAROLE usate bene — ACCENTO POSITIVO solo per positivo, ACCENTO NEGATIVO solo per negativo, mai parola evidenziata a caso o col colore sbagliato. (Nei layout ricchi — griglie, diagrammi, grafici — bordi/superfici colorate e una emoji per nodo sono OK se usate in modo semantico e coerente: il canvas resta bianco. Segnala solo colore/emoji casuali o eccessivi.)
 19. SIMMETRIA: in confronti/colonne/grafici le parti devono essere simmetriche (stesso numero di voci, allineamenti e lunghezze comparabili). Segnala asimmetrie.
 20. DIFETTI VISIVI PER-SLIDE: collisioni/sovrapposizioni, testo sopra altro testo, numeri/etichette fuori dalla propria box, disallineamenti, testo tagliato, valori che vanno a capo male (es. "%" su riga separata), spazi vuoti accidentali. Anche un solo difetto del genere = carosello non pronto.
 

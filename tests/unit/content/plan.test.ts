@@ -14,7 +14,7 @@ describe('ContentFormatSchema', () => {
 
 describe('ContentPlanSchema', () => {
   const valid = {
-    title: 'La leva del tempo',
+    title: "Il potere dell'1%",
     framework: 'SWIPE',
     angle: 'Il tempo come alleato dell investitore di lungo periodo.',
     slides: [

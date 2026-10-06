@@ -8,36 +8,36 @@
     "blocks": [
       {
         "type": "Headline",
-        "text": "La leva del tempo",
+        "text": "Il potere dell'1%",
         "size": "xl",
-        "color": "brand-navy"
+        "color": "brand-primary"
       },
       {
         "type": "RichText",
         "content": [
           {
             "kind": "paragraph",
-            "text": "Per Mirco, 24 anni, il vantaggio competitivo non sono i soldi — è il tempo davanti a lui."
+            "text": "Per Giulia, 24 anni, il vantaggio non è il talento — è la costanza."
           },
           {
             "kind": "bullets",
             "items": [
-              "30-35 anni di orizzonte temporale: abbastanza per attraversare più cicli di mercato.",
-              "A 7% reale annuo, €200/mese diventano ~€240.000 in 30 anni.",
-              "Lo stesso capitale investito a 45 anni produce meno della metà.",
-              "L'interesse composto non è lineare: gli ultimi 10 anni producono più dei primi 20."
+              "Migliorare dell'1% al giorno significa essere ~37 volte meglio in un anno.",
+              "Peggiorare dell'1% al giorno ti lascia a meno di un decimo del punto di partenza.",
+              "I risultati non sono lineari: i primi mesi sembrano inutili, poi tutto accelera.",
+              "Le abitudini piccole sono quelle che sopravvivono alle giornate storte."
             ]
           },
           {
             "kind": "paragraph",
-            "text": "Il rischio per Mirco non è volatilità — è non iniziare."
+            "text": "Il rischio per Giulia non è sbagliare — è non iniziare."
           }
         ]
       },
       {
         "type": "Illustration",
-        "assetId": "money-time-flow",
-        "caption": "Stessa cifra mensile, risultati radicalmente diversi",
+        "assetId": "growth-steps",
+        "caption": "Piccoli passi, risultati che si sommano",
         "align": "center"
       },
       {

@@ -53,7 +53,7 @@ describe('validateGeneratedHtml', () => {
 
   describe('brand CSS rules (deterministic)', () => {
     it('rejects hardcoded hex colors', () => {
-      const err = validateGeneratedHtml('<div>x</div>', '.canvas .t { color: #012A78; }');
+      const err = validateGeneratedHtml('<div>x</div>', '.canvas .t { color: #4F46E5; }');
       expect(err).not.toBeNull();
       expect(err?.detail).toMatch(/hex|var\(/i);
     });
@@ -98,7 +98,7 @@ describe('validateGeneratedHtml', () => {
     });
 
     it('reports multiple violations together', () => {
-      const err = validateGeneratedHtml('<div>x</div>', '.canvas { color: #012A78; box-shadow: 0 0 2px #000; width: 100vw; }');
+      const err = validateGeneratedHtml('<div>x</div>', '.canvas { color: #4F46E5; box-shadow: 0 0 2px #000; width: 100vw; }');
       expect(err).not.toBeNull();
       expect(err?.detail).toMatch(/hex/i);
       expect(err?.detail).toMatch(/box-shadow/i);

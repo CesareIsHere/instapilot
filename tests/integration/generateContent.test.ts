@@ -18,7 +18,7 @@ const DESIGN_SPEC = {
   headline: { text: 'Titolo', coloredSpans: null },
   eyebrow: null,
   bodyElements: [{ type: 'paragraph', text: 'corpo', emphasis: 'none' }],
-  colorPlan: 'navy',
+  colorPlan: 'primary',
   useAssets: ['logo'],
   notes: null,
 };
@@ -107,7 +107,7 @@ describe('POST /generate/content', () => {
   it('generates a carousel: research → plan → slides → review', async () => {
     const res = await request(buildApp())
       .post('/generate/content')
-      .send({ topic: 'La leva del tempo', format: 'carousel', slideCount: 3 });
+      .send({ topic: "Il potere dell'1%", format: 'carousel', slideCount: 3 });
 
     expect(res.status).toBe(200);
     expect(res.body.title).toBe('Titolo contenuto');

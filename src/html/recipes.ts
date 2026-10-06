@@ -60,7 +60,7 @@ export const recipes: Recipe[] = [
     skeleton: `
 <div class="kpi-hero">
   <div class="kpi-hero__eyebrow">CONTEXT LABEL</div>
-  <div class="kpi-hero__number">€ 487.000</div>
+  <div class="kpi-hero__number">73%</div>
   <div class="kpi-hero__label">What this number means</div>
   <p class="kpi-hero__context">One or two sentences of supporting context. Keep it short.</p>
 </div>`.trim(),
@@ -88,9 +88,9 @@ export const recipes: Recipe[] = [
   <h1 class="grid-slide__title">Hook headline</h1>
   <p class="grid-slide__subtitle">One sentence that frames what these cards are and how to read them.</p>
   <div class="grid-slide__grid"><!-- repeat 3–6 cards; cycle the accent classes for variety -->
-    <div class="gcard gcard--navy"><div class="gcard__label">P/E</div><p class="gcard__desc">What it measures, in one plain line.</p><p class="gcard__desc">A second short note if useful.</p></div>
-    <div class="gcard gcard--green"><div class="gcard__label">P/FCF</div><p class="gcard__desc">…</p></div>
-    <div class="gcard gcard--amber"><div class="gcard__label">EV/EBITDA</div><p class="gcard__desc">…</p></div>
+    <div class="gcard gcard--primary"><div class="gcard__label">Concept A</div><p class="gcard__desc">What it measures, in one plain line.</p><p class="gcard__desc">A second short note if useful.</p></div>
+    <div class="gcard gcard--positive"><div class="gcard__label">Concept B</div><p class="gcard__desc">…</p></div>
+    <div class="gcard gcard--amber"><div class="gcard__label">Concept C</div><p class="gcard__desc">…</p></div>
   </div>
 </div>`.trim(),
   },
@@ -99,11 +99,11 @@ export const recipes: Recipe[] = [
     when: 'Unpack ONE concept with supporting boxes: a definition box + a formula/breakdown box + an optional glossary box. Great for "what is X" explainers.',
     skeleton: `
 <div class="concept">
-  <h1 class="concept__title">Finalmente capisci <span class="accent-green">X</span></h1>
+  <h1 class="concept__title">Finalmente capisci <span class="accent-positive">X</span></h1>
   <div class="concept__boxes">
     <div class="concept__box concept__box--blue"><div class="concept__box-title">Cos'è X?</div><p>Plain-language definition in 1–2 lines.</p></div>
     <div class="concept__box concept__box--gray"><div class="concept__box-title">Come si calcola</div><p>A + B + C = X (one line per term).</p></div>
-    <div class="concept__box concept__box--green"><div class="concept__box-title">In breve</div><p>The single takeaway.</p></div>
+    <div class="concept__box concept__box--positive"><div class="concept__box-title">In breve</div><p>The single takeaway.</p></div>
   </div>
 </div>`.trim(),
   },
@@ -112,35 +112,35 @@ export const recipes: Recipe[] = [
     when: 'A process / how-it-works flow with ordered steps (3–6). Nodes stacked vertically (or a branch row) connected by arrows. Optionally a small emoji icon per node. Position:absolute / SVG is allowed here for connectors.',
     skeleton: `
 <div class="flow">
-  <h1 class="flow__title">Come funziona <span class="accent-green">X</span></h1>
+  <h1 class="flow__title">Come funziona <span class="accent-positive">X</span></h1>
   <ol class="flow__steps">
     <li class="flow__node flow__node--blue"><span class="flow__icon">💰</span><div><div class="flow__node-title">Step 1 — short label</div><p class="flow__node-desc">One line explaining the step.</p></div></li>
     <li class="flow__arrow" aria-hidden="true">↓</li>
     <li class="flow__node flow__node--violet"><span class="flow__icon">👤</span><div><div class="flow__node-title">Step 2</div><p class="flow__node-desc">…</p></div></li>
     <li class="flow__arrow" aria-hidden="true">↓</li>
-    <li class="flow__node flow__node--green"><span class="flow__icon">✅</span><div><div class="flow__node-title">Step 3 — outcome</div><p class="flow__node-desc">…</p></div></li>
+    <li class="flow__node flow__node--positive"><span class="flow__icon">✅</span><div><div class="flow__node-title">Step 3 — outcome</div><p class="flow__node-desc">…</p></div></li>
   </ol>
 </div>`.trim(),
   },
   {
     id: 'bar-chart',
-    when: 'Compare discrete quantities or rank options (e.g. average return by asset class, cost of A vs B vs C). Horizontal bars: each row is a category label + a proportional bar + its value. Bar widths are proportional to the values (the largest ≈ 100%). Always show the value on every bar.',
+    when: 'Compare discrete quantities or rank options (e.g. time spent per activity, cost of A vs B vs C). Horizontal bars: each row is a category label + a proportional bar + its value. Bar widths are proportional to the values (the largest ≈ 100%). Always show the value on every bar.',
     skeleton: `
 <div class="chart">
   <div class="chart__eyebrow">TOPICAL LABEL</div>
   <h1 class="chart__title">Hook headline</h1>
   <p class="chart__subtitle">One line saying what the chart compares and the unit.</p>
   <ul class="chart__bars">
-    <li class="chart__row"><span class="chart__cat">Azioni</span><span class="chart__track"><span class="chart__bar chart__bar--green" style="width:100%"></span></span><span class="chart__val">7,8%</span></li>
-    <li class="chart__row"><span class="chart__cat">Obbligazioni</span><span class="chart__track"><span class="chart__bar chart__bar--navy" style="width:42%"></span></span><span class="chart__val">3,3%</span></li>
-    <li class="chart__row"><span class="chart__cat">Liquidità</span><span class="chart__track"><span class="chart__bar chart__bar--navy" style="width:12%"></span></span><span class="chart__val">0,9%</span></li>
+    <li class="chart__row"><span class="chart__cat">Opzione A</span><span class="chart__track"><span class="chart__bar chart__bar--positive" style="width:100%"></span></span><span class="chart__val">78%</span></li>
+    <li class="chart__row"><span class="chart__cat">Opzione B</span><span class="chart__track"><span class="chart__bar chart__bar--primary" style="width:42%"></span></span><span class="chart__val">33%</span></li>
+    <li class="chart__row"><span class="chart__cat">Opzione C</span><span class="chart__track"><span class="chart__bar chart__bar--primary" style="width:12%"></span></span><span class="chart__val">9%</span></li>
   </ul>
   <p class="chart__note">Fonte / one-line takeaway.</p>
 </div>`.trim(),
   },
   {
     id: 'progression-chart',
-    when: 'Show growth / accumulation OVER TIME (compound interest, a portfolio reaching 100k, savings building up). Vertical rising bars, one per time milestone, heights proportional to the value; highlight the final bar. Label each bar with its year and value. Ideal for "il tempo fa crescere".',
+    when: 'Show growth / accumulation OVER TIME (a habit compounding, a skill improving, a number building up). Vertical rising bars, one per time milestone, heights proportional to the value; highlight the final bar. Label each bar with its year and value. Ideal for "il tempo fa crescere".',
     skeleton: `
 <div class="growth">
   <div class="growth__eyebrow">TOPICAL LABEL</div>
@@ -149,22 +149,22 @@ export const recipes: Recipe[] = [
     <div class="growth__col"><span class="growth__v">10k</span><span class="growth__bar" style="height:12%"></span><span class="growth__x">Anno 1</span></div>
     <div class="growth__col"><span class="growth__v">28k</span><span class="growth__bar" style="height:34%"></span><span class="growth__x">Anno 5</span></div>
     <div class="growth__col"><span class="growth__v">55k</span><span class="growth__bar" style="height:62%"></span><span class="growth__x">Anno 10</span></div>
-    <div class="growth__col"><span class="growth__v">100k</span><span class="growth__bar growth__bar--green" style="height:100%"></span><span class="growth__x">Anno 18</span></div>
+    <div class="growth__col"><span class="growth__v">100k</span><span class="growth__bar growth__bar--positive" style="height:100%"></span><span class="growth__x">Anno 18</span></div>
   </div>
   <p class="growth__note">One line: what the trend means.</p>
 </div>`.trim(),
   },
   {
     id: 'breakdown-chart',
-    when: 'Show proportions or a step-down breakdown with bars (e.g. revenue → margin → EBITDA → net). Horizontal bars whose WIDTHS are proportional (use width:NN% of the row, never viewport units). Green = what remains, red = what is subtracted; label every bar with what it is and its value.',
+    when: 'Show proportions or a step-down breakdown with bars (e.g. total → after step 1 → after step 2 → what is left). Horizontal bars whose WIDTHS are proportional (use width:NN% of the row, never viewport units). Positive accent = what remains, negative accent = what is subtracted; label every bar with what it is and its value.',
     skeleton: `
 <div class="bars">
   <div class="bars__eyebrow">TOPICAL LABEL</div>
   <h1 class="bars__title">Hook headline</h1>
   <ul class="bars__list">
-    <li class="bars__row"><span class="bars__label">Ricavi</span><span class="bars__track"><span class="bars__fill bars__fill--green" style="width:100%"></span></span><span class="bars__value">100</span></li>
-    <li class="bars__row"><span class="bars__label">Margine lordo</span><span class="bars__track"><span class="bars__fill bars__fill--green" style="width:62%"></span><span class="bars__fill bars__fill--red" style="width:38%"></span></span><span class="bars__value">62</span></li>
-    <li class="bars__row"><span class="bars__label">EBITDA</span><span class="bars__track"><span class="bars__fill bars__fill--green" style="width:40%"></span><span class="bars__fill bars__fill--red" style="width:22%"></span></span><span class="bars__value">40</span></li>
+    <li class="bars__row"><span class="bars__label">Totale</span><span class="bars__track"><span class="bars__fill bars__fill--positive" style="width:100%"></span></span><span class="bars__value">100</span></li>
+    <li class="bars__row"><span class="bars__label">Dopo il passo 1</span><span class="bars__track"><span class="bars__fill bars__fill--positive" style="width:62%"></span><span class="bars__fill bars__fill--negative" style="width:38%"></span></span><span class="bars__value">62</span></li>
+    <li class="bars__row"><span class="bars__label">Dopo il passo 2</span><span class="bars__track"><span class="bars__fill bars__fill--positive" style="width:40%"></span><span class="bars__fill bars__fill--negative" style="width:22%"></span></span><span class="bars__value">40</span></li>
   </ul>
   <p class="bars__note">One line stating what the breakdown shows.</p>
 </div>`.trim(),

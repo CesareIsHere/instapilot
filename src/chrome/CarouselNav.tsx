@@ -36,8 +36,8 @@ export const CarouselNav: React.FC<Props> = ({ pageIndex }) => {
           position: 'absolute',
           right: 48, bottom: 48,
           width: 80, height: 56, borderRadius: 28,
-          border: `2px solid ${theme.colors['brand-navy']}`,
-          color: theme.colors['brand-navy'],
+          border: `2px solid ${theme.colors['brand-primary']}`,
+          color: theme.colors['brand-primary'],
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 28,
         }}>→</div>

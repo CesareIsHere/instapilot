@@ -32,7 +32,7 @@ describe('discovery endpoints', () => {
   it('GET /theme returns colors/typography/spacing', async () => {
     const res = await request(buildApp()).get('/theme');
     expect(res.status).toBe(200);
-    expect(res.body.colors['brand-navy']).toMatch(/^#/);
+    expect(res.body.colors['brand-primary']).toMatch(/^#/);
   });
 
   it('GET /assets returns manifest entries', async () => {

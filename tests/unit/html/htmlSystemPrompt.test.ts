@@ -40,10 +40,10 @@ describe('buildHtmlSystemPrompt — rich layouts & palette', () => {
     expect(prompt).toMatch(/proportional/i);
   });
 
-  it('documents the extended palette and keeps the canvas white', () => {
+  it('documents the extended palette and keeps the canvas on the paper color', () => {
     expect(prompt).toContain('var(--surface-blue)');
     expect(prompt).toContain('var(--accent-amber)');
-    expect(prompt.toLowerCase()).toContain('canvas background stays pure white');
+    expect(prompt.toLowerCase()).toContain('canvas background stays var(--paper)');
   });
 
   it('allows emoji as sparing node icons', () => {
