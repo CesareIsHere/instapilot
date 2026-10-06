@@ -167,7 +167,7 @@ export function mountJobRoutes(app: Express): void {
           model: body.model,
           useWebSearch: body.useWebSearch,
         },
-        progress: { phase: 'queued', detail: 'In coda' },
+        progress: { phase: 'queued', detail: 'Queued' },
       };
       jobs.set(id, job);
       pruneJobs();
@@ -226,7 +226,7 @@ export function mountJobRoutes(app: Express): void {
           model: body.model,
           useWebSearch: body.useWebSearch,
         },
-        progress: { phase: 'queued', detail: 'In coda' },
+        progress: { phase: 'queued', detail: 'Queued' },
       };
       jobs.set(id, job);
       pruneJobs();

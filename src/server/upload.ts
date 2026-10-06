@@ -9,7 +9,7 @@ const DATA_BRAND_DIR = path.resolve(process.cwd(), 'data', 'brand');
 const CUSTOM_LOGO_PATH = path.join(DATA_BRAND_DIR, 'logo.png');
 const DEFAULT_LOGO_PATH = path.resolve(process.cwd(), 'public', 'brand', 'logo.svg');
 
-/** Risolve il path del logo: custom caricato → default pubblico. */
+/** Resolve the logo path: uploaded custom logo → public default. */
 export function resolveLogoPath(customPath = CUSTOM_LOGO_PATH): string {
   return fs.existsSync(customPath) ? customPath : DEFAULT_LOGO_PATH;
 }
@@ -28,14 +28,14 @@ const upload = multer({
   fileFilter: (_req, file, cb) => {
     const allowed = ['image/png', 'image/jpeg', 'image/svg+xml'];
     if (allowed.includes(file.mimetype)) return cb(null, true);
-    cb(new Error('Formato non supportato: usa PNG, JPG o SVG'));
+    cb(new Error('Unsupported format: use PNG, JPG or SVG'));
   },
 });
 
 export function mountUploadRoutes(app: Express): void {
   app.post('/api/brand/logo', upload.single('logo'), (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!req.file) { res.status(400).json({ error: 'nessun file' }); return; }
+      if (!req.file) { res.status(400).json({ error: 'no file' }); return; }
       log.info('brand.logo.uploaded', { size: req.file.size });
       res.json({ ok: true, path: CUSTOM_LOGO_PATH });
     } catch (err) { next(err); }

@@ -402,10 +402,10 @@ export function mountLibraryRoutes(app: Express): void {
         return;
       }
       const { html } = SaveHtmlSchema.parse(req.body);
-      snapshotSlide(dir, slide, slide.lastEditSummary ?? 'Versione precedente');
+      snapshotSlide(dir, slide, slide.lastEditSummary ?? 'Previous version');
       const warnings = await rerenderSlide(dir, slide, html);
       slide.editedAt = new Date().toISOString();
-      slide.lastEditSummary = 'Modifica manuale HTML';
+      slide.lastEditSummary = 'Manual HTML edit';
       m.updatedAt = slide.editedAt;
       writeManifest(dir, m);
       log.info('library.slide.saved', { id: req.params.id, slide: idx, warnings });
@@ -454,7 +454,7 @@ export function mountLibraryRoutes(app: Express): void {
         throw e;
       }
 
-      snapshotSlide(dir, slide, slide.lastEditSummary ?? 'Versione precedente');
+      snapshotSlide(dir, slide, slide.lastEditSummary ?? 'Previous version');
       const warnings = await rerenderSlide(dir, slide, edited.html);
       slide.editedAt = new Date().toISOString();
       // Keep the original design `intent`; record the edit summary separately so
@@ -526,7 +526,7 @@ export function mountLibraryRoutes(app: Express): void {
         return;
       }
       const html = fs.readFileSync(path.join(dir, entry.htmlFile), 'utf8');
-      snapshotSlide(dir, slide, slide.lastEditSummary ?? 'Versione precedente');
+      snapshotSlide(dir, slide, slide.lastEditSummary ?? 'Previous version');
       const warnings = await rerenderSlide(dir, slide, html);
       slide.editedAt = new Date().toISOString();
       slide.lastEditSummary = `Ripristino: ${entry.label}`;
