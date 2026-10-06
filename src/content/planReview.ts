@@ -4,6 +4,8 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { ReasoningEffort } from '@/llm/client';
 import type { UsageMeter } from '@/llm/usage';
 import type { ContentPlan, ContentFormat } from './plan';
+import { GENERIC_BRAND_NAME } from '@/html/brandVars';
+import { DEFAULT_CONTENT_LANGUAGE } from '@/server/brand';
 
 export const PlanReviewSchema = z.object({
   approved: z.boolean(),
@@ -12,32 +14,32 @@ export const PlanReviewSchema = z.object({
 });
 export type PlanReview = z.infer<typeof PlanReviewSchema>;
 
-function buildPlanReviewerPrompt(brandName: string): string {
-  return `Sei un caporedattore di ${brandName}. Valuti il PIANO di un contenuto Instagram (la struttura in slide e i brief) PRIMA che le slide vengano generate.
+function buildPlanReviewerPrompt(brandName: string, language: string): string {
+  return `You are the editor-in-chief of ${brandName}. You evaluate the PLAN of an Instagram piece (its slide structure and briefs) BEFORE the slides are generated. The reader-facing copy is in ${language}.
 
-Controlla:
-1. Struttura: rispetta il formato richiesto (numero di slide, ruoli cover/body/cta)?
-2. Arco narrativo: cover con hook forte → sviluppo logico → cta che chiude con invito?
-3. Una idea per slide MA sviluppata: nessuna slide sovraccarica E nessuna slide vuota/troppo magra (ogni body deve insegnare qualcosa di completo: mini-headline + spiegazione + eventuale prova).
-4. NIENTE RIPETIZIONI: nessuna slide rispiega con parole diverse un concetto già dato. Ogni slide aggiunge informazione NUOVA.
-5. Obiettivo per-slide: ogni slide dichiara cosa deve ottenere nell'arco? Se non è chiaro, è un problema.
-6. Dati con significato: ogni numero ha etichetta (cos'è) e takeaway (cosa comunica)? Niente numeri nudi né accumulo di cifre (max ~1 dato chiave per slide)?
-7. Registro: linguaggio conversazionale (tu), termini tecnici spiegati o sostituiti (pubblico a zero)? Niente gergo non spiegato?
-8. Quantità: headline ≤ ~12 parole, corpo ≈ ≤ 300 caratteri per slide? Se un brief sembra un paragrafo, va asciugato.
-9. Confronti/colonne: gli elementi sono simmetrici (stesso numero di voci, struttura parallela, lunghezze simili)?
-9b. Visualizzazione dei dati: le slide che confrontano più numeri, mostrano proporzioni/ranking o un'evoluzione nel tempo usano un GRAFICO (bar-chart/progression-chart/breakdown-chart) e non solo testo o un singolo numero? Se i dati sono lasciati a testo, segnalalo.
-10. Qualità dei brief: ogni brief è autosufficiente, con headline, hint di layout, taglio, e aderente al dossier/argomento?
-11. Fattibilità: il contenuto di ogni slide sta in 1080×1350 senza overflow?
-12. Framework: la struttura dichiarata è adatta? La sequenza dei narrativeFunction è coerente con quel framework?
-13. Foreshadowing: cover e slide 2 coerenti (la slide 2 apre il loop / spiega perché conta)?
-14. Mini-loop e payoff: ogni loop aperto si chiude entro 1-2 slide; c'è un recap nella penultima slide, prima della CTA, che richiama la cover?
-15. CTA: UNA sola, chiara, solo nell'ultima slide?
-16. Ritmo: numero di slide ragionevole per il framework (tipicamente 6-9; non imporre ≈7 ai framework a lista o roadmap)?
+Check:
+1. Structure: does it respect the requested format (number of slides, cover/body/cta roles)?
+2. Narrative arc: cover with a strong hook → logical development → a cta that closes with an invitation?
+3. One idea per slide BUT developed: no overloaded slide AND no empty/too-thin slide (every body slide must teach something complete: mini-headline + explanation + optional proof).
+4. NO REPETITION: no slide re-explains an already covered concept in different words. Every slide adds NEW information.
+5. Per-slide goal: does every slide state what it must achieve in the arc? If unclear, that is a problem.
+6. Data with meaning: does every number have a label (what it is) and a takeaway (what it tells you)? No bare numbers and no pile-up of figures (max ~1 key data point per slide)?
+7. Register: conversational, informal second person; technical terms explained or replaced (audience starting from zero)? No unexplained jargon?
+8. Amount: headline ≤ ~12 words, body ≈ ≤ 300 characters per slide? If a brief reads like a paragraph, it must be trimmed.
+9. Comparisons/columns: are the items symmetric (same number of items, parallel structure, similar lengths)?
+9b. Data visualisation: do the slides that compare several numbers, show proportions/rankings or a change over time use a CHART (bar-chart/progression-chart/breakdown-chart) rather than just text or a single number? If data is left as text, flag it.
+10. Brief quality: is every brief self-contained, with headline, layout hint and angle, and faithful to the dossier/topic?
+11. Feasibility: does each slide's content fit in 1080×1350 without overflow?
+12. Framework: is the declared structure appropriate? Is the sequence of narrativeFunctions consistent with that framework?
+13. Foreshadowing: are the cover and slide 2 consistent (slide 2 opens the loop / explains why it matters)?
+14. Mini-loops and payoff: does every open loop close within 1-2 slides; is there a recap on the second-to-last slide, before the CTA, that echoes the cover?
+15. CTA: only ONE, clear, and only on the last slide?
+16. Pacing: a reasonable number of slides for the framework (typically 6-9; do not force ≈7 onto list or roadmap frameworks)?
 
-Sii esigente ma equo. Approva se il piano è solido. Boccia solo per problemi reali.
-Se NON approvi, elenca gli issue e fornisci in planFeedback istruzioni concrete e azionabili per rifare il piano.
-Output JSON: { "approved": boolean, "issues": string[], "planFeedback": string | null }.
-Se approvato, issues è vuoto e planFeedback è null.`;
+Be demanding but fair. Approve if the plan is solid. Reject only for real problems.
+If you do NOT approve, list the issues and give concrete, actionable instructions in planFeedback to redo the plan.
+JSON output: { "approved": boolean, "issues": string[], "planFeedback": string | null }.
+If approved, issues is empty and planFeedback is null.`;
 }
 
 export async function reviewPlan(args: {
@@ -52,24 +54,25 @@ export async function reviewPlan(args: {
   plan: ContentPlan;
   meter?: UsageMeter;
   brandName?: string;
+  language?: string;
 }): Promise<PlanReview> {
   const jsonSchema = zodToJsonSchema(PlanReviewSchema, { name: 'PlanReview', nameStrategy: 'title' });
   const slidesText = args.plan.slides
     .map((s, i) => `### Slide ${i} (${s.role} / ${s.narrativeFunction})\n${s.brief}`)
     .join('\n\n');
-  const userContent = `ARGOMENTO: ${args.topic}
-${args.instructions ? `ISTRUZIONI: ${args.instructions}\n` : ''}FORMATO: ${args.format}${args.slideCount ? ` (${args.slideCount} slide)` : ''}
+  const userContent = `TOPIC: ${args.topic}
+${args.instructions ? `INSTRUCTIONS: ${args.instructions}\n` : ''}FORMAT: ${args.format}${args.slideCount ? ` (${args.slideCount} slides)` : ''}
 
-DOSSIER DI RICERCA:
+RESEARCH DOSSIER:
 ${args.research}
 
-PIANO PROPOSTO — framework: "${args.plan.framework}", titolo: "${args.plan.title}", angolo: "${args.plan.angle}"
+PROPOSED PLAN — framework: "${args.plan.framework}", title: "${args.plan.title}", angle: "${args.plan.angle}"
 ${slidesText}`;
 
   const request: Record<string, unknown> = {
     model: args.model,
     messages: [
-      { role: 'system', content: buildPlanReviewerPrompt(args.brandName ?? 'il brand') },
+      { role: 'system', content: buildPlanReviewerPrompt(args.brandName ?? GENERIC_BRAND_NAME, args.language ?? DEFAULT_CONTENT_LANGUAGE) },
       { role: 'user', content: userContent },
     ],
     response_format: { type: 'json_schema', json_schema: { name: 'PlanReview', strict: true, schema: jsonSchema } },

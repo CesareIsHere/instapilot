@@ -183,7 +183,7 @@ async function main(): Promise<void> {
     slides: manifestSlides,
   };
   fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
-  console.log(`[seed-demo] ${slides.length} slide renderizzate in ${dir}`);
+  console.log(`[seed-demo] rendered ${slides.length} slides into ${dir}`);
 }
 
 main()

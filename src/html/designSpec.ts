@@ -4,6 +4,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { ReasoningEffort } from '@/llm/client';
 import type { UsageMeter } from '@/llm/usage';
 import type { SlideRole } from './htmlSystemPrompt';
+import { DEFAULT_CONTENT_LANGUAGE } from '@/server/brand';
 import { manifest } from '@/assets/manifest';
 
 const RECIPE_VALUES = [
@@ -84,7 +85,7 @@ async function callLlmJson<T extends z.ZodType>(
   return result.data;
 }
 
-function buildPlannerSystemPrompt(brandContext: string, role: SlideRole | undefined, selfContained = false): string {
+function buildPlannerSystemPrompt(brandContext: string, role: SlideRole | undefined, selfContained = false, language: string = DEFAULT_CONTENT_LANGUAGE): string {
   const assetList = Object.entries(manifest)
     .map(([id, e]) => `- "${id}": ${e.description}`)
     .join('\n');
@@ -103,7 +104,7 @@ function buildPlannerSystemPrompt(brandContext: string, role: SlideRole | undefi
       }\n`
     : '';
 
-  return `You are a senior Instagram content strategist for the brand described in the BRAND CONTEXT below (educational content, primarily Italian).
+  return `You are a senior Instagram content strategist for the brand described in the BRAND CONTEXT below (educational content written in ${language}).
 Plan the visual design structure for a single Instagram post (1080×1350 portrait).
 
 Your output is a structured design specification — NOT HTML or CSS. A separate renderer implements it.
@@ -142,12 +143,12 @@ ${assetList}
 ## OUTPUT (SlideDesignSpec schema)
 - recipe: layout pattern
 - rationale: why this recipe fits (1–2 sentences)
-- headline.text: main title in Italian, ≤ ~12 words, says what the slide is about and why it matters; headline.coloredSpans: [{word, color}] for positive/negative words (null if the whole title is in the primary color)
-- eyebrow: a SHORT, TOPICAL uppercase label that names the subject (e.g. "A VS B", the specific theme). It must add meaning. NEVER use generic meta-labels like "CONTESTO", "OGGETTO DELLA SLIDE", "ARGOMENTO", "INTRODUZIONE" — if no real topical label fits, set it to null.
+- headline.text: main title in ${language}, ≤ ~12 words, says what the slide is about and why it matters; headline.coloredSpans: [{word, color}] for positive/negative words (null if the whole title is in the primary color)
+- eyebrow: a SHORT, TOPICAL uppercase label that names the subject (e.g. "A VS B", the specific theme). It must add meaning. NEVER use generic meta-labels like "CONTEXT", "SLIDE TOPIC", "SUBJECT", "INTRODUCTION" (or their equivalents in the content language) — if no real topical label fits, set it to null.
 - bodyElements: content pieces in order — [{type, text, emphasis}]; emphasis "positive"/"negative"/"none"
   - types: "paragraph" | "list-item" | "kpi" | "card" | "caption" | "quote-text"
-  - a "kpi" number is NEVER bare: its text must carry BOTH what it is (a label) AND what it means (a one-line takeaway), e.g. "0,27% — costo medio annuo" not just "0,27%".
-- colorPlan: semantic description (e.g. "titolo in colore primario con 'rendimento' in accento positivo")
+  - a "kpi" number is NEVER bare: its text must carry BOTH what it is (a label) AND what it means (a one-line takeaway), e.g. "0.27% — average yearly cost" not just "0.27%".
+- colorPlan: semantic description (e.g. "title in the primary color with 'growth' in the positive accent")
 - useAssets: asset ids to use (always include "logo"), null if none
 - notes: special layout consideration, null if none
 
@@ -156,7 +157,7 @@ ${assetList}
 - DATA: at most ONE key number per slide; every number needs a label + a takeaway. Don't pile up figures.
 - EMPHASIS / HIERARCHY: exactly one focal point per slide. Highlight at most 1–2 words. Positive accent ONLY for positive/growth, negative accent ONLY for risk/loss — never the wrong color, never decorative highlighting.
 - SYMMETRY: for compare-2col / card-grid-2x2 / multi-column kpi, the columns must be parallel — same number of items, comparable text length, same structure on each side.
-- LANGUAGE: conversational, address the reader as "tu"; explain or replace every technical term (the audience starts from zero).
+- LANGUAGE: all copy in ${language}; conversational, address the reader directly in the informal second person; explain or replace every technical term (the audience starts from zero).
 - No repetition across the slide's own elements; every element earns its place.
 
 ## BRAND CONTEXT
@@ -174,6 +175,7 @@ export async function planSlideDesign(args: {
   meter?: UsageMeter;
   designContext?: string;
   selfContained?: boolean;
+  language?: string;
 }): Promise<SlideDesignSpec> {
   const ctx = args.designContext
     ? `${args.userPrompt}\n\n---\nCAROUSEL CONTEXT (for visual coherence across the series):\n${args.designContext}`
@@ -185,7 +187,7 @@ export async function planSlideDesign(args: {
   return callLlmJson(
     args.client, args.model, args.reasoningEffort,
     [
-      { role: 'system', content: buildPlannerSystemPrompt(args.brandContext, args.role, args.selfContained) },
+      { role: 'system', content: buildPlannerSystemPrompt(args.brandContext, args.role, args.selfContained, args.language) },
       { role: 'user', content: userContent },
     ],
     SlideDesignSpecSchema, 'SlideDesignSpec',
@@ -193,7 +195,8 @@ export async function planSlideDesign(args: {
   );
 }
 
-const DESIGN_CRITIC_PROMPT = `You are a design critic for the brand's Instagram posts.
+function buildDesignCriticPrompt(language: string): string {
+  return `You are a design critic for the brand's Instagram posts (copy written in ${language}).
 Review the proposed slide design specification against the original content request.
 
 Check:
@@ -203,14 +206,15 @@ Check:
 4. Data with meaning: is every kpi/number given a label (what it is) AND a takeaway (what it means)? At most one key number? Flag bare numbers.
 5. Color semantics & hierarchy: exactly one focal point; ≤ 1–2 highlighted words in the headline; positive accent ONLY for positive, negative accent ONLY for negative, never the wrong color. (Distinct accent borders / pastel surfaces on cards/diagram-nodes/chart-blocks are fine for card-grid, flow-diagram, breakdown-chart and concept-breakdown — judge them as structural, not as decorative highlighting.)
 6. Symmetry: for compare-2col / card-grid-2x2 / multi-column kpi, are the columns parallel (same item count, comparable length, same structure)?
-7. Eyebrow: is it a real topical label (or null)? Reject generic meta-labels like "CONTESTO", "OGGETTO DELLA SLIDE", "ARGOMENTO", "INTRODUZIONE".
-8. Language: conversational ("tu"); technical terms explained or avoided (audience starts from zero)?
+7. Eyebrow: is it a real topical label (or null)? Reject generic meta-labels like "CONTEXT", "SLIDE TOPIC", "SUBJECT", "INTRODUCTION" (or their equivalents in the content language).
+8. Language: copy in ${language}; conversational, informal second person; technical terms explained or avoided (audience starts from zero)?
 9. Feasibility: would this content realistically fit in 1080×1350px?
 
 Be decisive. Approve if the spec is sound. Reject only for genuine mismatches.
 
 Output JSON: { "approved": boolean, "issues": string[] }
 If approved, issues must be an empty array.`;
+}
 
 export async function reviewSlideDesign(args: {
   client: OpenAI;
@@ -219,11 +223,12 @@ export async function reviewSlideDesign(args: {
   originalPrompt: string;
   designSpec: SlideDesignSpec;
   meter?: UsageMeter;
+  language?: string;
 }): Promise<DesignReview> {
   return callLlmJson(
     args.client, args.model, args.reasoningEffort,
     [
-      { role: 'system', content: DESIGN_CRITIC_PROMPT },
+      { role: 'system', content: buildDesignCriticPrompt(args.language ?? DEFAULT_CONTENT_LANGUAGE) },
       {
         role: 'user',
         content: `Original request:\n${args.originalPrompt}\n\nProposed design spec:\n${JSON.stringify(args.designSpec, null, 2)}`,

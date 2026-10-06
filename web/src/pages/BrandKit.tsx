@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const EMPTY: IBrandKit = {
-  name: '', tagline: '', audience: '', tone: '',
+  name: '', tagline: '', audience: '', tone: '', language: 'Italian',
   brandColors: { primary: '#4F46E5', positive: '#059669', negative: '#DC2626', paper: '#FFFFFF', ink: '#111827', muted: '#6B7280' },
   font: { family: 'Inter', source: 'bundled' },
   hashtags: [], ctas: [],
@@ -127,6 +127,11 @@ export function BrandKit() {
             <Label htmlFor="tone">Tono di voce</Label>
             <Textarea id="tone" rows={2} value={kit.tone} onChange={e => set('tone', e.target.value)}
               placeholder="Es. Chiaro, autorevole ma accessibile, mai gergale" className="resize-none" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="language">Lingua dei contenuti</Label>
+            <Input id="language" value={kit.language ?? ''} onChange={e => set('language', e.target.value)} placeholder="Es. Italian, English, Español" />
+            <p className="text-xs text-muted-foreground">Lingua in cui l'AI scrive slide e caption (in inglese o nella lingua stessa).</p>
           </div>
         </section>
 

@@ -79,7 +79,7 @@ Hardcoded hex, :root, @font-face, @import, box-shadow and gradients in the rende
 
 ## CONTENT CLARITY REVIEW (image)
 - BARE NUMBERS: every number/KPI must show what it is (a label) and ideally what it means — flag a big number with no caption explaining it (category "content")
-- EYEBROW LABELS: the small uppercase label above the title must be a real topical label. Flag generic, disconnected meta-labels like "CONTESTO", "OGGETTO DELLA SLIDE", "ARGOMENTO", "INTRODUZIONE" (category "content")
+- EYEBROW LABELS: the small uppercase label above the title must be a real topical label. Flag generic, disconnected meta-labels like "CONTEXT", "SLIDE TOPIC", "SUBJECT", "INTRODUCTION" (or their equivalents in ${vars.language}) (category "content")
 
 ## TYPOGRAPHY REVIEW (source)
 - No font-size below 22px for any text; no font-size below 30px inside cards

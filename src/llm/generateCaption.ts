@@ -2,14 +2,15 @@ import type OpenAI from 'openai';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { ReasoningEffort } from './client';
+import { DEFAULT_CONTENT_LANGUAGE } from '@/server/brand';
 
 const CaptionSchema = z.object({
   caption: z
     .string()
-    .describe('La didascalia Instagram completa in italiano: hook iniziale, corpo con valore, e una call-to-action finale. Usa a capo per la leggibilità. NON includere gli hashtag qui.'),
+    .describe('The complete Instagram caption, in the brand content language: opening hook, value-packed body and a final call to action. Use line breaks for readability. Do NOT include hashtags here.'),
   hashtags: z
     .array(z.string())
-    .describe('Da 5 a 12 hashtag pertinenti, in italiano/inglese, ognuno SENZA il simbolo # iniziale (verrà aggiunto dal client).'),
+    .describe('5 to 12 relevant hashtags (in the content language and/or English), each WITHOUT the leading # (the client adds it).'),
 });
 export type GeneratedCaption = z.infer<typeof CaptionSchema>;
 
@@ -23,18 +24,22 @@ export interface GenerateCaptionArgs {
   /** Plain-text content extracted from the slides, in order. */
   slidesText: string[];
   brandContext?: string;
+  /** Language of the caption (defaults to the Brand Kit default). */
+  language?: string;
 }
 
-const SYSTEM_PROMPT = `Sei un social media manager esperto di Instagram per un brand di contenuti educativi.
-Scrivi la didascalia (caption) per un post/carosello a partire dal suo contenuto.
+function buildSystemPrompt(language: string): string {
+  return `You are an expert Instagram social media manager for an educational content brand.
+Write the caption for a post/carousel based on its content.
 
-Regole:
-- Scrivi in italiano, tono coerente con il brand: chiaro, autorevole ma accessibile, mai gergale.
-- Inizia con un hook forte nella prima riga (cattura l'attenzione, niente "Ciao a tutti").
-- Sviluppa il valore in modo conciso, riprendendo i concetti chiave delle slide senza ripeterle parola per parola.
-- Chiudi con una call-to-action naturale (salva, commenta, condividi o segui).
-- Puoi usare pochi emoji pertinenti, senza esagerare.
-- Gli hashtag vanno SOLO nel campo dedicato, senza il simbolo #.`;
+Rules:
+- Write in ${language}, with a tone consistent with the brand: clear, authoritative yet approachable, never jargon-heavy.
+- Open with a strong hook on the first line (grab attention, no generic "Hi everyone").
+- Deliver the value concisely, picking up the slides' key concepts without repeating them word for word.
+- Close with a natural call to action (save, comment, share or follow).
+- You may use a few relevant emoji, without overdoing it.
+- Hashtags go ONLY in their dedicated field, without the # symbol.`;
+}
 
 export async function generateCaption(args: GenerateCaptionArgs): Promise<GeneratedCaption> {
   const { client, model, reasoningEffort, topic, title, angle, slidesText, brandContext } = args;
@@ -45,17 +50,17 @@ export async function generateCaption(args: GenerateCaptionArgs): Promise<Genera
     .join('\n');
 
   const userPrompt = [
-    brandContext ? `CONTESTO BRAND:\n${brandContext}\n` : '',
-    `ARGOMENTO: ${topic}`,
-    title ? `TITOLO: ${title}` : '',
-    angle ? `ANGOLO: ${angle}` : '',
-    `\nCONTENUTO DELLE SLIDE:\n${slidesBlock}`,
+    brandContext ? `BRAND CONTEXT:\n${brandContext}\n` : '',
+    `TOPIC: ${topic}`,
+    title ? `TITLE: ${title}` : '',
+    angle ? `ANGLE: ${angle}` : '',
+    `\nSLIDE CONTENT:\n${slidesBlock}`,
   ].filter(Boolean).join('\n');
 
   const request: Record<string, unknown> = {
     model,
     messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: buildSystemPrompt(args.language ?? DEFAULT_CONTENT_LANGUAGE) },
       { role: 'user', content: userPrompt },
     ],
     response_format: {

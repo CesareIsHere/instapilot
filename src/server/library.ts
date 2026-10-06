@@ -9,6 +9,7 @@ import { renderHtmlStill } from '@/html/renderHtml';
 import { createZip, type ZipEntry } from '@/lib/zip';
 import { readPricing, estimateCost } from '@/lib/pricing';
 import { resolveBrandContext } from './brand';
+import { getBrandVars } from '@/html/brandVars';
 import { theme } from '@/theme';
 import { log } from '@/lib/log';
 
@@ -341,6 +342,7 @@ export function mountLibraryRoutes(app: Express): void {
           angle: m.angle,
           slidesText,
           brandContext: brand,
+          language: getBrandVars().language,
         });
       } catch (err) {
         const e: Error & { code?: string } = new Error((err as Error).message);
@@ -444,6 +446,7 @@ export function mountLibraryRoutes(app: Express): void {
           currentHtml,
           instruction,
           brandContext: brand,
+          language: getBrandVars().language,
         });
       } catch (err) {
         const e: Error & { code?: string } = new Error((err as Error).message);

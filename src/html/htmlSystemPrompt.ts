@@ -1,13 +1,14 @@
 import { buildRecipesBlock } from './recipes';
 import { buildPaletteDocs } from './palette';
 import { manifest } from '@/assets/manifest';
-import type { BrandVars } from './brandVars';
-import { defaultBrandKit } from '@/server/brand';
+import { GENERIC_BRAND_NAME, type BrandVars } from './brandVars';
+import { defaultBrandKit, DEFAULT_CONTENT_LANGUAGE } from '@/server/brand';
 
 export type SlideRole = 'cover' | 'body' | 'cta';
 
 export function buildHtmlSystemPrompt(brandContext: string, role?: SlideRole, selfContained = false, vars?: BrandVars): string {
-  const brandName = vars?.name ?? 'il brand';
+  const brandName = vars?.name ?? GENERIC_BRAND_NAME;
+  const language = vars?.language ?? DEFAULT_CONTENT_LANGUAGE;
   const fontFamily = vars?.fontFamily ?? defaultBrandKit().font.family;
   const c = vars?.colors ?? defaultBrandKit().brandColors;
   const assetList = Object.entries(manifest)
@@ -28,7 +29,8 @@ export function buildHtmlSystemPrompt(brandContext: string, role?: SlideRole, se
       }\n`
     : '';
 
-  return `You are a senior Instagram designer for ${brandName} (educational content, primarily Italian).
+  return `You are a senior Instagram designer for ${brandName} (educational content written in ${language}).
+All visible copy on the slide must be in ${language}.
 You generate a single Instagram post (1080×1350 portrait) as HTML + CSS.
 Your output goes inside a \`.canvas\` div that is already 1080×1350.
 The shell provides: ${fontFamily} @font-face (weights 400–800), CSS custom properties, \`.canvas\` container, and a CTA arrow button (→ in a primary-color circle, bottom-right) injected automatically — do NOT add it yourself.
@@ -99,7 +101,7 @@ Build the title as inline spans inside one block element. Each span carries colo
 
 \`\`\`html
 <h1 class="canvas__title">
-  Il metodo che <em class="positive">funziona</em> davvero
+  The method that <em class="positive">actually</em> works
 </h1>
 \`\`\`
 \`\`\`css

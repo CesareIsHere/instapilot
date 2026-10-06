@@ -99,11 +99,11 @@ export const recipes: Recipe[] = [
     when: 'Unpack ONE concept with supporting boxes: a definition box + a formula/breakdown box + an optional glossary box. Great for "what is X" explainers.',
     skeleton: `
 <div class="concept">
-  <h1 class="concept__title">Finalmente capisci <span class="accent-positive">X</span></h1>
+  <h1 class="concept__title">Finally understand <span class="accent-positive">X</span></h1>
   <div class="concept__boxes">
-    <div class="concept__box concept__box--blue"><div class="concept__box-title">Cos'è X?</div><p>Plain-language definition in 1–2 lines.</p></div>
-    <div class="concept__box concept__box--gray"><div class="concept__box-title">Come si calcola</div><p>A + B + C = X (one line per term).</p></div>
-    <div class="concept__box concept__box--positive"><div class="concept__box-title">In breve</div><p>The single takeaway.</p></div>
+    <div class="concept__box concept__box--blue"><div class="concept__box-title">What is X?</div><p>Plain-language definition in 1–2 lines.</p></div>
+    <div class="concept__box concept__box--gray"><div class="concept__box-title">How it works</div><p>A + B + C = X (one line per term).</p></div>
+    <div class="concept__box concept__box--positive"><div class="concept__box-title">In short</div><p>The single takeaway.</p></div>
   </div>
 </div>`.trim(),
   },
@@ -112,7 +112,7 @@ export const recipes: Recipe[] = [
     when: 'A process / how-it-works flow with ordered steps (3–6). Nodes stacked vertically (or a branch row) connected by arrows. Optionally a small emoji icon per node. Position:absolute / SVG is allowed here for connectors.',
     skeleton: `
 <div class="flow">
-  <h1 class="flow__title">Come funziona <span class="accent-positive">X</span></h1>
+  <h1 class="flow__title">How <span class="accent-positive">X</span> works</h1>
   <ol class="flow__steps">
     <li class="flow__node flow__node--blue"><span class="flow__icon">💰</span><div><div class="flow__node-title">Step 1 — short label</div><p class="flow__node-desc">One line explaining the step.</p></div></li>
     <li class="flow__arrow" aria-hidden="true">↓</li>
@@ -131,25 +131,25 @@ export const recipes: Recipe[] = [
   <h1 class="chart__title">Hook headline</h1>
   <p class="chart__subtitle">One line saying what the chart compares and the unit.</p>
   <ul class="chart__bars">
-    <li class="chart__row"><span class="chart__cat">Opzione A</span><span class="chart__track"><span class="chart__bar chart__bar--positive" style="width:100%"></span></span><span class="chart__val">78%</span></li>
-    <li class="chart__row"><span class="chart__cat">Opzione B</span><span class="chart__track"><span class="chart__bar chart__bar--primary" style="width:42%"></span></span><span class="chart__val">33%</span></li>
-    <li class="chart__row"><span class="chart__cat">Opzione C</span><span class="chart__track"><span class="chart__bar chart__bar--primary" style="width:12%"></span></span><span class="chart__val">9%</span></li>
+    <li class="chart__row"><span class="chart__cat">Option A</span><span class="chart__track"><span class="chart__bar chart__bar--positive" style="width:100%"></span></span><span class="chart__val">78%</span></li>
+    <li class="chart__row"><span class="chart__cat">Option B</span><span class="chart__track"><span class="chart__bar chart__bar--primary" style="width:42%"></span></span><span class="chart__val">33%</span></li>
+    <li class="chart__row"><span class="chart__cat">Option C</span><span class="chart__track"><span class="chart__bar chart__bar--primary" style="width:12%"></span></span><span class="chart__val">9%</span></li>
   </ul>
-  <p class="chart__note">Fonte / one-line takeaway.</p>
+  <p class="chart__note">Source / one-line takeaway.</p>
 </div>`.trim(),
   },
   {
     id: 'progression-chart',
-    when: 'Show growth / accumulation OVER TIME (a habit compounding, a skill improving, a number building up). Vertical rising bars, one per time milestone, heights proportional to the value; highlight the final bar. Label each bar with its year and value. Ideal for "il tempo fa crescere".',
+    when: 'Show growth / accumulation OVER TIME (a habit compounding, a skill improving, a number building up). Vertical rising bars, one per time milestone, heights proportional to the value; highlight the final bar. Label each bar with its year and value. Ideal for "time makes it grow".',
     skeleton: `
 <div class="growth">
   <div class="growth__eyebrow">TOPICAL LABEL</div>
   <h1 class="growth__title">Hook headline</h1>
   <div class="growth__plot"><!-- fixed-height plot; columns align to the bottom -->
-    <div class="growth__col"><span class="growth__v">10k</span><span class="growth__bar" style="height:12%"></span><span class="growth__x">Anno 1</span></div>
-    <div class="growth__col"><span class="growth__v">28k</span><span class="growth__bar" style="height:34%"></span><span class="growth__x">Anno 5</span></div>
-    <div class="growth__col"><span class="growth__v">55k</span><span class="growth__bar" style="height:62%"></span><span class="growth__x">Anno 10</span></div>
-    <div class="growth__col"><span class="growth__v">100k</span><span class="growth__bar growth__bar--positive" style="height:100%"></span><span class="growth__x">Anno 18</span></div>
+    <div class="growth__col"><span class="growth__v">10k</span><span class="growth__bar" style="height:12%"></span><span class="growth__x">Year 1</span></div>
+    <div class="growth__col"><span class="growth__v">28k</span><span class="growth__bar" style="height:34%"></span><span class="growth__x">Year 5</span></div>
+    <div class="growth__col"><span class="growth__v">55k</span><span class="growth__bar" style="height:62%"></span><span class="growth__x">Year 10</span></div>
+    <div class="growth__col"><span class="growth__v">100k</span><span class="growth__bar growth__bar--positive" style="height:100%"></span><span class="growth__x">Year 18</span></div>
   </div>
   <p class="growth__note">One line: what the trend means.</p>
 </div>`.trim(),
@@ -162,9 +162,9 @@ export const recipes: Recipe[] = [
   <div class="bars__eyebrow">TOPICAL LABEL</div>
   <h1 class="bars__title">Hook headline</h1>
   <ul class="bars__list">
-    <li class="bars__row"><span class="bars__label">Totale</span><span class="bars__track"><span class="bars__fill bars__fill--positive" style="width:100%"></span></span><span class="bars__value">100</span></li>
-    <li class="bars__row"><span class="bars__label">Dopo il passo 1</span><span class="bars__track"><span class="bars__fill bars__fill--positive" style="width:62%"></span><span class="bars__fill bars__fill--negative" style="width:38%"></span></span><span class="bars__value">62</span></li>
-    <li class="bars__row"><span class="bars__label">Dopo il passo 2</span><span class="bars__track"><span class="bars__fill bars__fill--positive" style="width:40%"></span><span class="bars__fill bars__fill--negative" style="width:22%"></span></span><span class="bars__value">40</span></li>
+    <li class="bars__row"><span class="bars__label">Total</span><span class="bars__track"><span class="bars__fill bars__fill--positive" style="width:100%"></span></span><span class="bars__value">100</span></li>
+    <li class="bars__row"><span class="bars__label">After step 1</span><span class="bars__track"><span class="bars__fill bars__fill--positive" style="width:62%"></span><span class="bars__fill bars__fill--negative" style="width:38%"></span></span><span class="bars__value">62</span></li>
+    <li class="bars__row"><span class="bars__label">After step 2</span><span class="bars__track"><span class="bars__fill bars__fill--positive" style="width:40%"></span><span class="bars__fill bars__fill--negative" style="width:22%"></span></span><span class="bars__value">40</span></li>
   </ul>
   <p class="bars__note">One line stating what the breakdown shows.</p>
 </div>`.trim(),
@@ -192,7 +192,7 @@ export const recipes: Recipe[] = [
   },
 ];
 
-export function buildRecipesBlock(brandName = 'il brand'): string {
+export function buildRecipesBlock(brandName = 'the brand'): string {
   return recipes
     .map(
       (r) =>

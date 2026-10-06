@@ -53,20 +53,20 @@ If after composition there's >100px of unintentional vertical empty space, you m
 
 JSX collapses whitespace between sibling elements. This means:
 
-  <span>Quanto</span><span>tempo</span>          → renders as "Quantotempo" (BUG)
-  <span>Quanto </span><span>tempo</span>         → renders as "Quanto tempo" (OK, space inside)
-  <span>Quanto</span>{' '}<span>tempo</span>     → renders as "Quanto tempo" (OK, explicit JSX space)
-  <span>Quanto</span> <span>tempo</span>         → renders as "Quantotempo" (BUG — newline-only space is collapsed)
+  <span>How</span><span>much</span>          → renders as "Howmuch" (BUG)
+  <span>How </span><span>much</span>         → renders as "How much" (OK, space inside)
+  <span>How</span>{' '}<span>much</span>     → renders as "How much" (OK, explicit JSX space)
+  <span>How</span> <span>much</span>         → renders as "Howmuch" (BUG — newline-only space is collapsed)
 
 Always use ONE of: trailing space inside the previous element, leading space inside the next element, or {' '} between elements. NEVER rely on a newline between JSX elements to produce a space.
 
-Same applies to apostrophes inside string props/JSX text — escape Italian apostrophes correctly. \`'IL COSTO DELL\\'ATTESA'\` inside a JSX string is fine but inside JSX text use \`{"IL COSTO DELL'ATTESA"}\` or write it as \`IL COSTO DELL{"'"}ATTESA\`. Easier: prefer using JS string variables (const t = "L'attesa") and rendering {t}.
+Same applies to apostrophes inside string props/JSX text (common in Italian, French, English contractions…) — escape them correctly. \`'THE COST OF WAITING ISN\\'T ZERO'\` inside a JSX string is fine but inside JSX text use \`{"THE COST OF WAITING ISN'T ZERO"}\` or write it as \`ISN{"'"}T\`. Easier: prefer using JS string variables (const t = "Don't wait") and rendering {t}.
 
 Check every multi-word string you write. If you concatenate spans for color reasons, mentally read the rendered output character by character.
 
 ## Mixed-color titles
 
-When the title needs multiple colors (e.g. "Quanto **tempo** serve per **raddoppiare il Capitale?**"), build it as one container with display:'block' and inline spans, each span carrying ONLY color/fontStyle (not its own block layout). Spaces go INSIDE the spans as described above. Use a single fontSize and fontWeight for the whole title for visual consistency — change only color/fontStyle per span.
+When the title needs multiple colors (e.g. "How much **time** does it take to **double your progress?**"), build it as one container with display:'block' and inline spans, each span carrying ONLY color/fontStyle (not its own block layout). Spaces go INSIDE the spans as described above. Use a single fontSize and fontWeight for the whole title for visual consistency — change only color/fontStyle per span.
 
 # REMOTION RULES
 

@@ -3,6 +3,8 @@ import type OpenAI from 'openai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { ReasoningEffort } from '@/llm/client';
 import type { UsageMeter } from '@/llm/usage';
+import { GENERIC_BRAND_NAME } from '@/html/brandVars';
+import { DEFAULT_CONTENT_LANGUAGE } from '@/server/brand';
 
 export const ResearchReviewSchema = z.object({
   approved: z.boolean(),
@@ -10,24 +12,24 @@ export const ResearchReviewSchema = z.object({
 });
 export type ResearchReview = z.infer<typeof ResearchReviewSchema>;
 
-function buildReviewerPrompt(format: 'single' | 'carousel', brandName: string): string {
+function buildReviewerPrompt(format: 'single' | 'carousel', brandName: string, language: string): string {
   const depthHint = format === 'single'
-    ? `Il dossier è per un SINGOLO POST (1 slide). Valuta se contiene i concetti chiave essenziali, almeno 1 dato utile e 1-2 angoli/hook. NON richiedere le 6 sezioni complete né approfondimenti accademici: la profondità richiesta è intenzionalmente ridotta.`
-    : `Il dossier è per un CAROSELLO multi-slide. Valuta se è abbastanza completo da alimentare più slide in modo progressivo: concetti chiave, dati con anno/fonte, esempi, errori comuni, angoli/hook.`;
+    ? `The dossier is for a SINGLE POST (1 slide). Check that it contains the essential key concepts, at least 1 useful data point and 1-2 angles/hooks. Do NOT require all 6 sections or academic depth: the expected depth is intentionally reduced.`
+    : `The dossier is for a multi-slide CAROUSEL. Check that it is complete enough to feed several slides progressively: key concepts, data with year/source, examples, common mistakes, angles/hooks.`;
 
-  return `Sei un revisore di ricerca per ${brandName} (contenuti educativi in italiano; settore e taglio nel CONTESTO BRAND).
-Valuti un dossier di ricerca PRIMA che venga usato per scrivere un post Instagram.
+  return `You are a research reviewer for ${brandName} (educational content in ${language}; sector and angle in the BRAND CONTEXT).
+You evaluate a research dossier BEFORE it is used to write an Instagram post.
 
 ${depthHint}
 
-Controlla:
-1. Accuratezza: i fatti sono plausibili e non inventati? Opinioni distinte dai fatti?
-2. Dati: i numeri hanno anno/fonte? L'incertezza è segnalata dove serve?
-3. Utilità: il materiale è abbastanza specifico da permettere un post di alto livello?
-4. Aderenza: risponde davvero all'argomento e alle istruzioni?
+Check:
+1. Accuracy: are the facts plausible and not invented? Are opinions kept separate from facts?
+2. Data: do figures have a year/source? Is uncertainty flagged where needed?
+3. Usefulness: is the material specific enough to enable a top-quality post?
+4. Relevance: does it actually address the topic and the instructions?
 
-Sii esigente ma equo. Approva se il dossier è solido. Boccia solo per lacune reali.
-Output JSON: { "approved": boolean, "issues": string[] }. Se approvato, issues è un array vuoto.`;
+Be demanding but fair. Approve if the dossier is solid. Reject only for real gaps.
+JSON output: { "approved": boolean, "issues": string[] }. If approved, issues is an empty array.`;
 }
 
 export async function reviewResearch(args: {
@@ -40,17 +42,21 @@ export async function reviewResearch(args: {
   format: 'single' | 'carousel';
   meter?: UsageMeter;
   brandName?: string;
+  language?: string;
 }): Promise<ResearchReview> {
   const jsonSchema = zodToJsonSchema(ResearchReviewSchema, { name: 'ResearchReview', nameStrategy: 'title' });
-  const userContent = `ARGOMENTO: ${args.topic}
-${args.instructions ? `ISTRUZIONI: ${args.instructions}\n` : ''}
-DOSSIER DA VALUTARE:
+  const userContent = `TOPIC: ${args.topic}
+${args.instructions ? `INSTRUCTIONS: ${args.instructions}\n` : ''}
+DOSSIER TO EVALUATE:
 ${args.research}`;
 
   const request: Record<string, unknown> = {
     model: args.model,
     messages: [
-      { role: 'system', content: buildReviewerPrompt(args.format, args.brandName ?? 'il brand') },
+      {
+        role: 'system',
+        content: buildReviewerPrompt(args.format, args.brandName ?? GENERIC_BRAND_NAME, args.language ?? DEFAULT_CONTENT_LANGUAGE),
+      },
       { role: 'user', content: userContent },
     ],
     response_format: { type: 'json_schema', json_schema: { name: 'ResearchReview', strict: true, schema: jsonSchema } },

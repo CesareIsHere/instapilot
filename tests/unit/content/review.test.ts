@@ -55,7 +55,7 @@ describe('reviewContent — multimodal whole-carousel review', () => {
 
     const content = create.mock.calls[0][0].messages[1].content as Array<{ type: string; text?: string }>;
     expect(content.some((p) => p.type === 'image_url')).toBe(false);
-    expect(content.some((p) => p.type === 'text' && p.text?.includes('immagine non disponibile'))).toBe(true);
+    expect(content.some((p) => p.type === 'text' && p.text?.includes('image not available'))).toBe(true);
   });
 
   it('returns the parsed review with slide fixes', async () => {

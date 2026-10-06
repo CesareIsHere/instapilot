@@ -4,10 +4,10 @@
 
 # Instapilot
 
-**Dall'argomento al carousel Instagram pronto da pubblicare, con il tuo brand.**
+**From a topic to a ready-to-post Instagram carousel, in your brand.**
 
-Una pipeline di agenti AI che fa ricerca, struttura la narrativa, progetta ogni slide,
-la renderizza in PNG e la fa revisionare. Il tutto con la tua identità visiva e il tuo tono di voce.
+A pipeline of AI agents that researches, structures the narrative, designs every slide,
+renders it to PNG and reviews it, all with your visual identity and your tone of voice.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-8B5CF6.svg)](LICENSE)
 ![Node](https://img.shields.io/badge/node-%E2%89%A520-339933?logo=node.js&logoColor=white)
@@ -16,391 +16,398 @@ la renderizza in PNG e la fa revisionare. Il tutto con la tua identità visiva e
 ![Playwright](https://img.shields.io/badge/render-Playwright-2EAD33?logo=playwright&logoColor=white)
 ![LLM](https://img.shields.io/badge/LLM-OpenAI%20%7C%20LiteLLM-111827)
 
-<img src="docs/assets/screenshots/carousel-demo.png" alt="Esempio di carousel renderizzato da Instapilot" width="100%">
+<img src="docs/assets/screenshots/carousel-demo.png" alt="Example carousel rendered by Instapilot" width="100%">
 
-<sub>Carousel di esempio renderizzato dal motore con il Brand Kit di default (<code>npm run seed:demo</code>).</sub>
+<sub>Example carousel rendered by the engine with the default Brand Kit (<code>npm run seed:demo</code>).</sub>
 
 </div>
 
 ---
 
-## Indice
+## Table of contents
 
-- [Perché Instapilot](#perché-instapilot)
-- [Funzionalità](#funzionalità)
-- [Screenshot](#screenshot)
-- [Come funziona](#come-funziona)
+- [Why Instapilot](#why-instapilot)
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [How it works](#how-it-works)
 - [Quickstart](#quickstart)
-- [Configurazione](#configurazione)
-- [Personalizzare il brand (white-label)](#personalizzare-il-brand-white-label)
-- [API HTTP](#api-http)
-- [Struttura del progetto](#struttura-del-progetto)
-- [Sviluppo](#sviluppo)
+- [Configuration](#configuration)
+- [Customising the brand (white-label)](#customising-the-brand-white-label)
+- [HTTP API](#http-api)
+- [Project structure](#project-structure)
+- [Development](#development)
 - [Troubleshooting](#troubleshooting)
-- [Contribuire](#contribuire)
-- [Licenza](#licenza)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## Perché Instapilot
+## Why Instapilot
 
-Fare un buon carousel educativo richiede ore: ricerca, scaletta, copy, impaginazione,
-coerenza grafica fra le slide, rilettura. Gli strumenti "AI" generici producono testo,
-non slide finite. I tool di design producono slide, ma il contenuto lo devi scrivere tu.
+A good educational carousel takes hours: research, outline, copy, layout, visual consistency
+across slides, proofreading. Generic "AI" tools produce text, not finished slides. Design tools
+produce slides, but you still have to write the content yourself.
 
-Instapilot fa tutto il percorso, e lo fa **rispettando il tuo brand**:
+Instapilot covers the whole path, and does it **while respecting your brand**:
 
-- **Contenuto prima della grafica**: un agente ricercatore prepara un dossier (con ricerca web opzionale),
-  un planner lo trasforma in un arco narrativo (hook → sviluppo → payoff → CTA), un revisore lo verifica.
-- **Design controllato, non improvvisato**: ogni slide parte da una libreria di *layout recipe*
-  (cover, liste, confronti, KPI, grafici, flow diagram…) e da regole tipografiche pensate per il feed.
-- **Qualità verificata sul render reale**: la slide viene renderizzata in un browser headless,
-  controllata per overflow e collisioni, poi giudicata da un art director AI che guarda il PNG.
-- **White-label by design**: nessun brand cablato nel codice. Nome, palette, font, logo, pubblico e tono
-  si configurano dalla UI e vengono iniettati a runtime in tutti i prompt e nel rendering.
+- **Content before graphics**: a researcher agent prepares a dossier (with optional web search),
+  a planner turns it into a narrative arc (hook → development → payoff → CTA), a reviewer checks it.
+- **Controlled design, not improvised**: every slide starts from a library of *layout recipes*
+  (cover, lists, comparisons, KPIs, charts, flow diagrams…) and typography rules built for the feed.
+- **Quality checked on the real render**: the slide is rendered in a headless browser,
+  checked for overflow and collisions, then judged by an AI art director that looks at the PNG.
+- **White-label by design**: no brand is hardcoded. Name, palette, font, logo, audience, tone
+  and content language are configured from the UI and injected at runtime into every prompt and
+  into the rendering.
 
-## Funzionalità
+## Features
 
 | | |
 |---|---|
-| 🧠 **Pipeline multi-agente** | Ricerca → revisione → piano → revisione → design → render → quality review → revisione editoriale. |
-| 🎠 **Carousel e post singoli** | Carousel da 6–9 slide con coerenza visiva fra le slide, oppure post singolo "self-contained". |
-| 🎨 **Brand Kit** | 6 colori con ruolo semantico, font, logo, tono, pubblico, hashtag, CTA, do & don't. |
-| 🖥️ **Studio web** | Libreria contenuti, generazione in background con avanzamento live, dettaglio slide per slide. |
-| ✏️ **Editing** | Modifica dell'HTML di una slide o modifica in linguaggio naturale ("rendi il titolo più corto"), con cronologia e ripristino. |
-| ✍️ **Caption** | Didascalia + hashtag generati dal contenuto delle slide, nel tono del brand. |
-| 📦 **Export** | ZIP con tutte le slide PNG pronte da caricare su Instagram. |
-| 🔌 **Provider flessibile** | OpenAI o qualsiasi endpoint OpenAI-compatibile (es. proxy LiteLLM verso Claude, Gemini, Llama…), con modello configurabile per singolo agente. |
-| 💸 **Stima costi** | Token e costo stimato per ogni contenuto generato. |
-| 🧪 **Testato** | Oltre 230 test (unit + integration) con Vitest. |
+| 🧠 **Multi-agent pipeline** | Research → review → plan → review → design → render → quality review → editorial review. |
+| 🎠 **Carousels and single posts** | 6–9 slide carousels with visual consistency across slides, or a self-contained single post. |
+| 🎨 **Brand Kit** | 6 colors with a semantic role, font, logo, tone, audience, content language, hashtags, CTAs, do's & don'ts. |
+| 🌍 **Any content language** | Prompts are written in English; the generated copy follows the language set in the Brand Kit. |
+| 🖥️ **Web Studio** | Content library, background generation with live progress, slide-by-slide detail view. |
+| ✏️ **Editing** | Edit a slide's HTML or describe the change in plain language ("make the title shorter"), with history and revert. |
+| ✍️ **Captions** | Caption + hashtags generated from the slides' content, in the brand's tone. |
+| 📦 **Export** | ZIP with every slide as a PNG, ready to upload to Instagram. |
+| 🔌 **Flexible provider** | OpenAI or any OpenAI-compatible endpoint (e.g. a LiteLLM proxy to Claude, Gemini, Llama…), with a configurable model per agent. |
+| 💸 **Cost estimate** | Tokens and estimated cost for every generated piece. |
+| 🧪 **Tested** | 230+ tests (unit + integration) with Vitest. |
 
-## Screenshot
+## Screenshots
+
+> The Studio UI is currently in Italian.
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/assets/screenshots/library.png" alt="Libreria"><br><sub><b>Libreria</b> — tutti i contenuti generati, con anteprima della cover.</sub></td>
-    <td width="50%"><img src="docs/assets/screenshots/content.png" alt="Dettaglio contenuto"><br><sub><b>Dettaglio</b> — navigazione fra le slide, metadati, editing, caption ed export.</sub></td>
+    <td width="50%"><img src="docs/assets/screenshots/library.png" alt="Library"><br><sub><b>Library</b> — every generated piece, with a cover preview.</sub></td>
+    <td width="50%"><img src="docs/assets/screenshots/content.png" alt="Content detail"><br><sub><b>Detail</b> — slide navigation, metadata, editing, captions and export.</sub></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/assets/screenshots/new.png" alt="Nuovo contenuto"><br><sub><b>Nuovo contenuto</b> — formato, numero di slide, argomento, istruzioni, ricerca web.</sub></td>
-    <td width="50%"><img src="docs/assets/screenshots/brand.png" alt="Brand kit"><br><sub><b>Brand kit</b> — identità, palette semantica, font, logo e linee guida.</sub></td>
+    <td width="50%"><img src="docs/assets/screenshots/new.png" alt="New content"><br><sub><b>New content</b> — format, number of slides, topic, instructions, web search.</sub></td>
+    <td width="50%"><img src="docs/assets/screenshots/brand.png" alt="Brand kit"><br><sub><b>Brand kit</b> — identity, content language, semantic palette, font, logo and guidelines.</sub></td>
   </tr>
 </table>
 
-Al primo avvio, finché non configuri una API key, lo Studio ti guida con un banner verso le Impostazioni:
+On first launch, until an API key is configured, the Studio points you to the Settings page with a banner:
 
-<img src="docs/assets/screenshots/first-run.png" alt="Primo avvio" width="70%">
+<img src="docs/assets/screenshots/first-run.png" alt="First run" width="70%">
 
-## Come funziona
+## How it works
 
 ```mermaid
 flowchart LR
-    U([Argomento + istruzioni]) --> R
+    U([Topic + instructions]) --> R
 
-    subgraph A["① Contenuto"]
-        R[Ricerca<br/><sub>web search opzionale</sub>] --> RR{Review<br/>dossier}
-        RR -- correzioni --> R
-        RR -- ok --> P[Piano narrativo<br/><sub>arco + brief per slide</sub>]
-        P --> PR{Review<br/>piano}
-        PR -- correzioni --> P
+    subgraph A["① Content"]
+        R[Research<br/><sub>optional web search</sub>] --> RR{Dossier<br/>review}
+        RR -- fixes --> R
+        RR -- ok --> P[Narrative plan<br/><sub>arc + brief per slide</sub>]
+        P --> PR{Plan<br/>review}
+        PR -- fixes --> P
     end
 
     PR -- ok --> D
 
-    subgraph B["② Per ogni slide"]
-        D[Design spec<br/><sub>recipe + gerarchia</sub>] --> DR{Design<br/>critic}
-        DR -- rifiuta --> D
+    subgraph B["② For each slide"]
+        D[Design spec<br/><sub>recipe + hierarchy</sub>] --> DR{Design<br/>critic}
+        DR -- reject --> D
         DR -- ok --> H[HTML + CSS]
-        H --> V[Validazione<br/><sub>sicurezza + regole brand</sub>]
-        V --> X[Render Playwright<br/><sub>1080×1350 PNG</sub>]
-        X --> L[Audit layout<br/><sub>overflow, collisioni</sub>]
-        L --> Q{Quality review<br/><sub>visione sul PNG</sub>}
-        Q -- correzioni --> H
+        H --> V[Validation<br/><sub>security + brand rules</sub>]
+        V --> X[Playwright render<br/><sub>1080×1350 PNG</sub>]
+        X --> L[Layout audit<br/><sub>overflow, collisions</sub>]
+        L --> Q{Quality review<br/><sub>vision on the PNG</sub>}
+        Q -- fixes --> H
     end
 
-    Q -- ok --> E{③ Revisione<br/>editoriale<br/><sub>coerenza fra slide</sub>}
-    E -- fix mirati --> H
-    E -- ok --> O[(Libreria<br/>PNG + HTML + manifest)]
+    Q -- ok --> E{③ Editorial<br/>review<br/><sub>cross-slide coherence</sub>}
+    E -- targeted fixes --> H
+    E -- ok --> O[(Library<br/>PNG + HTML + manifest)]
 ```
 
-**In breve:**
+**In short:**
 
-1. **Contenuto.** Il *researcher* produce un dossier sull'argomento; un *reviewer* ne controlla accuratezza
-   e completezza. Il *planner* sceglie un framework narrativo e scrive il brief di ogni slide; un secondo
-   reviewer verifica arco, densità e ripetizioni.
-2. **Slide.** Per ogni slide un *designer* sceglie la recipe di layout e definisce titolo, gerarchia ed
-   evidenziazioni; un *critic* la approva o la rimanda indietro. Il *renderer* scrive HTML+CSS che usa
-   solo le variabili del brand (`var(--brand-primary)`, `var(--brand-positive)`, …). Il risultato viene
-   validato, inserito nella "shell" del brand (font, colori, logo, freccia swipe), renderizzato con
-   Chromium headless e controllato geometricamente. Infine un *art director* multimodale guarda il PNG
-   e chiede correzioni chirurgiche finché la slide non è pubblicabile.
-3. **Revisione editoriale.** Sui carousel, un ultimo agente rilegge l'intera sequenza e applica fix
-   mirati alle singole slide senza rifare il layout.
+1. **Content.** The *researcher* produces a dossier on the topic; a *reviewer* checks its accuracy
+   and completeness. The *planner* picks a narrative framework and writes the brief for each slide;
+   a second reviewer checks arc, density and repetition.
+2. **Slides.** For each slide a *designer* picks the layout recipe and defines title, hierarchy and
+   highlights; a *critic* approves it or sends it back. The *renderer* writes HTML+CSS that only uses
+   the brand variables (`var(--brand-primary)`, `var(--brand-positive)`, …). The result is validated,
+   wrapped in the brand "shell" (font, colors, logo, swipe arrow), rendered with headless Chromium and
+   checked geometrically. Finally a multimodal *art director* looks at the PNG and asks for surgical
+   fixes until the slide is publishable.
+3. **Editorial review.** On carousels, a last agent rereads the whole sequence and applies targeted
+   fixes to single slides without redoing their layout.
 
-Ogni contenuto viene salvato in `output/<id>/` con PNG, HTML sorgente e un `manifest.json`
-(piano, design spec, warning, consumo token).
+Every piece is saved in `output/<id>/` with the PNGs, the source HTML and a `manifest.json`
+(plan, design specs, warnings, token usage).
 
-> Oltre alla pipeline HTML, il progetto include un motore di rendering basato su **Remotion**
-> (componenti React + primitive tipizzate) esposto dalle route `/render/still`, `/render/carousel`
-> e `/render/dynamic`. Vedi [API HTTP](#api-http).
+> Besides the HTML pipeline, the project includes a rendering engine based on **Remotion**
+> (React components + typed primitives) exposed by the `/render/still`, `/render/carousel` and
+> `/render/dynamic` routes. See [HTTP API](#http-api).
 
 ## Quickstart
 
-### Requisiti
+### Requirements
 
-- **Node.js 20+** e npm
-- Una **API key** OpenAI, oppure un endpoint OpenAI-compatibile (es. [LiteLLM](https://github.com/BerriAI/litellm))
+- **Node.js 20+** and npm
+- An OpenAI **API key**, or an OpenAI-compatible endpoint (e.g. [LiteLLM](https://github.com/BerriAI/litellm))
 
-### 1. Installa
+### 1. Install
 
 ```bash
 git clone https://github.com/CesareIsHere/instapilot.git
 cd instapilot
 npm install
-npx playwright install chromium   # browser headless usato per il rendering
+npx playwright install chromium   # headless browser used for rendering
 ```
 
-### 2. Avvia
+### 2. Run
 
 ```bash
 npm run dev
 ```
 
-Apri **[http://localhost:3001](http://localhost:3001)**. Lo Studio web è già compilato in `web/dist`
-e viene servito dallo stesso server: non serve un secondo processo.
+Open **[http://localhost:3001](http://localhost:3001)**. The web Studio is prebuilt in `web/dist`
+and served by the same server: no second process needed.
 
-### 3. Collega il provider LLM
+### 3. Connect the LLM provider
 
-Vai in **Impostazioni**, incolla la API key (ed eventualmente base URL e modello) e salva.
-La configurazione resta in locale in `data/config.json`.
+Go to **Settings** (*Impostazioni*), paste the API key (and optionally base URL and model) and save.
+The configuration stays local in `data/config.json`.
 
-> In alternativa: `cp .env.example .env` e imposta `OPENAI_API_KEY=sk-...`.
+> Alternatively: `cp .env.example .env` and set `OPENAI_API_KEY=sk-...`.
 
-### 4. Configura il brand
+### 4. Configure the brand
 
-In **Brand kit** imposta nome, pubblico, tono, i 6 colori, il font e carica il logo.
+In **Brand kit** set name, audience, tone, **content language**, the 6 colors, the font, and upload the logo.
 
-### 5. Genera
+### 5. Generate
 
-**Nuovo contenuto** → scrivi l'argomento → **Genera**. Segui l'avanzamento in *Generazioni*;
-a fine job il contenuto appare in *Libreria*.
+**New content** (*Nuovo contenuto*) → write the topic → **Generate**. Follow the progress in
+*Generations*; when the job finishes the piece shows up in the *Library*.
 
 <details>
-<summary><b>Vuoi esplorare lo Studio senza API key?</b></summary>
+<summary><b>Want to explore the Studio without an API key?</b></summary>
 
 ```bash
 npm run seed:demo
 ```
 
-Crea in Libreria un carousel dimostrativo di 5 slide (quello in cima a questa pagina): l'HTML è scritto
-a mano, ma passa per la stessa shell e lo stesso renderer della pipeline, usando il **tuo** Brand Kit
-corrente. È un modo rapido per vedere come rendono palette, font e logo. Nessuna chiamata LLM.
+Adds a 5-slide demo carousel to the Library (the one at the top of this page). Its HTML is
+hand-written, but it goes through the same shell and the same renderer as the pipeline, using **your**
+current Brand Kit. It's a quick way to see how your palette, font and logo look. No LLM calls.
 
 </details>
 
-## Configurazione
+## Configuration
 
-La maggior parte delle impostazioni si gestisce dalla UI. Le variabili d'ambiente servono per
-deploy, automazioni o tuning avanzato: l'elenco completo e commentato è in [`.env.example`](.env.example).
+Most settings are managed from the UI. Environment variables are for deployments, automation or
+advanced tuning: the full, commented list is in [`.env.example`](.env.example).
 
-**Precedenza:** impostazioni salvate dalla UI → variabili d'ambiente → default.
+**Precedence:** settings saved from the UI → environment variables → defaults.
 
-| Variabile | Default | Descrizione |
+| Variable | Default | Description |
 |---|---|---|
-| `PORT` | `3001` | Porta del server (API + Studio). |
-| `OPENAI_API_KEY` | — | API key OpenAI. |
-| `OPENAI_MODEL` | `gpt-4o` | Modello di default per tutti gli agenti. |
-| `OPENAI_REASONING_EFFORT` | — | `minimal` \| `low` \| `medium` \| `high` per i modelli di reasoning. |
-| `LITELLM_BASE_URL` / `LITELLM_API_KEY` / `LITELLM_MODEL` | — | Endpoint OpenAI-compatibile (hanno priorità su OpenAI). |
-| `MODEL_<AGENTE>` | `OPENAI_MODEL` | Modello per singolo agente: `RESEARCH`, `RESEARCH_REVIEW`, `PLAN`, `PLAN_REVIEW`, `DESIGN_PLAN`, `DESIGN_REVIEW`, `HTML_RENDER`, `QUALITY_REVIEW`, `EDITORIAL_REVIEW`, `DYNAMIC`. |
-| `OPENAI_WEB_SEARCH_TOOL` | `web_search_preview` | Tool di ricerca web usato dal researcher. |
-| `CONTENT_MAX_RESEARCH_ROUNDS` / `_PLAN_ROUNDS` / `_REVIEW_ROUNDS` | `2` | Giri massimi di revisione per fase. |
-| `HTML_MAX_DESIGN_RETRIES` / `HTML_MAX_ATTEMPTS` | `3` / `5` | Tentativi massimi di design e di render per slide. |
+| `PORT` | `3001` | Server port (API + Studio). |
+| `OPENAI_API_KEY` | — | OpenAI API key. |
+| `OPENAI_MODEL` | `gpt-4o` | Default model for every agent. |
+| `OPENAI_REASONING_EFFORT` | — | `minimal` \| `low` \| `medium` \| `high` for reasoning models. |
+| `LITELLM_BASE_URL` / `LITELLM_API_KEY` / `LITELLM_MODEL` | — | OpenAI-compatible endpoint (takes priority over OpenAI). |
+| `MODEL_<AGENT>` | `OPENAI_MODEL` | Model for a single agent: `RESEARCH`, `RESEARCH_REVIEW`, `PLAN`, `PLAN_REVIEW`, `DESIGN_PLAN`, `DESIGN_REVIEW`, `HTML_RENDER`, `QUALITY_REVIEW`, `EDITORIAL_REVIEW`, `DYNAMIC`. |
+| `OPENAI_WEB_SEARCH_TOOL` | `web_search_preview` | Web-search tool used by the researcher. |
+| `CONTENT_MAX_RESEARCH_ROUNDS` / `_PLAN_ROUNDS` / `_REVIEW_ROUNDS` | `2` | Max review rounds per phase. |
+| `HTML_MAX_DESIGN_RETRIES` / `HTML_MAX_ATTEMPTS` | `3` / `5` | Max design and render attempts per slide. |
 | `HTML_DEVICE_SCALE_FACTOR` | `1` | `1` = 1080×1350, `2` = 2160×2700. |
-| `BRAND_CONTEXT_FILE` | `docs/brand-context.example.md` | Documento brand usato se non c'è un Brand Kit salvato. |
-| `BRAND_HANDLE` / `BRAND_DISCLAIMER` | `@yourbrand` / testo generico | Footer delle slide Remotion. |
-| `LLM_PRICE_INPUT_PER_1M` / `LLM_PRICE_OUTPUT_PER_1M` / `LLM_PRICE_CURRENCY` | `2.5` / `10` / `USD` | Prezzi usati per la stima dei costi. |
-| `OUTPUT_DIR` | `./output` | Dove vengono salvati i contenuti generati. |
+| `BRAND_CONTEXT_FILE` | `docs/brand-context.example.md` | Brand document used when no Brand Kit has been saved. |
+| `BRAND_HANDLE` / `BRAND_DISCLAIMER` | `@yourbrand` / generic text | Footer of the Remotion slides. |
+| `LLM_PRICE_INPUT_PER_1M` / `LLM_PRICE_OUTPUT_PER_1M` / `LLM_PRICE_CURRENCY` | `2.5` / `10` / `USD` | Prices used for the cost estimate. |
+| `OUTPUT_DIR` | `./output` | Where generated content is saved. |
 
-> **Suggerimento sui costi:** gli agenti di revisione (`*_REVIEW`) funzionano bene anche con modelli
-> più piccoli. Per argomenti "evergreen" puoi disattivare la ricerca web dal form: salta anche la
-> revisione del dossier e riduce sensibilmente i token.
+> **Cost tip:** the review agents (`*_REVIEW`) work well with smaller models too. For evergreen
+> topics you can turn off web search from the form: it also skips the dossier review and cuts tokens
+> noticeably.
 
-## Personalizzare il brand (white-label)
+## Customising the brand (white-label)
 
-Il codice non contiene alcun brand. L'identità arriva a runtime da **due livelli**:
+The code contains no brand. The identity comes in at runtime from **two layers**:
 
-**1. Brand Kit** (UI → *Brand kit*, salvato in `data/brand-kit.json`)
+**1. Brand Kit** (UI → *Brand kit*, saved in `data/brand-kit.json`)
 
-| Campo | Effetto |
+| Field | Effect |
 |---|---|
-| Nome, tagline, pubblico, tono | Iniettati nei prompt di tutti gli agenti (contenuto, design, caption). |
-| Colori `primary`, `positive`, `negative`, `paper`, `ink`, `muted` | Diventano le CSS custom property della shell (`--brand-primary`, `--brand-positive`, `--danger`, `--paper`, `--ink`, `--muted`) e sono documentati con i valori reali nei prompt di design e di review. |
-| Font | `Inter` (default), `Montserrat`, `Poppins` inclusi in `public/fonts/` (licenza OFL). Puoi aggiungerne altri come `Famiglia-Regular.woff2`, `-Medium`, `-SemiBold`, `-Bold`, `-ExtraBold`. |
-| Logo | Caricato dalla UI, inserito nelle slide tramite il token `{{asset:logo}}`. |
-| Hashtag, CTA, do & don't, note | Guidano copy e caption. |
+| Name, tagline, audience, tone | Injected into the prompts of every agent (content, design, captions). |
+| Content language | The language of all generated copy (slides, captions, edits). Default: `Italian`. Any language the model handles works, e.g. `English`, `Spanish`. |
+| Colors `primary`, `positive`, `negative`, `paper`, `ink`, `muted` | Become the shell's CSS custom properties (`--brand-primary`, `--brand-positive`, `--danger`, `--paper`, `--ink`, `--muted`) and are documented with their real values in the design and review prompts. |
+| Font | `Inter` (default), `Montserrat` and `Poppins` are bundled in `public/fonts/` (OFL license). You can add others as `Family-Regular.woff2`, `-Medium`, `-SemiBold`, `-Bold`, `-ExtraBold`. |
+| Logo | Uploaded from the UI, placed in the slides through the `{{asset:logo}}` token. |
+| Hashtags, CTAs, do's & don'ts, notes | Guide copy and captions. |
 
-I colori hanno un **ruolo semantico**, non un valore fisso: i titoli usano il primario, l'accento
-positivo evidenzia crescita ed esiti favorevoli, quello negativo rischi e perdite. Cambiando i valori
-cambia l'aspetto, senza toccare prompt o codice.
+Colors have a **semantic role**, not a fixed value: titles use the primary color, the positive accent
+highlights growth and favourable outcomes, the negative accent risks and losses. Changing the values
+changes the look, without touching prompts or code.
 
-**2. Documento di brand context** (fallback, o per pipeline headless)
+**2. Brand context document** (fallback, or for headless pipelines)
 
-Un file Markdown più ricco: pillar editoriali, regole di compliance, cose da non fare.
-Parti da [`docs/brand-context.example.md`](docs/brand-context.example.md) (template vuoto) o da
-[`examples/brand-contexts/productivity.md`](examples/brand-contexts/productivity.md) (esempio compilato
-per un brand fittizio) e punta `BRAND_CONTEXT_FILE` al tuo file.
+A richer Markdown file: editorial pillars, compliance rules, things never to do.
+Start from [`docs/brand-context.example.md`](docs/brand-context.example.md) (empty template) or from
+[`examples/brand-contexts/productivity.md`](examples/brand-contexts/productivity.md) (filled-in example
+for a fictional brand) and point `BRAND_CONTEXT_FILE` at your file.
 
-## API HTTP
+## HTTP API
 
-Tutto ciò che fa lo Studio è disponibile via REST, utile per integrazioni (n8n, Zapier, script).
+Everything the Studio does is available over REST, handy for integrations (n8n, Zapier, scripts).
 
 <details>
-<summary><b>Generazione</b></summary>
+<summary><b>Generation</b></summary>
 
-| Metodo | Endpoint | Descrizione |
+| Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/generate` | Avvia un job asincrono (usato dallo Studio). |
-| `GET` | `/api/generate` · `/api/generate/:id` | Elenco job · stato e avanzamento di un job. |
-| `POST` | `/api/generate/:id/retry` | Rilancia un job con gli stessi parametri. |
-| `POST` | `/generate/content` | Generazione **sincrona** di un carousel/post completo. |
-| `POST` | `/render/html` | Una singola slide da prompt testuale (pipeline HTML). |
+| `POST` | `/api/generate` | Starts an asynchronous job (used by the Studio). |
+| `GET` | `/api/generate` · `/api/generate/:id` | List jobs · status and progress of a job. |
+| `POST` | `/api/generate/:id/retry` | Re-runs a job with the same parameters. |
+| `POST` | `/generate/content` | **Synchronous** generation of a full carousel/post. |
+| `POST` | `/render/html` | A single slide from a text prompt (HTML pipeline). |
 
 ```bash
 curl -X POST http://localhost:3001/generate/content \
   -H 'Content-Type: application/json' \
-  -d '{ "topic": "Perché le abitudini piccole battono i grandi propositi", "format": "carousel", "slideCount": 7 }'
+  -d '{ "topic": "Why small habits beat big resolutions", "format": "carousel", "slideCount": 7 }'
 ```
 
 </details>
 
 <details>
-<summary><b>Libreria</b></summary>
+<summary><b>Library</b></summary>
 
-| Metodo | Endpoint | Descrizione |
+| Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/library` · `/api/library/:id` | Elenco contenuti · dettaglio con slide. |
-| `DELETE` | `/api/library/:id` | Elimina un contenuto. |
-| `GET` | `/api/library/:id/export` | ZIP con le slide PNG. |
-| `POST` | `/api/library/:id/caption` | Genera caption e hashtag. |
-| `GET` · `PUT` | `/api/library/:id/slides/:n/html` | Legge · salva (e ri-renderizza) l'HTML di una slide. |
-| `POST` | `/api/library/:id/slides/:n/ai-edit` | Modifica una slide con un'istruzione in linguaggio naturale. |
-| `GET` · `POST` | `/api/library/:id/slides/:n/history` · `/revert` | Cronologia · ripristino di una versione precedente. |
+| `GET` | `/api/library` · `/api/library/:id` | List content · detail with slides. |
+| `DELETE` | `/api/library/:id` | Delete a piece. |
+| `GET` | `/api/library/:id/export` | ZIP with the slide PNGs. |
+| `POST` | `/api/library/:id/caption` | Generate caption and hashtags. |
+| `GET` · `PUT` | `/api/library/:id/slides/:n/html` | Read · save (and re-render) a slide's HTML. |
+| `POST` | `/api/library/:id/slides/:n/ai-edit` | Edit a slide with a natural-language instruction. |
+| `GET` · `POST` | `/api/library/:id/slides/:n/history` · `/revert` | History · restore a previous version. |
 
 </details>
 
 <details>
-<summary><b>Configurazione e brand</b></summary>
+<summary><b>Configuration and brand</b></summary>
 
-| Metodo | Endpoint | Descrizione |
+| Method | Endpoint | Description |
 |---|---|---|
-| `GET` · `PUT` | `/api/config` | Provider LLM e modelli (la key non viene mai restituita, solo le ultime 4 cifre). |
+| `GET` · `PUT` | `/api/config` | LLM provider and models (the key is never returned, only its last 4 characters). |
 | `GET` · `PUT` | `/api/brand` | Brand Kit. |
-| `GET` · `POST` | `/api/brand/logo` | Logo corrente · upload nuovo logo. |
-| `GET` | `/health` | Stato del server, bundle Remotion e presenza della API key. |
+| `GET` · `POST` | `/api/brand/logo` | Current logo · upload a new logo. |
+| `GET` | `/health` | Server status, Remotion bundle and API-key presence. |
 
 </details>
 
 <details>
-<summary><b>Motore Remotion</b></summary>
+<summary><b>Remotion engine</b></summary>
 
-| Metodo | Endpoint | Descrizione |
+| Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/compositions` · `/primitives` · `/layouts` · `/theme` · `/assets` | Discovery: schemi JSON di primitive, layout, token del tema e asset. |
-| `POST` | `/render/still` | Una slide da `SlideSpec` tipizzato (vedi [`examples/example-slide.json`](examples/example-slide.json)). |
-| `POST` | `/render/carousel` | Più slide in una chiamata. |
-| `POST` | `/render/dynamic` | Slide da prompt: l'LLM scrive codice Remotion compilato in sandbox (vedi [`examples/dynamic-prompt.json`](examples/dynamic-prompt.json)). |
+| `GET` | `/compositions` · `/primitives` · `/layouts` · `/theme` · `/assets` | Discovery: JSON schemas of primitives, layouts, theme tokens and assets. |
+| `POST` | `/render/still` | One slide from a typed `SlideSpec` (see [`examples/example-slide.json`](examples/example-slide.json)). |
+| `POST` | `/render/carousel` | Several slides in one call. |
+| `POST` | `/render/dynamic` | Slide from a prompt: the LLM writes Remotion code compiled in a sandbox (see [`examples/dynamic-prompt.json`](examples/dynamic-prompt.json)). |
 
 </details>
 
-## Struttura del progetto
+## Project structure
 
 ```
 instapilot/
 ├── src/
-│   ├── server/        # Express: route API, job asincroni, libreria, brand kit, upload
-│   ├── content/       # Fase contenuto: ricerca, piano narrativo, revisioni, orchestrazione
-│   ├── html/          # Fase slide: design spec, recipe, prompt, shell HTML, render Playwright, audit, quality review
-│   ├── llm/           # Client LLM, caption, editing AI delle slide, prompt Remotion
-│   ├── config/        # Persistenza della configurazione salvata dalla UI
-│   ├── remotion/      # Composition e bundler Remotion
-│   ├── primitives/    # Componenti React tipizzati (Headline, RichText, Illustration, Footer)
+│   ├── server/        # Express: API routes, async jobs, library, brand kit, uploads
+│   ├── content/       # Content phase: research, narrative plan, reviews, orchestration
+│   ├── html/          # Slide phase: design spec, recipes, prompts, HTML shell, Playwright render, audit, quality review
+│   ├── llm/           # LLM client, captions, AI slide editing, Remotion prompt
+│   ├── config/        # Persistence of the settings saved from the UI
+│   ├── remotion/      # Remotion compositions and bundler
+│   ├── primitives/    # Typed React components (Headline, RichText, Illustration, Footer)
 │   ├── layouts/ chrome/ theme/ schema/ dynamic/ assets/ lib/
-├── web/               # Studio: React + Vite + Tailwind (build committata in web/dist)
-├── public/            # Font, logo placeholder, illustrazioni
-├── examples/          # Payload di esempio e preset di brand context
+├── web/               # Studio: React + Vite + Tailwind (build committed in web/dist)
+├── public/            # Fonts, placeholder logo, illustrations
+├── examples/          # Example payloads and brand-context presets
 ├── scripts/           # seed:demo
-├── docs/              # Template brand context, note tecniche, asset del README
+├── docs/              # Brand-context template, technical notes, README assets
 ├── tests/             # unit, integration, snapshot (Vitest)
-├── data/              # Config e brand kit locali (gitignored)
-└── output/            # Contenuti generati (gitignored)
+├── data/              # Local config and brand kit (gitignored)
+└── output/            # Generated content (gitignored)
 ```
 
-## Sviluppo
+## Development
 
-| Comando | Cosa fa |
+| Command | What it does |
 |---|---|
-| `npm run dev` | Server con hot reload su `:3001` (serve anche lo Studio da `web/dist`). |
-| `npm run web:dev` | Studio in sviluppo con Vite su `:5173` (proxy verso `:3001`). Esegui prima `npm install --prefix web`. |
-| `npm run web:build` | Ricompila lo Studio in `web/dist`. |
-| `npm run seed:demo` | Crea il carousel dimostrativo in Libreria. |
-| `npm run studio` | Apre Remotion Studio sulle composition. |
-| `npm run typecheck` | Type-check TypeScript. |
-| `npm test` | Esegue la suite Vitest (`npm run test:watch` in watch mode). |
+| `npm run dev` | Server with hot reload on `:3001` (also serves the Studio from `web/dist`). |
+| `npm run web:dev` | Studio in development with Vite on `:5173` (proxied to `:3001`). Run `npm install --prefix web` first. |
+| `npm run web:build` | Rebuilds the Studio into `web/dist`. |
+| `npm run seed:demo` | Adds the demo carousel to the Library. |
+| `npm run studio` | Opens Remotion Studio on the compositions. |
+| `npm run typecheck` | TypeScript type-check. |
+| `npm test` | Runs the Vitest suite (`npm run test:watch` for watch mode). |
 
-Se modifichi qualcosa in `web/src`, ricordati di eseguire `npm run web:build` e committare `web/dist`:
-è ciò che viene servito a chi clona il repo.
+If you change anything in `web/src`, remember to run `npm run web:build` and commit `web/dist`:
+that is what people who clone the repo get served.
 
 ## Troubleshooting
 
 <details>
-<summary><b>"Executable doesn't exist" / errore all'avvio di Chromium</b></summary>
+<summary><b>"Executable doesn't exist" / Chromium fails to launch</b></summary>
 
-Manca il browser di Playwright: esegui `npx playwright install chromium`
-(su Linux eventualmente `npx playwright install-deps chromium`).
+Playwright's browser is missing: run `npx playwright install chromium`
+(on Linux you may also need `npx playwright install-deps chromium`).
 </details>
 
 <details>
-<summary><b>Il banner "API key non configurata" non sparisce</b></summary>
+<summary><b>The "API key not configured" banner doesn't go away</b></summary>
 
-Salva la key in **Impostazioni** oppure imposta `OPENAI_API_KEY` / `LITELLM_API_KEY` e riavvia il server.
-Il banner si aggiorna entro pochi secondi.
+Save the key in **Settings**, or set `OPENAI_API_KEY` / `LITELLM_API_KEY` and restart the server.
+The banner refreshes within a few seconds.
 </details>
 
 <details>
-<summary><b>Le slide usano un font diverso da quello scelto</b></summary>
+<summary><b>Slides use a different font from the one selected</b></summary>
 
-Il renderer funziona offline e incorpora solo i font presenti in `public/fonts/`
-(o caricati in `data/fonts/custom/`) con la convenzione `Famiglia-Peso.woff2`. Se mancano, ripiega su
-`sans-serif` e lo segnala nei log (`html.fonts.missing`).
+The renderer works offline and only embeds the fonts found in `public/fonts/`
+(or uploaded to `data/fonts/custom/`) named `Family-Weight.woff2`. If they are missing it falls back
+to `sans-serif` and logs it (`html.fonts.missing`).
 </details>
 
 <details>
-<summary><b>Le route Remotion (/render/still, /render/dynamic) scaricano qualcosa al primo avvio</b></summary>
+<summary><b>The Remotion routes (/render/still, /render/dynamic) download something on first run</b></summary>
 
-Remotion scarica il proprio Chrome headless al primo render. In ambienti senza accesso a internet
-serve pre-installarlo; la pipeline HTML (usata dallo Studio) usa invece Playwright e non ne ha bisogno.
+Remotion downloads its own headless Chrome on the first render. In environments without internet
+access it has to be pre-installed; the HTML pipeline (used by the Studio) relies on Playwright instead
+and doesn't need it.
 </details>
 
 <details>
-<summary><b>Una generazione fallisce o costa troppo</b></summary>
+<summary><b>A generation fails or costs too much</b></summary>
 
-Controlla i log del server (JSON strutturato su stdout) e il dettaglio del job in *Generazioni*.
-Riduci i giri di revisione (`CONTENT_MAX_*`, `HTML_MAX_*`), usa modelli più piccoli per i reviewer
-o disattiva la ricerca web.
+Check the server logs (structured JSON on stdout) and the job detail in *Generations*.
+Reduce the review rounds (`CONTENT_MAX_*`, `HTML_MAX_*`), use smaller models for the reviewers,
+or turn off web search.
 </details>
 
-## Contribuire
+## Contributing
 
-Issue e pull request sono benvenute.
+Issues and pull requests are welcome.
 
-1. Fai un fork e crea un branch: `git checkout -b feat/la-mia-modifica`
-2. Mantieni il codice brand-agnostic: niente nomi, colori o asset di un brand specifico in `src/`
-   (usa il Brand Kit e le variabili `--brand-*`).
-3. Aggiungi o aggiorna i test e verifica che `npm run typecheck && npm test` passino.
-4. Apri la PR descrivendo il *perché* della modifica.
+1. Fork and create a branch: `git checkout -b feat/my-change`
+2. Keep the code brand-agnostic: no names, colors or assets of a specific brand in `src/`
+   (use the Brand Kit and the `--brand-*` variables). Prompts are written in English; the output
+   language comes from the Brand Kit.
+3. Add or update tests and make sure `npm run typecheck && npm test` pass.
+4. Open the PR explaining the *why* of the change.
 
-## Licenza
+## License
 
-Distribuito con licenza [MIT](LICENSE). I font inclusi in `public/fonts/` sono distribuiti con
-SIL Open Font License 1.1 (vedi i file `OFL-*.txt`).
+Released under the [MIT](LICENSE) license. The fonts bundled in `public/fonts/` are released under
+the SIL Open Font License 1.1 (see the `OFL-*.txt` files).

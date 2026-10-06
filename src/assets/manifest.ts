@@ -13,6 +13,6 @@ export const manifest: Record<string, AssetEntry> = {
   'growth-steps': {
     path: 'illustrations/growth-steps.svg',
     tags: ['growth', 'progress', 'steps'],
-    description: 'Scalini crescenti con freccia verso l\'alto — progresso graduale, piccoli passi che si sommano',
+    description: 'Rising steps with an upward arrow — gradual progress, small steps that add up',
   },
 };

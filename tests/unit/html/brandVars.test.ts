@@ -10,6 +10,7 @@ const testVars: BrandVars = {
     primary: '#AA0011', positive: '#00AA22', negative: '#CC3300',
     paper: '#FFFBF0', ink: '#222222', muted: '#888888',
   },
+  language: 'Spanish',
 };
 
 describe('prompt brand injection', () => {
@@ -30,6 +31,12 @@ describe('prompt brand injection', () => {
     for (const hex of Object.values(testVars.colors)) expect(prompt).toContain(hex);
     expect(prompt).not.toContain('#4F46E5');
     expect(prompt.toLowerCase()).not.toContain('navy');
+  });
+
+  it('il system prompt chiede la copy nella lingua configurata', () => {
+    const prompt = buildHtmlSystemPrompt('brand context test', undefined, false, testVars);
+    expect(prompt).toContain('written in Spanish');
+    expect(prompt).not.toMatch(/Italian/);
   });
 
   it('il prompt del quality reviewer usa colori e font configurati', () => {
